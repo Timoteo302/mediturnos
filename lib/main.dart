@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'turnos/presentacion/pantallas/pantallaTurnos.dart';
 
+import 'autenticacion/presentacion/pantallaLogin.dart';
+
 void main() {
   runApp(const MediTurnosApp());
 }
@@ -26,7 +28,7 @@ class MediTurnosApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const PantallaTurnos(),
+      home: const PantallaLogin(),
     );
   }
 }

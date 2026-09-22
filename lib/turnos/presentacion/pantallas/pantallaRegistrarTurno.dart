@@ -19,6 +19,22 @@ class _PantallaRegistrarTurnoState extends State<PantallaRegistrarTurno> {
   final TextEditingController fechaController = TextEditingController();
   final TextEditingController horaController = TextEditingController();
 
+  // DE PRUEBA PARA SELECCIONAR , Luego se cambia por la API por los datos de MYSQL
+  String? medicoSeleccionado;
+  String? especialidadSeleccionada;
+
+  final List<String> medicos = [
+    'Dr. Juan Pérez',
+    'Dra. María Gómez',
+    'Dr. Carlos López',
+  ];
+
+  final List<String> especialidades = [
+    'Clínica médica',
+    'Cardiología',
+    'Pediatría',
+  ];
+
   final ControladorTurnos controlador = ControladorTurnos(
     CasosDeUsoTurnos(
       RepositorioTurnosImpl(),
@@ -36,34 +52,85 @@ class _PantallaRegistrarTurnoState extends State<PantallaRegistrarTurno> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            TextField(
-              controller: medicoController,
+            DropdownButtonFormField<String>(
+              value: medicoSeleccionado,
               decoration: const InputDecoration(
                 labelText: 'Médico',
               ),
+              items: medicos.map((medico) {
+                return DropdownMenuItem(
+                  value: medico,
+                  child: Text(medico),
+                );
+              }).toList(),
+              onChanged: (valor) {
+                setState(() {
+                  medicoSeleccionado = valor;
+                });
+              },
             ),
 
-            TextField(
-              controller: especialidadController,
+            const SizedBox(height: 15),
+
+            DropdownButtonFormField<String>(
+              value: especialidadSeleccionada,
               decoration: const InputDecoration(
                 labelText: 'Especialidad',
               ),
+              items: especialidades.map((especialidad) {
+                return DropdownMenuItem(
+                  value: especialidad,
+                  child: Text(especialidad),
+                );
+              }).toList(),
+              onChanged: (valor) {
+                setState(() {
+                  especialidadSeleccionada = valor;
+                });
+              },
             ),
 
             TextField(
               controller: fechaController,
+              readOnly: true,
               decoration: const InputDecoration(
                 labelText: 'Fecha',
+                suffixIcon: Icon(Icons.calendar_today),
               ),
+              onTap: () async {
+                final fechaSeleccionada = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime.now(),
+                  lastDate: DateTime(2030),
+                );
+
+                if (fechaSeleccionada != null) {
+                  fechaController.text =
+                  '${fechaSeleccionada.day}/${fechaSeleccionada.month}/${fechaSeleccionada.year}';
+                }
+              },
             ),
 
             TextField(
               controller: horaController,
+              readOnly: true,
               decoration: const InputDecoration(
                 labelText: 'Hora',
+                suffixIcon: Icon(Icons.access_time),
               ),
-            ),
+              onTap: () async {
+                final horaSeleccionada = await showTimePicker(
+                  context: context,
+                  initialTime: TimeOfDay.now(),
+                );
 
+                if (horaSeleccionada != null) {
+                  horaController.text =
+                  '${horaSeleccionada.hour.toString().padLeft(2, '0')}:${horaSeleccionada.minute.toString().padLeft(2, '0')}';
+                }
+              },
+            ),
             const SizedBox(height: 25),
 
             ElevatedButton(
@@ -71,8 +138,8 @@ class _PantallaRegistrarTurnoState extends State<PantallaRegistrarTurno> {
                 final turno = Turno(
                   id: DateTime.now().millisecondsSinceEpoch,
                   paciente: 'Timoteo Wierna',
-                  medico: medicoController.text,
-                  especialidad: especialidadController.text,
+                  medico: medicoSeleccionado ?? '',
+                  especialidad: especialidadSeleccionada ?? '',
                   fecha: fechaController.text,
                   hora: horaController.text,
                   estado: 'Pendiente',
