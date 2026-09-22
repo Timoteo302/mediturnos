@@ -9,6 +9,9 @@ import '../../datos/modelos/turno.dart';
 import 'pantallaRegistrarTurno.dart';
 import 'pantallaModificarTurno.dart';
 
+import '../../../autenticacion/presentacion/pantallaLogin.dart';
+
+
 class PantallaTurnos extends StatefulWidget {
   const PantallaTurnos({super.key});
 
@@ -65,6 +68,23 @@ class _PantallaTurnosState extends State<PantallaTurnos> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Mis Turnos'),
+
+        // Botón para cerrar la sesión y volver al login.
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Cerrar sesión',
+            onPressed: () {
+              // Volvemos al login y reemplazamos la pantalla actual.
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PantallaLogin(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: turnos.isEmpty
           ? const Center(

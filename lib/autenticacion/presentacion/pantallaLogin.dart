@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../turnos/presentacion/pantallas/pantallaTurnos.dart';
+import 'pantallaCrearCuenta.dart';
+
 
 class PantallaLogin extends StatefulWidget {
   const PantallaLogin({super.key});
@@ -91,6 +93,21 @@ class _PantallaLoginState extends State<PantallaLogin> {
                 );
               },
               child: const Text('Iniciar sesión'),
+            ),
+
+            const SizedBox(height: 15),
+
+// Permite acceder a la pantalla para crear una cuenta.
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PantallaCrearCuenta(),
+                  ),
+                );
+              },
+              child: const Text('Crear una cuenta'),
             ),
           ],
         ),
