@@ -1,115 +1,242 @@
+// Importamos Flutter Material.
+// Contiene los elementos visuales que usamos para construir la pantalla:
+// botones, textos, iconos, columnas, campos, navegación, etc.
 import 'package:flutter/material.dart';
 
+// Importamos nuestros componentes reutilizables.
+// Así evitamos tener que diseñar un botón o un campo de texto desde cero.
+import '../../../componentes/botonPrincipal.dart';
+import '../../../componentes/campoTexto.dart';
+import '../../../componentes/iconoEncabezado.dart';
+
+// Importamos los archivos de configuración visual.
+import '../../../configuracion/coloresApp.dart';
+import '../../../configuracion/estilosTexto.dart';
+
+// Importamos la pantalla a la que iremos después de iniciar sesión.
 import '../../../turnos/presentacion/pantallas/pantallaTurnos.dart';
+
+// Importamos la pantalla para crear una cuenta.
 import 'pantallaCrearCuenta.dart';
 
-
+// StatefulWidget indica que esta pantalla puede cambiar durante su uso.
+// Por ejemplo, cuando mostramos u ocultamos la contraseña.
 class PantallaLogin extends StatefulWidget {
+
+  // Constructor de la pantalla
+  // super.key permite identificar este widget dentro de Flutter
   const PantallaLogin({super.key});
 
   @override
   State<PantallaLogin> createState() => _PantallaLoginState();
 }
 
+// Acá escribimos el comportamiento y los datos de la pantalla.
 class _PantallaLoginState extends State<PantallaLogin> {
 
-  // Controladores para obtener los datos ingresados.
+  // Controlador del campo de correo electrónico.
+  // Permite leer lo que escribe el usuario.
   final TextEditingController emailController = TextEditingController();
+
+  //Controlador del campo contraseña
   final TextEditingController contrasenaController = TextEditingController();
 
-  // Permite mostrar u ocultar la contraseña.
+  // Variable que indica si la contraseña está visible.
   bool mostrarContrasena = false;
 
+
+  // la funcion: dispose() se ejecuta cuando la pantalla deja de utilizarse
+  // definitivamente.
+  // Liberamos los controladores para evitar consumir memoria innecesariamente.
+  @override
+  void dispose() {
+    emailController.dispose();
+    contrasenaController.dispose();
+    super.dispose();
+  }
+
+  // Métod que se ejecuta cuando el usuario toca "Iniciar sesión".
+  void _iniciarSesion() {
+
+    // pushReplacement permite navegar a otra pantalla
+    // reemplazando la actual.
+    // Por eso, el usuario no podrá volver al login con el botón atrás.
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        // Indicamos cuál será la nueva pantalla.
+        builder: (context) => const PantallaTurnos(),
+      ),
+    );
+  }
+
+  // Métod que permite ir a la pantalla de registro.
+  void _irACrearCuenta() {
+
+    // push agrega una nueva pantalla encima de la actual.
+    // A diferencia de pushReplacement, permite volver al login.
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const PantallaCrearCuenta(),
+      ),
+    );
+  }
+
+  // build construye toda la interfaz visual de la pantalla.
+  // Flutter lo vuelve a ejecutar cuando necesita actualizar la interfaz.
   @override
   Widget build(BuildContext context) {
+
+    /// 	Proporciona la estructura básica de una pantalla.
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('MediTurnos'),
-      ),
 
-      body: Padding(
-        padding: const EdgeInsets.all(20),
+      // SafeArea evita que el contenido quede debajo de elementos
+      // del teléfono, como la cámara o la barra de estado.
+      body: SafeArea(
 
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+        // Center centra el contenido
+        child: Center(
 
-            // Título de la aplicación.
-            const Text(
-              'Iniciar sesión',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+          // Permite desplazar la pantalla si el contenido no entra
+          // en el espacio disponible.
+          child: SingleChildScrollView(
 
-            const SizedBox(height: 30),
+            // Establecemos los márgenes internos.
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
 
-            // Campo para ingresar el correo.
-            TextField(
-              controller: emailController,
-              decoration: const InputDecoration(
-                labelText: 'Correo electrónico',
-                prefixIcon: Icon(Icons.email),
-              ),
-            ),
+            // Column organiza los elementos uno debajo del otro.
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
 
-            const SizedBox(height: 15),
+                // Mostramos nuestro componente de encabezado.
+                // Ícono del encabezado
+                const IconoEncabezado(),
 
-            // Campo para ingresar la contraseña.
-            TextField(
-              controller: contrasenaController,
-              obscureText: !mostrarContrasena,
-              decoration: InputDecoration(
-                labelText: 'Contraseña',
-                prefixIcon: const Icon(Icons.lock),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    mostrarContrasena
-                        ? Icons.visibility
-                        : Icons.visibility_off,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      mostrarContrasena = !mostrarContrasena;
-                    });
-                  },
+                const SizedBox(height: 24),
+
+                // Título principal de la aplicación.
+                // El estilo viene de nuestro archivo estilosTexto.dart.
+                // Título y subtítulo
+                const Text('MediTurnos', style: EstilosTexto.tituloGrande),
+                const SizedBox(height: 8),
+                const Text(
+                  'Accedé a tu gestión de turnos médicos',
+                  style: EstilosTexto.subtitulo,
+                  textAlign: TextAlign.center,
                 ),
-              ),
-            ),
 
-            const SizedBox(height: 25),
+                const SizedBox(height: 36),
 
-            // Botón para iniciar sesión.
-            ElevatedButton(
-              onPressed: () {
-                // Por ahora ingresamos directamente a la pantalla de turnos.
-                // Más adelante la validación se hará mediante la API.
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const PantallaTurnos(),
+                // Campo de Correo Electrónico
+                CampoTexto(
+                  controller: emailController,
+                  etiqueta: 'Correo electrónico',
+                  hintText: 'ejemplo@correo.com',
+                  iconoPrefijo: Icons.email_outlined,
+
+                  // Hace que el teclado muestre opciones
+                  // apropiadas para escribir un correo.
+                  tipoTeclado: TextInputType.emailAddress,
+                ),
+
+                const SizedBox(height: 16),
+
+                // Campo de Contraseña
+                CampoTexto(
+                  controller: contrasenaController,
+                  etiqueta: 'Contraseña',
+                  hintText: '••••••••••••',
+                  iconoPrefijo: Icons.lock_outline,
+
+                  // Si mostrarContrasena es false, ocultamos el texto.
+                  ocultarTexto: !mostrarContrasena,
+
+                  // Botón ubicado dentro del campo de contraseña.
+                  // Permite mostrar u ocultar lo que escribimos.
+                  iconoSufijo: IconButton(
+                    icon: Icon(
+
+                      // Operador ternario:
+                      // si la contraseña está visible, mostramos el ojo.
+                      // si está oculta, mostramos el ojo tachado.
+                      mostrarContrasena
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      color: ColoresApp.textoSecundario,
+                    ),
+
+                    // Se ejecuta cuando tocamos el icono.
+                    onPressed: () {
+
+                      // setState avisa a Flutter que debe actualizar
+                      // la interfaz porque cambió una variable.
+                      setState(() {
+
+                        // Cambiamos el valor de true a false
+                        // o de false a true.
+                        mostrarContrasena = !mostrarContrasena;
+                      });
+                    },
                   ),
-                );
-              },
-              child: const Text('Iniciar sesión'),
-            ),
+                ),
 
-            const SizedBox(height: 15),
+                const SizedBox(height: 12),
 
-// Permite acceder a la pantalla para crear una cuenta.
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const PantallaCrearCuenta(),
+                // Olvidaste tu contraseña
+                // Alineamos el enlace hacia la derecha.
+                Align(
+                  alignment: Alignment.centerRight,
+
+                  // GestureDetector permite detectar cuando
+                  // el usuario toca un elemento.
+                  child: GestureDetector(
+                    onTap: () {},
+
+                    // Texto del enlace.
+                    // Actualmente no tiene ninguna funcionalidad
+                    child: const Text(
+                      '¿Olvidaste tu contraseña?',
+                      style: EstilosTexto.enlace,
+                    ),
                   ),
-                );
-              },
-              child: const Text('Crear una cuenta'),
+                ),
+
+                const SizedBox(height: 28),
+
+                // Botón Iniciar Sesión
+                BotonPrincipal(
+                  texto: 'Iniciar sesión',
+
+                  // Cuando se presiona, ejecutamos nuestro método.
+                  onPressed: _iniciarSesion,
+                ),
+
+                const SizedBox(height: 36),
+
+                // Enlace Crear Cuenta
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      '¿No tenés una cuenta? ',
+                      style: EstilosTexto.subtitulo,
+                    ),
+                    GestureDetector(
+                      onTap: _irACrearCuenta,
+                      child: const Text(
+                        'Crear cuenta',
+                        style: EstilosTexto.enlaceDestacado,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'turnos/presentacion/pantallas/pantallaTurnos.dart';
 
 import 'autenticacion/presentacion/pantallas/pantallaLogin.dart';
-import 'autenticacion/presentacion/pantallas/pantallaCrearCuenta.dart';
+
+import 'configuracion/temaApp.dart';
+import 'autenticacion/presentacion/pantallas/pantallaLogin.dart';
 
 void main() {
   runApp(const MediTurnosApp());
@@ -23,12 +24,7 @@ class MediTurnosApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'MediTurnos',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-        ),
-        useMaterial3: true,
-      ),
+      theme: TemaApp.tema,
       home: const PantallaLogin(),
     );
   }
