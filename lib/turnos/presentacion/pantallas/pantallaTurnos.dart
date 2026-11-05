@@ -9,7 +9,7 @@ import '../../datos/modelos/turno.dart';
 import 'pantallaRegistrarTurno.dart';
 import 'pantallaModificarTurno.dart';
 
-import '../../../autenticacion/presentacion/pantallaLogin.dart';
+import '../../../autenticacion/presentacion/pantallas/pantallaLogin.dart';
 
 
 class PantallaTurnos extends StatefulWidget {

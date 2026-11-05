@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'turnos/presentacion/pantallas/pantallaTurnos.dart';
 
-import 'autenticacion/presentacion/pantallaLogin.dart';
+import 'autenticacion/presentacion/pantallas/pantallaLogin.dart';
+import 'autenticacion/presentacion/pantallas/pantallaCrearCuenta.dart';
 
 void main() {
   runApp(const MediTurnosApp());

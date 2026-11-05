@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../turnos/presentacion/pantallas/pantallaTurnos.dart';
+import '../../../turnos/presentacion/pantallas/pantallaTurnos.dart';
 import 'pantallaCrearCuenta.dart';
 
 
