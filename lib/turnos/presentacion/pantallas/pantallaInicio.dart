@@ -9,6 +9,7 @@ import 'package:mediturnos/configuracion/estilosTexto.dart';
 
 import 'package:mediturnos/componentes/comunes/barraNavegacion.dart';
 import 'pantallaBuscarMedicos.dart';
+import 'pantallaMisTurnos.dart';
 import '../../../perfil/presentacion/pantallas/pantallaPerfil.dart';
 
 /// Pantalla principal de inicio para el paciente (03A. Inicio).
@@ -165,7 +166,14 @@ class _PantallaInicioState extends State<PantallaInicio> {
               subtitulo: 'Ver historial y fechas',
               icono: Icons.calendar_month_outlined,
               badgeTexto: '2 activos',
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PantallaMisTurnos(),
+                  ),
+                );
+              },
             ),
             const SizedBox(width: 14),
             TarjetaAccesoRapido(
@@ -200,6 +208,11 @@ class _PantallaInicioState extends State<PantallaInicio> {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const PantallaBuscarMedicos()),
+          ).then((_) => setState(() => _indiceNavegacion = 0));
+        } else if (index == 2) { // 👈 Pestaña "Mis Turnos"
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const PantallaMisTurnos()),
           ).then((_) => setState(() => _indiceNavegacion = 0));
         } else if (index == 3) { // 👈 Pestaña "Mi Perfil"
           Navigator.push(

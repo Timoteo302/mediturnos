@@ -6,6 +6,7 @@ import 'package:mediturnos/configuracion/coloresApp.dart';
 
 import 'pantallaSeleccionarTurno.dart';
 import 'pantallaInicio.dart';
+import 'pantallaMisTurnos.dart';
 import '../../../perfil/presentacion/pantallas/pantallaPerfil.dart';
 
 /// Pantalla para buscar médicos y consultar cartilla (05. Buscar médicos).
@@ -157,6 +158,11 @@ class _PantallaBuscarMedicosState extends State<PantallaBuscarMedicos> {
               MaterialPageRoute(
                 builder: (context) => const PantallaInicio(),
               ),
+            );
+          } else if (index == 2) { // 👈 Pestaña "Mis Turnos"
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const PantallaMisTurnos()),
             );
           } else if (index == 3) { // 👈 Pestaña "Mi Perfil"
             Navigator.pushReplacement(
