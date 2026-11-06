@@ -7,6 +7,7 @@ import 'package:mediturnos/componentes/perfil/tarjetaEncabezadoPerfil.dart';
 import 'package:mediturnos/configuracion/coloresApp.dart';
 import 'package:mediturnos/turnos/presentacion/pantallas/pantallaBuscarMedicos.dart';
 import 'package:mediturnos/turnos/presentacion/pantallas/pantallaInicio.dart';
+import 'package:mediturnos/turnos/presentacion/pantallas/pantallaMisTurnos.dart';
 
 /// Pantalla de perfil de usuario del paciente (04. Mi perfil).
 class PantallaPerfil extends StatefulWidget {
@@ -85,6 +86,11 @@ class _PantallaPerfilState extends State<PantallaPerfil> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (context) => const PantallaBuscarMedicos()),
+            );
+          } else if (index == 2) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const PantallaMisTurnos()),
             );
           }
         },

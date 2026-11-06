@@ -4,6 +4,7 @@ import 'package:mediturnos/componentes/turnos/carruselCalendario.dart';
 import 'package:mediturnos/componentes/turnos/grillaHorariosTurno.dart';
 import 'package:mediturnos/componentes/turnos/tarjetaDoctorResumen.dart';
 import 'package:mediturnos/configuracion/coloresApp.dart';
+import 'pantallaConfirmarSolicitud.dart';
 
 /// Pantalla para seleccionar fecha y hora disponible de un médico (07. Seleccionar turno).
 class PantallaSeleccionarTurno extends StatefulWidget {
@@ -84,8 +85,14 @@ class _PantallaSeleccionarTurnoState extends State<PantallaSeleccionarTurno> {
             : 'Seleccioná un horario',
         onContinuar: _horaSeleccionada != null
             ? () {
-          // Avanzar a la pantalla de confirmación
-        }
+                // Avanzar a la pantalla de confirmación
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PantallaConfirmarSolicitud(),
+                  ),
+                );
+              }
             : () {}, // Deshabilitado si no eligió hora
       ),
     );
