@@ -19,6 +19,9 @@ import '../../../turnos/presentacion/pantallas/pantallaTurnos.dart';
 // Importamos la pantalla para crear una cuenta.
 import 'pantallaCrearCuenta.dart';
 
+// Importamos la pantalla para recuperar contraseña.
+import 'pantallaOlvideContrasena.dart';
+
 // StatefulWidget indica que esta pantalla puede cambiar durante su uso.
 // Por ejemplo, cuando mostramos u ocultamos la contraseña.
 class PantallaLogin extends StatefulWidget {
@@ -83,12 +86,22 @@ class _PantallaLoginState extends State<PantallaLogin> {
     );
   }
 
+  // Método para ir a la pantalla de recuperación de contraseña.
+  void _irAOlvideContrasena() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const PantallaOlvideContrasena(),
+      ),
+    );
+  }
+
   // build construye toda la interfaz visual de la pantalla.
   // Flutter lo vuelve a ejecutar cuando necesita actualizar la interfaz.
   @override
   Widget build(BuildContext context) {
 
-    /// 	Proporciona la estructura básica de una pantalla.
+    // Scaffold es un widget que proporciona una estructura básica
     return Scaffold(
 
       // SafeArea evita que el contenido quede debajo de elementos
@@ -192,7 +205,7 @@ class _PantallaLoginState extends State<PantallaLogin> {
                   // GestureDetector permite detectar cuando
                   // el usuario toca un elemento.
                   child: GestureDetector(
-                    onTap: () {},
+                    onTap: _irAOlvideContrasena,
 
                     // Texto del enlace.
                     // Actualmente no tiene ninguna funcionalidad
