@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../configuracion/coloresApp.dart';
+import '../../configuracion/coloresApp.dart';
 
 /// Campo de texto reutilizable personalizable para correos, contraseñas, etc.
 

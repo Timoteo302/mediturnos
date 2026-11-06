@@ -2,9 +2,9 @@
 import 'package:flutter/material.dart';
 
 // Importamos nuestros componentes reutilizables y configuraciones
-import '../../../componentes/botonPrincipal.dart';
-import '../../../componentes/campoTexto.dart';
-import '../../../componentes/iconoEncabezado.dart';
+import '../../../componentes/comunes/botonPrincipal.dart';
+import '../../../componentes/comunes/campoTexto.dart';
+import '../../../componentes/comunes/iconoEncabezado.dart';
 import '../../../configuracion/coloresApp.dart';
 import '../../../configuracion/estilosTexto.dart';
 

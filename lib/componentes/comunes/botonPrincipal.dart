@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../configuracion/coloresApp.dart';
-import '../configuracion/estilosTexto.dart';
+import '../../configuracion/coloresApp.dart';
+import '../../configuracion/estilosTexto.dart';
 
 /// Botón azul redondeado desplegado a lo ancho.
 /// Botón principal reutilizable de tipo "pill" azul.

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../configuracion/coloresApp.dart';
+import '../../configuracion/coloresApp.dart';
 
 /// Componente para el ícono de encabezado con fondo redondeado.
 class IconoEncabezado extends StatelessWidget {

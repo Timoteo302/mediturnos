@@ -5,9 +5,9 @@ import 'package:flutter/material.dart';
 
 // Importamos nuestros componentes reutilizables.
 // Así evitamos tener que diseñar un botón o un campo de texto desde cero.
-import '../../../componentes/botonPrincipal.dart';
-import '../../../componentes/campoTexto.dart';
-import '../../../componentes/iconoEncabezado.dart';
+import '../../../componentes/comunes/botonPrincipal.dart';
+import '../../../componentes/comunes/campoTexto.dart';
+import '../../../componentes/comunes/iconoEncabezado.dart';
 
 // Importamos los archivos de configuración visual.
 import '../../../configuracion/coloresApp.dart';
@@ -15,6 +15,12 @@ import '../../../configuracion/estilosTexto.dart';
 
 // Importamos la pantalla a la que iremos después de iniciar sesión.
 import '../../../turnos/presentacion/pantallas/pantallaTurnos.dart';
+
+// Importamos la pantalla a la que iremos después de iniciar sesión. (ADMIN)
+import 'pantallaInicioAdmin.dart';
+
+// Importamos la pantalla de inicio del paciente.
+import 'pantallaInicio.dart';
 
 // Importamos la pantalla para crear una cuenta.
 import 'pantallaCrearCuenta.dart';
@@ -61,16 +67,40 @@ class _PantallaLoginState extends State<PantallaLogin> {
   // Métod que se ejecuta cuando el usuario toca "Iniciar sesión".
   void _iniciarSesion() {
 
+      // SOLO POR AHORA PARA INICIAR EN ADMIN O PACIENTE
+    final textoEmail = emailController.text.toLowerCase().trim();
+
+    // Si el correo contiene la palabra "admin", navega a la pantalla del administrador
+    if (textoEmail.contains('admin')) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const PantallaInicioAdmin(),
+        ),
+      );
+    } else {
+      // Para cualquier otro correo, navega al inicio del paciente
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const PantallaInicio(),
+        ),
+      );
+    }
+
+
+    // CODIGO VERDADERO:
+
     // pushReplacement permite navegar a otra pantalla
     // reemplazando la actual.
     // Por eso, el usuario no podrá volver al login con el botón atrás.
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
+    //Navigator.pushReplacement(
+    //  context,
+    //  MaterialPageRoute(
         // Indicamos cuál será la nueva pantalla.
-        builder: (context) => const PantallaTurnos(),
-      ),
-    );
+    //    builder: (context) => const PantallaInicio(),
+    //  ),
+    //);
   }
 
   // Métod que permite ir a la pantalla de registro.
