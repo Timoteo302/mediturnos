@@ -9,9 +9,10 @@ import '../../../configuracion/estilosTexto.dart';
 // Importamos otras pantallas para la navegación inferior
 import 'pantallaInicio.dart';
 import 'pantallaBuscarMedicos.dart';
+import 'pantallaDetalleTurno.dart';
 import '../../../perfil/presentacion/pantallas/pantallaPerfil.dart';
 
-/// Pantalla "Mis Turnos" para gestionar consultas activas e historial médico.
+// Pantalla "Mis Turnos" para gestionar consultas activas e historial médico.
 class PantallaMisTurnos extends StatefulWidget {
   const PantallaMisTurnos({super.key});
 
@@ -660,7 +661,14 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
 
               // Botón primario "Ver detalle ->"
               ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PantallaDetalleTurno(),
+                    ),
+                  );
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: ColoresApp.primarioBoton,
                   foregroundColor: ColoresApp.textoBoton,

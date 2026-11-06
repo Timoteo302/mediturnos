@@ -7,6 +7,7 @@ import 'package:mediturnos/configuracion/estilosTexto.dart';
 
 import 'package:mediturnos/componentes/comunes/barraNavegacion.dart';
 import '../../../autenticacion/presentacion/pantallas/pantallaLogin.dart';
+import '../../../medicos/presentacion/pantallas/pantallaGestionMedicos.dart';
 
 
 /// Pantalla principal de inicio para el Administrador (03B. Inicio Admin).
@@ -172,7 +173,14 @@ class _PantallaInicioAdminState extends State<PantallaInicioAdmin> {
               subtitulo: 'Nómina de especialistas y disponibilidad diaria.',
               icono: Icons.medical_services_outlined,
               infoPie: '14 registros',
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PantallaGestionMedicos(),
+                  ),
+                );
+              },
             ),
             const SizedBox(width: 12),
             TarjetaAccionAdmin(
@@ -269,6 +277,13 @@ class _PantallaInicioAdminState extends State<PantallaInicioAdmin> {
         setState(() {
           _indiceNavegacion = index;
         });
+
+        if (index == 2) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const PantallaGestionMedicos()),
+          ).then((_) => setState(() => _indiceNavegacion = 0));
+        }
       },
       destinos: const [
         ElementoNavegacion(
