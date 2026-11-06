@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'autenticacion/presentacion/pantallas/pantallaLogin.dart';
 
 import 'configuracion/temaApp.dart';
-import 'autenticacion/presentacion/pantallas/pantallaLogin.dart';
 
 void main() {
   runApp(const MediTurnosApp());

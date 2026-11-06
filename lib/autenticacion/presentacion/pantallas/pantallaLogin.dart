@@ -13,14 +13,14 @@ import '../../../componentes/comunes/iconoEncabezado.dart';
 import '../../../configuracion/coloresApp.dart';
 import '../../../configuracion/estilosTexto.dart';
 
-// Importamos la pantalla a la que iremos después de iniciar sesión.
-import '../../../turnos/presentacion/pantallas/pantallaTurnos.dart';
+// Importamos la pantalla a la que iremos después de iniciar sesión
+import '../../../turnos/presentacion/pantallas/pantallaInicio.dart';
 
 // Importamos la pantalla a la que iremos después de iniciar sesión. (ADMIN)
-import 'pantallaInicioAdmin.dart';
+import '../../../turnos/presentacion/pantallas/pantallaInicioAdmin.dart';
 
 // Importamos la pantalla de inicio del paciente.
-import 'pantallaInicio.dart';
+import '../../../turnos/presentacion/pantallas/pantallaInicio.dart';
 
 // Importamos la pantalla para crear una cuenta.
 import 'pantallaCrearCuenta.dart';

@@ -6,12 +6,10 @@ import 'package:mediturnos/componentes/inicio/tarjetaAccesoRapido.dart';
 import 'package:mediturnos/componentes/inicio/tarjetaProximoTurno.dart';
 import 'package:mediturnos/configuracion/coloresApp.dart';
 import 'package:mediturnos/configuracion/estilosTexto.dart';
-import 'package:mediturnos/turnos/presentacion/pantallas/pantallaRegistrarTurno.dart';
-import 'package:mediturnos/turnos/presentacion/pantallas/pantallaTurnos.dart';
 
 import 'package:mediturnos/componentes/comunes/barraNavegacion.dart';
 import 'pantallaBuscarMedicos.dart';
-import 'pantallaPerfil.dart';
+import '../../../perfil/presentacion/pantallas/pantallaPerfil.dart';
 
 /// Pantalla principal de inicio para el paciente (03A. Inicio).
 class PantallaInicio extends StatefulWidget {
@@ -167,18 +165,7 @@ class _PantallaInicioState extends State<PantallaInicio> {
               subtitulo: 'Ver historial y fechas',
               icono: Icons.calendar_month_outlined,
               badgeTexto: '2 activos',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const PantallaTurnos(),
-                  ),
-                ).then((_) {
-                  setState(() {
-                    _indiceNavegacion = 0;
-                  });
-                });
-              },
+              onTap: () {},
             ),
             const SizedBox(width: 14),
             TarjetaAccesoRapido(
@@ -213,11 +200,6 @@ class _PantallaInicioState extends State<PantallaInicio> {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const PantallaBuscarMedicos()),
-          ).then((_) => setState(() => _indiceNavegacion = 0));
-        } else if (index == 2) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const PantallaTurnos()),
           ).then((_) => setState(() => _indiceNavegacion = 0));
         } else if (index == 3) { // 👈 Pestaña "Mi Perfil"
           Navigator.push(

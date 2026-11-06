@@ -6,7 +6,7 @@ import 'package:mediturnos/configuracion/coloresApp.dart';
 import 'package:mediturnos/configuracion/estilosTexto.dart';
 
 import 'package:mediturnos/componentes/comunes/barraNavegacion.dart';
-import 'pantallaLogin.dart';
+import '../../../autenticacion/presentacion/pantallas/pantallaLogin.dart';
 
 
 /// Pantalla principal de inicio para el Administrador (03B. Inicio Admin).

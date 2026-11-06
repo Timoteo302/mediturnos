@@ -4,8 +4,9 @@ import 'package:mediturnos/componentes/comunes/filtroCategoriaChip.dart';
 import 'package:mediturnos/componentes/medicos/tarjetaMedico.dart';
 import 'package:mediturnos/configuracion/coloresApp.dart';
 
+import 'pantallaSeleccionarTurno.dart';
 import 'pantallaInicio.dart';
-import 'pantallaPerfil.dart';
+import '../../../perfil/presentacion/pantallas/pantallaPerfil.dart';
 
 /// Pantalla para buscar médicos y consultar cartilla (05. Buscar médicos).
 class PantallaBuscarMedicos extends StatefulWidget {
@@ -128,7 +129,15 @@ class _PantallaBuscarMedicosState extends State<PantallaBuscarMedicos> {
               sede: 'Sede Central',
               consultorio: 'Consultorio 4',
               proximoTurno: 'Hoy 15:30 hs',
-              onVerDisponibilidad: () {},
+              onVerDisponibilidad: () {
+                //  Al tocar el botón abre la pantalla de selección de fecha y hora:
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PantallaSeleccionarTurno(),
+                  ),
+                );
+              },
             ),
 
             const SizedBox(height: 16),
