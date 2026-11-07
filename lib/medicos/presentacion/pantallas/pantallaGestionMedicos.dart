@@ -10,6 +10,8 @@ import '../../../componentes/comunes/barraNavegacion.dart';
 
 // Importamos las otras pantallas de admin para que funcione el menu inferior.
 import '../../../turnos/presentacion/pantallas/pantallaInicioAdmin.dart';
+import '../../../turnos/presentacion/pantallas/pantallaTodosLosTurnos.dart';
+import 'pantallaAgregarMedico.dart';
 
 // Esta pantalla muestra la lista de medicos registrados, permitiendo filtrar por activos o inactivos,
 // agregar un nuevo medico, editar sus datos o desactivarlos.
@@ -122,7 +124,13 @@ class _PantallaGestionMedicosState extends State<PantallaGestionMedicos> {
               height: 50,
               child: OutlinedButton.icon(
                 onPressed: () {
-                  // Aca se abriria el formulario para registrar un nuevo especialista
+                  // Abrimos la pantalla para agregar un nuevo medico
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PantallaAgregarMedico(),
+                    ),
+                  );
                 },
                 style: OutlinedButton.styleFrom(
                   backgroundColor: ColoresApp.fondoIcono,
@@ -348,7 +356,15 @@ class _PantallaGestionMedicosState extends State<PantallaGestionMedicos> {
               // Boton Editar
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () {},
+                  onPressed: () {
+                    // Abrimos la misma pantalla de agregar medico pero pasandole los datos para editar
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PantallaAgregarMedico(medicoAEditar: medico),
+                      ),
+                    );
+                  },
                   style: OutlinedButton.styleFrom(
                     foregroundColor: ColoresApp.textoTitulo,
                     side: const BorderSide(color: ColoresApp.bordeCampo),
@@ -413,13 +429,20 @@ class _PantallaGestionMedicosState extends State<PantallaGestionMedicos> {
             context,
             MaterialPageRoute(builder: (context) => const PantallaInicioAdmin()),
           );
+        } else if (index == 1) {
+          // Va a Todos los turnos
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const PantallaTodosLosTurnos()),
+          );
+        } else if (index == 2) {
+          // Ya estamos en medicos
         }
       },
       destinos: const [
         ElementoNavegacion(etiqueta: 'Inicio', icono: Icons.home_outlined, iconoSeleccionado: Icons.home),
         ElementoNavegacion(etiqueta: 'Turnos', icono: Icons.calendar_today_outlined, iconoSeleccionado: Icons.calendar_today),
         ElementoNavegacion(etiqueta: 'Medicos', icono: Icons.medical_services_outlined, iconoSeleccionado: Icons.medical_services),
-        ElementoNavegacion(etiqueta: 'Horarios', icono: Icons.access_time_outlined, iconoSeleccionado: Icons.access_time),
         ElementoNavegacion(etiqueta: 'Mi perfil', icono: Icons.person_outline, iconoSeleccionado: Icons.person),
       ],
     );

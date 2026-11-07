@@ -7,7 +7,9 @@ import 'package:mediturnos/configuracion/estilosTexto.dart';
 
 import 'package:mediturnos/componentes/comunes/barraNavegacion.dart';
 import '../../../autenticacion/presentacion/pantallas/pantallaLogin.dart';
+import '../../../medicos/presentacion/pantallas/pantallaGestionHorarios.dart';
 import '../../../medicos/presentacion/pantallas/pantallaGestionMedicos.dart';
+import 'pantallaTodosLosTurnos.dart';
 
 
 /// Pantalla principal de inicio para el Administrador (03B. Inicio Admin).
@@ -163,7 +165,14 @@ class _PantallaInicioAdminState extends State<PantallaInicioAdmin> {
           infoPie: '23 confirmados • 5 en espera',
           textoEnlace: 'Abrir grilla >',
           esBannerAncho: true,
-          onTap: () {},
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const PantallaTodosLosTurnos(),
+              ),
+            );
+          },
         ),
         const SizedBox(height: 12),
         Row(
@@ -188,7 +197,14 @@ class _PantallaInicioAdminState extends State<PantallaInicioAdmin> {
               subtitulo: 'Configuración de franjas y días de atención.',
               icono: Icons.access_time_outlined,
               infoPie: '8 consultorios',
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PantallaGestionHorarios(),
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -278,11 +294,16 @@ class _PantallaInicioAdminState extends State<PantallaInicioAdmin> {
           _indiceNavegacion = index;
         });
 
-        if (index == 2) {
-          Navigator.push(
+        if (index == 1) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const PantallaTodosLosTurnos()),
+          );
+        } else if (index == 2) {
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const PantallaGestionMedicos()),
-          ).then((_) => setState(() => _indiceNavegacion = 0));
+          );
         }
       },
       destinos: const [
@@ -292,7 +313,7 @@ class _PantallaInicioAdminState extends State<PantallaInicioAdmin> {
           iconoSeleccionado: Icons.home,
         ),
         ElementoNavegacion(
-          etiqueta: 'Todos los turnos',
+          etiqueta: 'Turnos',
           icono: Icons.calendar_today_outlined,
           iconoSeleccionado: Icons.calendar_today,
         ),
@@ -300,11 +321,6 @@ class _PantallaInicioAdminState extends State<PantallaInicioAdmin> {
           etiqueta: 'Médicos',
           icono: Icons.medical_services_outlined,
           iconoSeleccionado: Icons.medical_services,
-        ),
-        ElementoNavegacion(
-          etiqueta: 'Horarios',
-          icono: Icons.access_time_outlined,
-          iconoSeleccionado: Icons.access_time,
         ),
         ElementoNavegacion(
           etiqueta: 'Mi perfil',
