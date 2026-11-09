@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mediturnos/configuracion/coloresApp.dart';
+import 'package:mediturnos/turnos/presentacion/pantallas/pantallaDetalleTurno.dart';
 
 /// Tarjeta destacada del próximo turno programado.
 class TarjetaProximoTurno extends StatelessWidget {
@@ -179,7 +180,15 @@ class TarjetaProximoTurno extends StatelessWidget {
                 width: double.infinity,
                 height: 44,
                 child: OutlinedButton.icon(
-                  onPressed: onVerDetalle ?? () {},
+                  onPressed: onVerDetalle ??
+                      () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const PantallaDetalleTurno(),
+                          ),
+                        );
+                      },
                   icon: const Icon(
                     Icons.description_outlined,
                     size: 18,

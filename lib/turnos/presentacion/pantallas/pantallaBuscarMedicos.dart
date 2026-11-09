@@ -55,7 +55,6 @@ class _PantallaBuscarMedicosState extends State<PantallaBuscarMedicos> {
               decoration: InputDecoration(
                 hintText: 'Buscar por nombre, especialidad o sede...',
                 prefixIcon: const Icon(Icons.search, color: ColoresApp.textoSecundario),
-                suffixIcon: const Icon(Icons.tune, color: ColoresApp.textoSecundario),
               ),
             ),
             const SizedBox(height: 8),

@@ -77,41 +77,6 @@ class TarjetaEncabezadoPerfil extends StatelessWidget {
               color: ColoresApp.textoTitulo,
             ),
           ),
-          const SizedBox(height: 2),
-          Text(
-            estadoPaciente,
-            style: const TextStyle(
-              fontSize: 13,
-              color: ColoresApp.textoSecundario,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            decoration: BoxDecoration(
-              color: const Color(0xFFE8F3FF),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.shield_outlined,
-                  size: 14,
-                  color: ColoresApp.primario,
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  obraSocial,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: ColoresApp.primario,
-                  ),
-                ),
-              ],
-            ),
-          ),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,

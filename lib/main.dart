@@ -4,7 +4,15 @@ import 'autenticacion/presentacion/pantallas/pantallaLogin.dart';
 
 import 'configuracion/temaApp.dart';
 
+import 'package:mediturnos/servicios/verificadorConexion.dart';
+
 void main() {
+  //Inicializa Flutter para permitir temporizadores antes de runApp
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 👈 Inicia la vigilancia de red continua para toda la app
+  VerificadorConexion.iniciarMonitoreoGlobal();
+
   runApp(const MediTurnosApp());
 }
 
@@ -21,6 +29,8 @@ class MediTurnosApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      // 👈 Clave para poder abrir la pantalla de sin conexión desde cualquier parte
+      navigatorKey: claveNavegacionGlobal,
       debugShowCheckedModeBanner: false,
       title: 'MediTurnos',
       theme: TemaApp.tema,

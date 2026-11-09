@@ -11,6 +11,8 @@ import 'pantallaInicio.dart';
 import 'pantallaBuscarMedicos.dart';
 import 'pantallaDetalleTurno.dart';
 import '../../../perfil/presentacion/pantallas/pantallaPerfil.dart';
+import 'package:mediturnos/componentes/turnos/dialogoCancelarTurno.dart';
+import 'package:mediturnos/componentes/turnos/estadoSinTurnos.dart';
 
 // Pantalla "Mis Turnos" para gestionar consultas activas e historial médico.
 class PantallaMisTurnos extends StatefulWidget {
@@ -26,6 +28,9 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
 
   // Variable para controlar la pestaña seleccionada ("Próximos" o "Historial")
   bool _verProximos = true;
+
+  // Variable para evaluar si el paciente tiene turnos programados activa (true = Muestra turnos activos)
+  bool _tieneTurnosProgramados = true;
 
   @override
   Widget build(BuildContext context) {
@@ -51,12 +56,6 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
           ],
         ),
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person_outline, color: ColoresApp.textoTitulo),
-            onPressed: () {},
-          ),
-        ],
       ),
 
       // Cuerpo desplazable
@@ -183,15 +182,27 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
 
             const SizedBox(height: 24),
 
-            // Contenido dinámico según la pestaña seleccionada
-            if (_verProximos) ...[
-              // Tarjeta Turno 1: Confirmado (Dr. Juan Manuel Gómez)
+            // Muestra el estado vacío si NO hay turnos, o la lista si SÍ hay turnos
+            if (!_tieneTurnosProgramados) ...[
+              // ❌ Sin turnos -> Muestra la tarjeta vacía que hicimos
+              EstadoSinTurnos(
+                onSolicitarTurno: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PantallaBuscarMedicos(),
+                    ),
+                  );
+                },
+              ),
+            ] else ...[
+              // ✅ Con turnos -> Muestra las tarjetas de los turnos
               _construirTarjetaTurno(
                 context,
                 nombreMedico: 'Dr. Juan Manuel Gómez',
                 especialidad: 'Cardiología',
                 estadoTexto: 'Confirmado',
-                estadoColor: const Color(0xFF10B981), // Verde
+                estadoColor: const Color(0xFF10B981),
                 estadoFondo: const Color(0xFFD1FAE5),
                 estadoIcono: Icons.check_circle_outline,
                 fechaHora: 'Jueves 24 de Octubre • 10:30 hs',
@@ -203,37 +214,19 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
 
               const SizedBox(height: 16),
 
-              // Tarjeta Turno 2: Pendiente de confirmación (Dra. Lucía Benítez)
               _construirTarjetaTurno(
                 context,
                 nombreMedico: 'Dra. Lucía Benítez',
                 especialidad: 'Cardiología',
                 estadoTexto: 'Pendiente de confirmación',
-                estadoColor: const Color(0xFFD97706), // Ámbar / Amarillo oscuro
+                estadoColor: const Color(0xFFD97706),
                 estadoFondo: const Color(0xFFFEF3C7),
                 estadoIcono: Icons.access_time_rounded,
                 fechaHora: 'Martes 5 de Noviembre • 15:00 hs',
                 ubicacion: 'Sede Belgrano',
                 textoBotonSecundario: 'Cancelar',
                 iconoBotonSecundario: Icons.close,
-                colorBotonSecundario: const Color(0xFFDC2626), // Rojo
-              ),
-            ] else ...[
-              // Vista de Historial (vacía o con turnos pasados de ejemplo)
-              Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 40),
-                  child: Column(
-                    children: const [
-                      Icon(Icons.history, size: 48, color: ColoresApp.textoHint),
-                      SizedBox(height: 12),
-                      Text(
-                        'No tenés turnos en el historial',
-                        style: TextStyle(color: ColoresApp.textoSecundario, fontSize: 14),
-                      ),
-                    ],
-                  ),
-                ),
+                colorBotonSecundario: const Color(0xFFDC2626),
               ),
             ],
 
@@ -642,7 +635,22 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
             children: [
               // Botón secundario (Reprogramar o Cancelar)
               TextButton.icon(
-                onPressed: () {},
+                onPressed: () async {
+                  // Si el botón es 'Cancelar', abre el diálogo modal
+                  if (textoBotonSecundario == 'Cancelar') {
+                    final bool? confirmo = await mostrarDialogoCancelarTurno(
+                      context: context,
+                      doctor: nombreMedico,
+                      especialidad: especialidad,
+                      fechaHora: fechaHora,
+                      consultorio: ubicacion,
+                    );
+
+                    if (confirmo == true) {
+                      // Se confirmó la cancelación del turno
+                    }
+                  }
+                },
                 icon: Icon(iconoBotonSecundario, size: 16, color: colorBotonSecundario),
                 label: Text(
                   textoBotonSecundario,
@@ -651,11 +659,6 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
                     fontWeight: FontWeight.bold,
                     color: colorBotonSecundario,
                   ),
-                ),
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.zero,
-                  minimumSize: const Size(50, 30),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ),
 

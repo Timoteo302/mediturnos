@@ -9,6 +9,8 @@ import 'package:mediturnos/turnos/presentacion/pantallas/pantallaBuscarMedicos.d
 import 'package:mediturnos/turnos/presentacion/pantallas/pantallaInicio.dart';
 import 'package:mediturnos/turnos/presentacion/pantallas/pantallaMisTurnos.dart';
 
+import 'package:mediturnos/componentes/comunes/notificacionCambiosGuardados.dart';
+
 /// Pantalla de perfil de usuario del paciente (04. Mi perfil).
 class PantallaPerfil extends StatefulWidget {
   const PantallaPerfil({super.key});
@@ -175,7 +177,18 @@ class _PantallaPerfilState extends State<PantallaPerfil> {
             titulo: 'Notificaciones por correo',
             subtitulo: 'Confirmaciones y reprogramaciones',
             valor: _notificacionesCorreo,
-            onChanged: (val) => setState(() => _notificacionesCorreo = val),
+            onChanged: (val) {
+              setState(() {
+                _notificacionesCorreo = val;
+              });
+
+              // 👈 Muestra el SnackBar verde flotante M3
+              mostrarNotificacionCambiosGuardados(
+                context,
+                titulo: 'Cambios guardados',
+                mensaje: 'Se actualizaron tus preferencias de notificación.',
+              );
+            },
           ),
           const Divider(height: 1, color: Color(0xFFE2E8F0)),
           ItemAvisoSwitch(

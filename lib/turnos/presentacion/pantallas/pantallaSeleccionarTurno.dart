@@ -6,6 +6,9 @@ import 'package:mediturnos/componentes/turnos/tarjetaDoctorResumen.dart';
 import 'package:mediturnos/configuracion/coloresApp.dart';
 import 'pantallaConfirmarSolicitud.dart';
 
+import 'package:mediturnos/componentes/comunes/dialogoDescartarCambios.dart';
+import 'package:mediturnos/componentes/turnos/dialogoHorarioOcupado.dart';
+
 /// Pantalla para seleccionar fecha y hora disponible de un médico (07. Seleccionar turno).
 class PantallaSeleccionarTurno extends StatefulWidget {
   const PantallaSeleccionarTurno({super.key});
@@ -28,7 +31,13 @@ class _PantallaSeleccionarTurnoState extends State<PantallaSeleccionarTurno> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: ColoresApp.textoTitulo),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () async {
+            // 👈 Abre el diálogo modal de confirmación antes de salir
+            final bool? descarto = await mostrarDialogoDescartarCambios(context);
+            if (descarto == true && context.mounted) {
+              Navigator.pop(context);
+            }
+          },
         ),
         title: const Text(
           'Seleccionar turno',

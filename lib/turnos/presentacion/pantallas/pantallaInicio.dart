@@ -11,6 +11,7 @@ import 'package:mediturnos/componentes/comunes/barraNavegacion.dart';
 import 'pantallaBuscarMedicos.dart';
 import 'pantallaMisTurnos.dart';
 import '../../../perfil/presentacion/pantallas/pantallaPerfil.dart';
+import 'package:mediturnos/servicios/verificadorConexion.dart';
 
 /// Pantalla principal de inicio para el paciente (03A. Inicio).
 class PantallaInicio extends StatefulWidget {

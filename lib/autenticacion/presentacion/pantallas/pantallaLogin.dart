@@ -1,32 +1,15 @@
-// Importamos Flutter Material.
-// Contiene los elementos visuales que usamos para construir la pantalla:
-// botones, textos, iconos, columnas, campos, navegación, etc.
 import 'package:flutter/material.dart';
-
-// Importamos nuestros componentes reutilizables.
-// Así evitamos tener que diseñar un botón o un campo de texto desde cero.
-import '../../../componentes/comunes/botonPrincipal.dart';
-import '../../../componentes/comunes/campoTexto.dart';
-import '../../../componentes/comunes/iconoEncabezado.dart';
-
-// Importamos los archivos de configuración visual.
-import '../../../configuracion/coloresApp.dart';
-import '../../../configuracion/estilosTexto.dart';
-
-// Importamos la pantalla a la que iremos después de iniciar sesión
-import '../../../turnos/presentacion/pantallas/pantallaInicio.dart';
-
-// Importamos la pantalla a la que iremos después de iniciar sesión. (ADMIN)
-import '../../../turnos/presentacion/pantallas/pantallaInicioAdmin.dart';
-
-// Importamos la pantalla de inicio del paciente.
-import '../../../turnos/presentacion/pantallas/pantallaInicio.dart';
-
-// Importamos la pantalla para crear una cuenta.
-import 'pantallaCrearCuenta.dart';
-
-// Importamos la pantalla para recuperar contraseña.
-import 'pantallaOlvideContrasena.dart';
+import 'package:mediturnos/autenticacion/presentacion/pantallas/pantallaCrearCuenta.dart';
+import 'package:mediturnos/autenticacion/presentacion/pantallas/pantallaOlvideContrasena.dart';
+import 'package:mediturnos/componentes/comunes/botonPrincipal.dart';
+import 'package:mediturnos/componentes/comunes/campoTexto.dart';
+import 'package:mediturnos/componentes/comunes/iconoEncabezado.dart';
+import 'package:mediturnos/configuracion/coloresApp.dart';
+import 'package:mediturnos/configuracion/estilosTexto.dart';
+import 'package:mediturnos/servicios/verificadorConexion.dart';
+import 'package:mediturnos/turnos/presentacion/pantallas/pantallaInicio.dart';
+import 'package:mediturnos/turnos/presentacion/pantallas/pantallaInicioAdmin.dart';
+import 'package:mediturnos/turnos/presentacion/pantallas/pantallaSinConexion.dart';
 
 // StatefulWidget indica que esta pantalla puede cambiar durante su uso.
 // Por ejemplo, cuando mostramos u ocultamos la contraseña.
@@ -64,11 +47,26 @@ class _PantallaLoginState extends State<PantallaLogin> {
     super.dispose();
   }
 
-  // Métod que se ejecuta cuando el usuario toca "Iniciar sesión".
-  void _iniciarSesion() {
+  // Método que se ejecuta cuando el usuario toca "Iniciar sesión".
+  void _iniciarSesion() async {
+    // 1. Verificamos la conexión real a internet antes de ingresar
+    final bool hayRed = await VerificadorConexion.tieneConexionReal();
 
-      // SOLO POR AHORA PARA INICIAR EN ADMIN O PACIENTE
+    if (!hayRed && mounted) {
+      // Si no hay internet, abre la pantalla de "Sin conexión" y frena el ingreso
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const PantallaSinConexion(),
+        ),
+      );
+      return;
+    }
+
+    // 2. Si hay internet, procesamos el ingreso normalmente:
     final textoEmail = emailController.text.toLowerCase().trim();
+
+    if (!mounted) return;
 
     // Si el correo contiene la palabra "admin", navega a la pantalla del administrador
     if (textoEmail.contains('admin')) {
@@ -87,20 +85,6 @@ class _PantallaLoginState extends State<PantallaLogin> {
         ),
       );
     }
-
-
-    // CODIGO VERDADERO:
-
-    // pushReplacement permite navegar a otra pantalla
-    // reemplazando la actual.
-    // Por eso, el usuario no podrá volver al login con el botón atrás.
-    //Navigator.pushReplacement(
-    //  context,
-    //  MaterialPageRoute(
-        // Indicamos cuál será la nueva pantalla.
-    //    builder: (context) => const PantallaInicio(),
-    //  ),
-    //);
   }
 
   // Métod que permite ir a la pantalla de registro.

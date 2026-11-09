@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import '../../../configuracion/coloresApp.dart';
 import '../../../configuracion/estilosTexto.dart';
 import 'pantallaModificarTurno.dart';
+import 'package:mediturnos/componentes/turnos/dialogoCancelarTurno.dart';
+
 
 /// Pantalla de detalle completo de un turno médico (08. Detalle del turno).
 class PantallaDetalleTurno extends StatelessWidget {
@@ -579,7 +581,21 @@ class PantallaDetalleTurno extends StatelessWidget {
               width: double.infinity,
               height: 52,
               child: TextButton.icon(
-                onPressed: () {},
+                onPressed: () async {
+                  // 👈 Abre el diálogo modal de confirmación
+                  final bool? confirmoCancelacion = await mostrarDialogoCancelarTurno(
+                    context: context,
+                    doctor: 'Dra. Gabriela Pellegrini',
+                    especialidad: 'Cardiología',
+                    fechaHora: 'Jueves 24 Oct · 10:30 hs',
+                    consultorio: 'Consultorio 4',
+                  );
+
+                  if (confirmoCancelacion == true && context.mounted) {
+                    // Si confirmó cancelar, vuelve atrás
+                    Navigator.pop(context);
+                  }
+                },
                 style: TextButton.styleFrom(
                   foregroundColor: const Color(0xFFDC2626),
                   shape: RoundedRectangleBorder(
