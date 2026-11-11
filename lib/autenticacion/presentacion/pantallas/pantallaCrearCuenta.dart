@@ -1,22 +1,33 @@
-// Importamos los paquetes principales de Flutter
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-// Importamos nuestros componentes reutilizables y configuraciones
 import '../../../componentes/comunes/botonPrincipal.dart';
 import '../../../componentes/comunes/campoTexto.dart';
 import '../../../configuracion/coloresApp.dart';
 import '../../../configuracion/estilosTexto.dart';
+import '../../datos/repositorios/repositorioAutenticacion.dart';
+import '../viewmodels/registroViewModel.dart';
 
-class PantallaCrearCuenta extends StatefulWidget {
+class PantallaCrearCuenta extends StatelessWidget {
   const PantallaCrearCuenta({super.key});
 
   @override
-  State<PantallaCrearCuenta> createState() => _PantallaCrearCuentaState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (context) => RegistroViewModel(context.read<RepositorioAutenticacion>()),
+      child: const _VistaCrearCuenta(),
+    );
+  }
 }
 
-class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
+class _VistaCrearCuenta extends StatefulWidget {
+  const _VistaCrearCuenta();
 
-  // Controladores para capturar lo que el usuario escribe en cada campo
+  @override
+  State<_VistaCrearCuenta> createState() => _VistaCrearCuentaState();
+}
+
+class _VistaCrearCuentaState extends State<_VistaCrearCuenta> {
   final TextEditingController nombreController = TextEditingController();
   final TextEditingController apellidoController = TextEditingController();
   final TextEditingController dniController = TextEditingController();
@@ -24,13 +35,11 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
   final TextEditingController contrasenaController = TextEditingController();
   final TextEditingController confirmarContrasenaController = TextEditingController();
 
-  // Variables booleanas para controlar la visibilidad de las contraseñas (mostrar/ocultar ojito)
   bool mostrarContrasena = false;
   bool mostrarConfirmacion = false;
 
   @override
   void dispose() {
-    // Liberamos memoria de los controladores cuando la pantalla se destruye
     nombreController.dispose();
     apellidoController.dispose();
     dniController.dispose();
@@ -40,32 +49,55 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
     super.dispose();
   }
 
+  Future<void> _registrar() async {
+    FocusScope.of(context).unfocus();
+    final vm = context.read<RegistroViewModel>();
+    final exito = await vm.registrar(
+      nombre: nombreController.text,
+      apellido: apellidoController.text,
+      dni: dniController.text,
+      email: emailController.text,
+      contrasena: contrasenaController.text,
+      confirmacion: confirmarContrasenaController.text,
+    );
+
+    if (!mounted) return;
+
+    if (exito) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cuenta creada. Ya podés iniciar sesión.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      Navigator.pop(context, emailController.text.trim().toLowerCase());
+    } else if (vm.errorGeneral != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(vm.errorGeneral!),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // Scaffold es un widget que proporciona una estructura básica
+    final vm = context.watch<RegistroViewModel>();
+
     return Scaffold(
-      // Barra superior con botón de retroceso, título e ícono de perfil
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context), // Vuelve a la pantalla anterior (Login)
+          onPressed: () => Navigator.pop(context),
         ),
         title: const Text('Crear cuenta'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person_outline),
-            onPressed: () {},
-          ),
-        ],
       ),
-
-      // Cuerpo desplazable para evitar desbordamientos en pantallas chicas
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Badge superior "Nuevo paciente"
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
@@ -88,26 +120,19 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
                 ],
               ),
             ),
-
             const SizedBox(height: 16),
-
-            // Título principal destacado
             const Text(
               'Completá tus datos para registrarte como paciente',
               style: EstilosTexto.tituloGrande,
             ),
-
             const SizedBox(height: 8),
-
-            // Subtítulo explicativo
             const Text(
-              'Vas a poder agendar consultas, recibir recordatorios y consultar tus órdenes médicas en cualquier momento.',
+              'Vas a poder solicitar y gestionar tus turnos médicos desde la app.',
               style: EstilosTexto.subtitulo,
             ),
-
             const SizedBox(height: 24),
-
-            // Tarjeta  para "1. Datos personales"
+            
+            // Tarjeta Datos Personales
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -118,7 +143,6 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Cabecera de la sección
                   Row(
                     children: const [
                       Icon(Icons.person_outline, color: ColoresApp.primario, size: 20),
@@ -133,41 +157,35 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 16),
-
-                  // Campo Nombre
                   CampoTexto(
                     controller: nombreController,
                     etiqueta: 'Nombre *',
                     hintText: 'Ej. Lucas',
                     iconoPrefijo: Icons.person_outline,
+                    mensajeError: vm.errorNombre,
+                    alCambiar: (_) => vm.limpiarError('nombre'),
                   ),
-
                   const SizedBox(height: 16),
-
-                  // Campo Apellido
                   CampoTexto(
                     controller: apellidoController,
                     etiqueta: 'Apellido *',
                     hintText: 'Ej. González',
                     iconoPrefijo: Icons.person_outline,
+                    mensajeError: vm.errorApellido,
+                    alCambiar: (_) => vm.limpiarError('apellido'),
                   ),
-
                   const SizedBox(height: 16),
-
-                  // Campo DNI con teclado numérico
                   CampoTexto(
                     controller: dniController,
                     etiqueta: 'DNI (Documento Nacional de Identidad) *',
                     hintText: '38450123',
                     tipoTeclado: TextInputType.number,
                     iconoPrefijo: Icons.badge_outlined,
+                    mensajeError: vm.errorDni,
+                    alCambiar: (_) => vm.limpiarError('dni'),
                   ),
-
                   const SizedBox(height: 6),
-
-                  // Texto de ayuda bajo el DNI
                   const Text(
                     'ℹ Ingresá tu DNI sin puntos ni espacios.',
                     style: TextStyle(fontSize: 12, color: ColoresApp.textoSecundario),
@@ -178,7 +196,7 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
 
             const SizedBox(height: 20),
 
-            // Tarjeta  para "2. Datos de acceso"
+            // Tarjeta Datos de Acceso
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -189,7 +207,6 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Cabecera de la sección
                   Row(
                     children: const [
                       Icon(Icons.lock_outline, color: ColoresApp.primario, size: 20),
@@ -204,33 +221,30 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 16),
-
-                  // Campo Correo electrónico
                   CampoTexto(
                     controller: emailController,
                     etiqueta: 'Correo electrónico *',
                     hintText: 'ejemplo@correo.com',
                     tipoTeclado: TextInputType.emailAddress,
                     iconoPrefijo: Icons.email_outlined,
+                    mensajeError: vm.errorEmail,
+                    alCambiar: (_) => vm.limpiarError('email'),
                   ),
-
                   const SizedBox(height: 4),
                   const Text(
-                    '✔ Te enviaremos las confirmaciones y comprobantes a esta casilla.',
+                    'ℹ Vas a usar este correo para iniciar sesión.',
                     style: TextStyle(fontSize: 12, color: ColoresApp.textoSecundario),
                   ),
-
                   const SizedBox(height: 16),
-
-                  // Campo Contraseña con botón para mostrar/ocultar
                   CampoTexto(
                     controller: contrasenaController,
                     etiqueta: 'Contraseña *',
                     hintText: '••••••••',
                     ocultarTexto: !mostrarContrasena,
                     iconoPrefijo: Icons.lock_outline,
+                    mensajeError: vm.errorContrasena,
+                    alCambiar: (_) => vm.limpiarError('contrasena'),
                     iconoSufijo: IconButton(
                       icon: Icon(
                         mostrarContrasena ? Icons.visibility_outlined : Icons.visibility_off_outlined,
@@ -243,22 +257,20 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
                       },
                     ),
                   ),
-
                   const SizedBox(height: 4),
                   const Text(
                     '🔒 Mínimo 8 caracteres (recomendado incluir letras y números).',
                     style: TextStyle(fontSize: 12, color: ColoresApp.textoSecundario),
                   ),
-
                   const SizedBox(height: 16),
-
-                  // Campo Confirmar Contraseña
                   CampoTexto(
                     controller: confirmarContrasenaController,
                     etiqueta: 'Confirmar contraseña *',
                     hintText: '••••••••',
                     ocultarTexto: !mostrarConfirmacion,
                     iconoPrefijo: Icons.lock_outline,
+                    mensajeError: vm.errorConfirmacion,
+                    alCambiar: (_) => vm.limpiarError('confirmacion'),
                     iconoSufijo: IconButton(
                       icon: Icon(
                         mostrarConfirmacion ? Icons.visibility_outlined : Icons.visibility_off_outlined,
@@ -277,7 +289,6 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
 
             const SizedBox(height: 20),
 
-            // Cuadro informativo de Ley de Protección de Datos
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -290,7 +301,7 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      'Al registrarte aceptás la protección de datos médicos confidenciales regulada por la Ley de Salud de la República Argentina.',
+                      'Tus datos personales se guardan de forma confidencial.',
                       style: TextStyle(fontSize: 12, color: ColoresApp.textoSecundario),
                     ),
                   ),
@@ -300,17 +311,14 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
 
             const SizedBox(height: 24),
 
-            // Botón principal de registro
             BotonPrincipal(
               texto: 'Crear cuenta',
-              onPressed: () {
-                // Lógica de registro pendiente de integración con la API
-              },
+              onPressed: _registrar,
+              cargando: vm.cargando,
             ),
 
             const SizedBox(height: 24),
 
-            // Enlace "¿Ya tenés cuenta? Iniciar sesión"
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -319,9 +327,7 @@ class _PantallaCrearCuentaState extends State<PantallaCrearCuenta> {
                   style: EstilosTexto.subtitulo,
                 ),
                 GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context); // Vuelve al Login
-                  },
+                  onTap: () => Navigator.pop(context),
                   child: const Text(
                     'Iniciar sesión',
                     style: EstilosTexto.enlaceDestacado,
