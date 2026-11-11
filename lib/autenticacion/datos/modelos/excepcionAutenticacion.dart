@@ -17,10 +17,11 @@ enum ErrorAutenticacion {
 class ExcepcionAutenticacion implements Exception {
   final ErrorAutenticacion tipo;
   final String? campo;
+  final String? mensaje;
   final int? intentosRestantes;
 
-  ExcepcionAutenticacion(this.tipo, {this.campo, this.intentosRestantes});
+  ExcepcionAutenticacion(this.tipo, {this.campo, this.mensaje, this.intentosRestantes});
 
   @override
-  String toString() => 'ExcepcionAutenticacion(tipo: $tipo, campo: $campo, intentos: $intentosRestantes)';
+  String toString() => 'ExcepcionAutenticacion(tipo: $tipo, campo: $campo, mensaje: $mensaje, intentos: $intentosRestantes)';
 }

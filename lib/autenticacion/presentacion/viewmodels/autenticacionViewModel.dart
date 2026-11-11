@@ -3,6 +3,7 @@ import 'package:mediturnos/autenticacion/datos/modelos/usuario.dart';
 import 'package:mediturnos/autenticacion/datos/modelos/rolUsuario.dart';
 import 'package:mediturnos/autenticacion/datos/modelos/excepcionAutenticacion.dart';
 import 'package:mediturnos/autenticacion/datos/repositorios/repositorioAutenticacion.dart';
+import 'package:mediturnos/configuracion/configuracionServidor.dart';
 
 class AutenticacionViewModel extends ChangeNotifier {
   final RepositorioAutenticacion _repositorio;
@@ -48,10 +49,10 @@ class AutenticacionViewModel extends ChangeNotifier {
 
   String? validarEmail(String? valor) {
     if (valor == null || valor.trim().isEmpty) {
-      return 'El correo electronico es obligatorio.';
+      return 'El correo electrónico es obligatorio.';
     }
     final emailNorm = valor.trim().toLowerCase();
-    final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    final regex = RegExp(ConfiguracionServidor.regexEmail);
     if (!regex.hasMatch(emailNorm) || emailNorm.length > 150) {
       return 'Ingresá un correo electrónico válido.';
     }
