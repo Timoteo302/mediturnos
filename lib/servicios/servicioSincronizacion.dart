@@ -1,5 +1,5 @@
-import '../datos/modelos/turno.dart';
-import '../datos/repositorios/repositorioTurnos.dart';
+import '../turnos/datos/modelos/turno.dart';
+import '../turnos/datos/repositorios/repositorioTurnos.dart';
 
 class ServicioSincronizacion {
   // Repositorio que permite acceder a los turnos guardados localmente.
