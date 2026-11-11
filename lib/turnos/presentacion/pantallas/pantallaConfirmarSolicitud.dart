@@ -1,3 +1,9 @@
+import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
+import '../../../servicios/servicioMonitoreoSincronizacion.dart';
+
+import '../../../autenticacion/presentacion/viewmodels/autenticacionViewModel.dart';
+
 // Importamos los paquetes principales de Flutter
 import 'package:flutter/material.dart';
 
@@ -5,9 +11,22 @@ import 'package:flutter/material.dart';
 import '../../../configuracion/coloresApp.dart';
 import '../../../configuracion/estilosTexto.dart';
 
+import '../../datos/modelos/turno.dart';
+import '../../datos/repositorios/repositorioTurnosImpl.dart';
+import '../../logica/casosDeUsoTurnos.dart';
+
 /// Pantalla de confirmación y revisión final del turno (Paso 4).
 class PantallaConfirmarSolicitud extends StatelessWidget {
-  const PantallaConfirmarSolicitud({super.key});
+  final DateTime fecha;
+  final String hora;
+  final int medicoId;
+
+  const PantallaConfirmarSolicitud({
+    super.key,
+    required this.fecha,
+    required this.hora,
+    required this.medicoId,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -20,10 +39,7 @@ class PantallaConfirmarSolicitud extends StatelessWidget {
         ),
         title: const Text('Confirmar solicitud'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.person_outline),
-            onPressed: () {},
-          ),
+          IconButton(icon: const Icon(Icons.person_outline), onPressed: () {}),
         ],
       ),
 
@@ -54,7 +70,10 @@ class PantallaConfirmarSolicitud extends StatelessWidget {
 
                 // Badge de reserva temporal con cuenta regresiva
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: ColoresApp.fondoIcono,
                     borderRadius: BorderRadius.circular(20),
@@ -116,7 +135,10 @@ class PantallaConfirmarSolicitud extends StatelessWidget {
                           children: [
                             // Badge de especialidad
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: ColoresApp.fondoIcono,
                                 borderRadius: BorderRadius.circular(10),
@@ -165,7 +187,9 @@ class PantallaConfirmarSolicitud extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: ColoresApp.fondoIcono.withOpacity(0.5),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: ColoresApp.bordeCampo.withOpacity(0.5)),
+                      border: Border.all(
+                        color: ColoresApp.bordeCampo.withOpacity(0.5),
+                      ),
                     ),
                     child: Row(
                       children: [
@@ -210,7 +234,10 @@ class PantallaConfirmarSolicitud extends StatelessWidget {
                         ),
                         // Badge de tipo de atención (Presencial)
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(20),
@@ -218,7 +245,11 @@ class PantallaConfirmarSolicitud extends StatelessWidget {
                           ),
                           child: Row(
                             children: const [
-                              Icon(Icons.location_city_outlined, size: 14, color: ColoresApp.textoSecundario),
+                              Icon(
+                                Icons.location_city_outlined,
+                                size: 14,
+                                color: ColoresApp.textoSecundario,
+                              ),
                               SizedBox(width: 4),
                               Text(
                                 'Presencial',
@@ -241,7 +272,11 @@ class PantallaConfirmarSolicitud extends StatelessWidget {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(Icons.location_on_outlined, color: ColoresApp.primario, size: 20),
+                      const Icon(
+                        Icons.location_on_outlined,
+                        color: ColoresApp.primario,
+                        size: 20,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(
@@ -290,8 +325,21 @@ class PantallaConfirmarSolicitud extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: const [
-                      Text('Paciente:', style: TextStyle(color: ColoresApp.textoSecundario, fontSize: 13)),
-                      Text('Sofía Martínez', style: TextStyle(fontWeight: FontWeight.bold, color: ColoresApp.textoTitulo, fontSize: 13)),
+                      Text(
+                        'Paciente:',
+                        style: TextStyle(
+                          color: ColoresApp.textoSecundario,
+                          fontSize: 13,
+                        ),
+                      ),
+                      Text(
+                        'Sofía Martínez',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: ColoresApp.textoTitulo,
+                          fontSize: 13,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -300,8 +348,21 @@ class PantallaConfirmarSolicitud extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: const [
-                      Text('DNI:', style: TextStyle(color: ColoresApp.textoSecundario, fontSize: 13)),
-                      Text('36.120.455', style: TextStyle(fontWeight: FontWeight.bold, color: ColoresApp.textoTitulo, fontSize: 13)),
+                      Text(
+                        'DNI:',
+                        style: TextStyle(
+                          color: ColoresApp.textoSecundario,
+                          fontSize: 13,
+                        ),
+                      ),
+                      Text(
+                        '36.120.455',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: ColoresApp.textoTitulo,
+                          fontSize: 13,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -310,12 +371,31 @@ class PantallaConfirmarSolicitud extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Cobertura médica:', style: TextStyle(color: ColoresApp.textoSecundario, fontSize: 13)),
+                      const Text(
+                        'Cobertura médica:',
+                        style: TextStyle(
+                          color: ColoresApp.textoSecundario,
+                          fontSize: 13,
+                        ),
+                      ),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: const [
-                          Text('OSDE 210', style: TextStyle(fontWeight: FontWeight.bold, color: ColoresApp.textoTitulo, fontSize: 13)),
-                          Text('Credencial Nº 4410293', style: TextStyle(color: ColoresApp.textoSecundario, fontSize: 11)),
+                          Text(
+                            'OSDE 210',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: ColoresApp.textoTitulo,
+                              fontSize: 13,
+                            ),
+                          ),
+                          Text(
+                            'Credencial Nº 4410293',
+                            style: TextStyle(
+                              color: ColoresApp.textoSecundario,
+                              fontSize: 11,
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -330,7 +410,9 @@ class PantallaConfirmarSolicitud extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFFEF3C7), // Ámbar muy suave / amarillo institucional
+                color: const Color(
+                  0xFFFEF3C7,
+                ), // Ámbar muy suave / amarillo institucional
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0xFFFDE68A)),
               ),
@@ -374,8 +456,67 @@ class PantallaConfirmarSolicitud extends StatelessWidget {
               width: double.infinity,
               height: 52,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  // Acción para confirmar el turno y enviarlo al backend/API
+                // Acción para confirmar el turno y enviarlo al backend/API
+                onPressed: () async {
+                  final usuario = context
+                      .read<AutenticacionViewModel>()
+                      .usuarioActual;
+
+                  final pacienteId = usuario?.paciente?.id;
+
+                  if (pacienteId == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'No se encontró el paciente autenticado.',
+                        ),
+                      ),
+                    );
+                    return;
+                  }
+
+                  final turno = Turno(
+                    id: DateTime.now().microsecondsSinceEpoch,
+                    paciente: 'Sofía Martínez',
+                    medico: 'Dr. Juan Manuel Gómez',
+                    especialidad: 'Cardiología',
+                    fecha: fecha.toIso8601String().split('T').first,
+                    hora: hora,
+                    estado: 'PENDIENTE',
+                    sincronizado: false,
+                    pacienteId: pacienteId,
+                    medicoId: medicoId,
+                    claveSolicitud: const Uuid().v4(),
+                  );
+
+                  try {
+                    final casosDeUso = CasosDeUsoTurnos(
+                      RepositorioTurnosImpl(),
+                    );
+
+                    await casosDeUso.registrarTurno(turno);
+                    context.read<ServicioMonitoreoSincronizacion>().sincronizarAhora();
+
+                    if (!context.mounted) return;
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Solicitud guardada localmente. Pendiente de sincronización.',
+                        ),
+                      ),
+                    );
+
+                    Navigator.pop(context);
+                  } catch (e) {
+                    if (!context.mounted) return;
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error al guardar la solicitud: $e'),
+                      ),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: ColoresApp.primarioBoton,
@@ -403,7 +544,10 @@ class PantallaConfirmarSolicitud extends StatelessWidget {
                 onPressed: () => Navigator.pop(context),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: ColoresApp.primario,
-                  side: const BorderSide(color: ColoresApp.primario, width: 1.5),
+                  side: const BorderSide(
+                    color: ColoresApp.primario,
+                    width: 1.5,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(28),
                   ),
@@ -427,7 +571,11 @@ class PantallaConfirmarSolicitud extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: const [
-                  Icon(Icons.lock_outline, size: 14, color: ColoresApp.textoSecundario),
+                  Icon(
+                    Icons.lock_outline,
+                    size: 14,
+                    color: ColoresApp.textoSecundario,
+                  ),
                   SizedBox(width: 6),
                   Text(
                     'Tus datos médicos se procesan de forma confidencial y segura.',

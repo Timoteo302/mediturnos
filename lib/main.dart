@@ -1,33 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
-
-import 'autenticacion/presentacion/pantallas/pantallaLogin.dart';
-import 'configuracion/temaApp.dart';
-import 'package:mediturnos/servicios/verificadorConexion.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
 import 'autenticacion/datos/repositorios/repositorioAutenticacion.dart';
 import 'autenticacion/datos/repositorios/repositorioAutenticacionOfflineFirst.dart';
 import 'autenticacion/datos/fuentes/clienteAutenticacionApi.dart';
 import 'autenticacion/datos/fuentes/almacenSesionLocalSqlite.dart';
+import 'autenticacion/presentacion/pantallas/pantallaLogin.dart';
 import 'autenticacion/presentacion/viewmodels/autenticacionViewModel.dart';
+import 'configuracion/temaApp.dart';
 
-void main() {
-  // Inicializa Flutter para permitir temporizadores antes de runApp
+import 'package:mediturnos/servicios/verificadorConexion.dart';
+
+import 'servicios/servicioMonitoreoSincronizacion.dart';
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inicia la vigilancia de red continua para toda la app
-  VerificadorConexion.iniciarMonitoreoGlobal();
+  // Inicialización de SQLite para Flutter Web Edge.
+  if (kIsWeb) {
+    databaseFactory = databaseFactoryFfiWebNoWebWorker;
+  }
+
+  // Por ahora no iniciamos el monitoreo global para evitar
+  // interrupciones en la navegación.
+  // VerificadorConexion.iniciarMonitoreoGlobal();
+
   runApp(const MediTurnosApp());
 }
 
-/*
-Esta clase representa la aplicación en sí.
-Aquí configuramos aspectos generales como:
-- título
-- tema
-- primera pantalla
-*/
 class MediTurnosApp extends StatelessWidget {
   const MediTurnosApp({super.key});
 
@@ -42,13 +46,17 @@ class MediTurnosApp extends StatelessWidget {
           ),
         ),
         ChangeNotifierProvider<AutenticacionViewModel>(
-          create: (context) => AutenticacionViewModel(
-            context.read<RepositorioAutenticacion>(),
-          ),
+          create: (context) =>
+              AutenticacionViewModel(context.read<RepositorioAutenticacion>()),
+        ),
+
+        Provider<ServicioMonitoreoSincronizacion>(
+          lazy: false,
+          create: (_) => ServicioMonitoreoSincronizacion()..iniciar(),
+          dispose: (_, servicio) => servicio.detener(),
         ),
       ],
       child: MaterialApp(
-        // 👈 Clave para poder abrir la pantalla de sin conexión desde cualquier parte
         navigatorKey: claveNavegacionGlobal,
         debugShowCheckedModeBanner: false,
         title: 'MediTurnos',

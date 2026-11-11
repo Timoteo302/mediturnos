@@ -11,8 +11,13 @@ import 'pantallaInicio.dart';
 import 'pantallaBuscarMedicos.dart';
 import 'pantallaDetalleTurno.dart';
 import '../../../perfil/presentacion/pantallas/pantallaPerfil.dart';
+
 import 'package:mediturnos/componentes/turnos/dialogoCancelarTurno.dart';
 import 'package:mediturnos/componentes/turnos/estadoSinTurnos.dart';
+
+//RAMIRO
+import '../../../turnos/datos/modelos/turno.dart';
+import '../../../turnos/datos/repositorios/repositorioTurnosImpl.dart';
 
 // Pantalla "Mis Turnos" para gestionar consultas activas e historial médico.
 class PantallaMisTurnos extends StatefulWidget {
@@ -23,6 +28,29 @@ class PantallaMisTurnos extends StatefulWidget {
 }
 
 class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
+  //ramiro...
+  final RepositorioTurnosImpl _repositorio = RepositorioTurnosImpl();
+
+  List<Turno> _turnos = [];
+  bool _cargando = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarTurnos();
+  }
+
+  Future<void> _cargarTurnos() async {
+    final turnos = await _repositorio.obtenerTurnos();
+
+    if (!mounted) return;
+
+    setState(() {
+      _turnos = turnos;
+      _cargando = false;
+    });
+  }
+
   // Índice actual para la barra de navegación inferior (Mis Turnos es la pestaña 2)
   int _indiceNavegacion = 2;
 
@@ -43,7 +71,11 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: const [
-            Icon(Icons.health_and_safety_outlined, color: ColoresApp.primario, size: 22),
+            Icon(
+              Icons.health_and_safety_outlined,
+              color: ColoresApp.primario,
+              size: 22,
+            ),
             SizedBox(width: 8),
             Text(
               'MediTurnos',
@@ -65,10 +97,7 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Título y Subtítulo
-            const Text(
-              'Mis turnos',
-              style: EstilosTexto.tituloGrande,
-            ),
+            const Text('Mis turnos', style: EstilosTexto.tituloGrande),
             const SizedBox(height: 4),
             const Text(
               'Gestioná tus consultas y revisá tu historial médico',
@@ -97,7 +126,9 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
-                          color: _verProximos ? Colors.white : Colors.transparent,
+                          color: _verProximos
+                              ? Colors.white
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(26),
                           boxShadow: _verProximos
                               ? [
@@ -116,14 +147,21 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
                               'Próximos',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: _verProximos ? ColoresApp.textoTitulo : ColoresApp.textoSecundario,
+                                color: _verProximos
+                                    ? ColoresApp.textoTitulo
+                                    : ColoresApp.textoSecundario,
                               ),
                             ),
                             const SizedBox(width: 6),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
-                                color: _verProximos ? ColoresApp.primario : ColoresApp.textoSecundario,
+                                color: _verProximos
+                                    ? ColoresApp.primario
+                                    : ColoresApp.textoSecundario,
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: const Text(
@@ -152,7 +190,9 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
-                          color: !_verProximos ? Colors.white : Colors.transparent,
+                          color: !_verProximos
+                              ? Colors.white
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(26),
                           boxShadow: !_verProximos
                               ? [
@@ -169,7 +209,9 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
                             'Historial',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: !_verProximos ? ColoresApp.textoTitulo : ColoresApp.textoSecundario,
+                              color: !_verProximos
+                                  ? ColoresApp.textoTitulo
+                                  : ColoresApp.textoSecundario,
                             ),
                           ),
                         ),
@@ -183,8 +225,9 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
             const SizedBox(height: 24),
 
             // Muestra el estado vacío si NO hay turnos, o la lista si SÍ hay turnos
-            if (!_tieneTurnosProgramados) ...[
-              // ❌ Sin turnos -> Muestra la tarjeta vacía que hicimos
+            if (_cargando) ...[
+              const Center(child: CircularProgressIndicator()),
+            ] else if (_turnos.isEmpty) ...[
               EstadoSinTurnos(
                 onSolicitarTurno: () {
                   Navigator.push(
@@ -196,38 +239,33 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
                 },
               ),
             ] else ...[
-              // ✅ Con turnos -> Muestra las tarjetas de los turnos
-              _construirTarjetaTurno(
-                context,
-                nombreMedico: 'Dr. Juan Manuel Gómez',
-                especialidad: 'Cardiología',
-                estadoTexto: 'Confirmado',
-                estadoColor: const Color(0xFF10B981),
-                estadoFondo: const Color(0xFFD1FAE5),
-                estadoIcono: Icons.check_circle_outline,
-                fechaHora: 'Jueves 24 de Octubre • 10:30 hs',
-                ubicacion: 'Sede Central • Consultorio 4',
-                textoBotonSecundario: 'Reprogramar',
-                iconoBotonSecundario: Icons.calendar_today_outlined,
-                colorBotonSecundario: ColoresApp.textoTitulo,
-              ),
-
-              const SizedBox(height: 16),
-
-              _construirTarjetaTurno(
-                context,
-                nombreMedico: 'Dra. Lucía Benítez',
-                especialidad: 'Cardiología',
-                estadoTexto: 'Pendiente de confirmación',
-                estadoColor: const Color(0xFFD97706),
-                estadoFondo: const Color(0xFFFEF3C7),
-                estadoIcono: Icons.access_time_rounded,
-                fechaHora: 'Martes 5 de Noviembre • 15:00 hs',
-                ubicacion: 'Sede Belgrano',
-                textoBotonSecundario: 'Cancelar',
-                iconoBotonSecundario: Icons.close,
-                colorBotonSecundario: const Color(0xFFDC2626),
-              ),
+              ..._turnos.map((turno) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: _construirTarjetaTurno(
+                    context,
+                    nombreMedico: turno.medico,
+                    especialidad: turno.especialidad,
+                    estadoTexto: turno.sincronizado
+                        ? turno.estado
+                        : 'Pendiente de sincronización',
+                    estadoColor: turno.sincronizado
+                        ? const Color(0xFF10B981)
+                        : const Color(0xFFD97706),
+                    estadoFondo: turno.sincronizado
+                        ? const Color(0xFFD1FAE5)
+                        : const Color(0xFFFEF3C7),
+                    estadoIcono: turno.sincronizado
+                        ? Icons.check_circle_outline
+                        : Icons.cloud_upload_outlined,
+                    fechaHora: '${turno.fecha} • ${turno.hora} hs',
+                    ubicacion: 'Sede Central',
+                    textoBotonSecundario: 'Cancelar',
+                    iconoBotonSecundario: Icons.close,
+                    colorBotonSecundario: const Color(0xFFDC2626),
+                  ),
+                );
+              }),
             ],
 
             const SizedBox(height: 32),
@@ -258,7 +296,11 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
                         ),
                       ),
                       SizedBox(width: 2),
-                      Icon(Icons.chevron_right, size: 16, color: ColoresApp.primario),
+                      Icon(
+                        Icons.chevron_right,
+                        size: 16,
+                        color: ColoresApp.primario,
+                      ),
                     ],
                   ),
                 ),
@@ -326,15 +368,24 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9), // Gris claro para Atendido
+                          color: const Color(
+                            0xFFF1F5F9,
+                          ), // Gris claro para Atendido
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: const [
-                            Icon(Icons.check, size: 12, color: Color(0xFF64748B)),
+                            Icon(
+                              Icons.check,
+                              size: 12,
+                              color: Color(0xFF64748B),
+                            ),
                             SizedBox(width: 4),
                             Text(
                               'Atendido',
@@ -355,24 +406,38 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
                     decoration: BoxDecoration(
                       color: ColoresApp.fondoIcono.withOpacity(0.5),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: ColoresApp.bordeCampo.withOpacity(0.4)),
+                      border: Border.all(
+                        color: ColoresApp.bordeCampo.withOpacity(0.4),
+                      ),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: const [
                         Row(
                           children: [
-                            Icon(Icons.calendar_today_outlined, size: 14, color: ColoresApp.textoSecundario),
+                            Icon(
+                              Icons.calendar_today_outlined,
+                              size: 14,
+                              color: ColoresApp.textoSecundario,
+                            ),
                             SizedBox(width: 8),
                             Text(
                               '12 de Septiembre de 2024',
-                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: ColoresApp.textoTitulo),
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: ColoresApp.textoTitulo,
+                              ),
                             ),
                           ],
                         ),
                         Text(
                           '11:15 hs',
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: ColoresApp.textoTitulo),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: ColoresApp.textoTitulo,
+                          ),
                         ),
                       ],
                     ),
@@ -388,12 +453,23 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                       ),
-                      icon: const Icon(Icons.visibility_outlined, size: 16, color: ColoresApp.textoTitulo),
+                      icon: const Icon(
+                        Icons.visibility_outlined,
+                        size: 16,
+                        color: ColoresApp.textoTitulo,
+                      ),
                       label: const Text(
                         'Ver detalle',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: ColoresApp.textoTitulo),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: ColoresApp.textoTitulo,
+                        ),
                       ),
                     ),
                   ),
@@ -459,14 +535,20 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
                       backgroundColor: ColoresApp.primario,
                       foregroundColor: Colors.white,
                       elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
                     ),
                     child: const Text(
                       'Reservar',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -558,7 +640,10 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
               ),
               // Badge de estado (Confirmado / Pendiente)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: estadoFondo,
                   borderRadius: BorderRadius.circular(12),
@@ -597,7 +682,11 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.calendar_today_outlined, size: 14, color: ColoresApp.textoSecundario),
+                    const Icon(
+                      Icons.calendar_today_outlined,
+                      size: 14,
+                      color: ColoresApp.textoSecundario,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       fechaHora,
@@ -612,7 +701,11 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    const Icon(Icons.location_on_outlined, size: 14, color: ColoresApp.textoSecundario),
+                    const Icon(
+                      Icons.location_on_outlined,
+                      size: 14,
+                      color: ColoresApp.textoSecundario,
+                    ),
                     const SizedBox(width: 8),
                     Text(
                       ubicacion,
@@ -651,7 +744,11 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
                     }
                   }
                 },
-                icon: Icon(iconoBotonSecundario, size: 16, color: colorBotonSecundario),
+                icon: Icon(
+                  iconoBotonSecundario,
+                  size: 16,
+                  color: colorBotonSecundario,
+                ),
                 label: Text(
                   textoBotonSecundario,
                   style: TextStyle(
@@ -676,7 +773,10 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
                   backgroundColor: ColoresApp.primarioBoton,
                   foregroundColor: ColoresApp.textoBoton,
                   elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -724,7 +824,9 @@ class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
           // Ir a Especialistas
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const PantallaBuscarMedicos()),
+            MaterialPageRoute(
+              builder: (context) => const PantallaBuscarMedicos(),
+            ),
           ).then((_) => setState(() => _indiceNavegacion = 2));
         } else if (index == 3) {
           // Ir a Mi Perfil
