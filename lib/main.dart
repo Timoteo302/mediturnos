@@ -18,7 +18,6 @@ void main() {
 
   // Inicia la vigilancia de red continua para toda la app
   VerificadorConexion.iniciarMonitoreoGlobal();
-
   runApp(const MediTurnosApp());
 }
 
