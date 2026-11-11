@@ -13,10 +13,10 @@ import 'autenticacion/datos/fuentes/almacenSesionLocalSqlite.dart';
 import 'autenticacion/presentacion/viewmodels/autenticacionViewModel.dart';
 
 void main() {
-  //Inicializa Flutter para permitir temporizadores antes de runApp
+  // Inicializa Flutter para permitir temporizadores antes de runApp
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 👈 Inicia la vigilancia de red continua para toda la app
+  // Inicia la vigilancia de red continua para toda la app
   VerificadorConexion.iniciarMonitoreoGlobal();
 
   runApp(const MediTurnosApp());
@@ -59,29 +59,3 @@ class MediTurnosApp extends StatelessWidget {
     );
   }
 }
-
-/*Pantalla de nuestra aplicacion, aqui podemos tener
--PantallInicio, PantallaTurnos, RegistrarTurno, DetalleTurno*/
-/*
-class PantallaInicio extends StatelessWidget {
-  const PantallaInicio({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('MediTurnos'),
-      ),
-      body: const Center(
-        child: Text(
-          'Bienvenido a MediTurnos',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-}
-*/
