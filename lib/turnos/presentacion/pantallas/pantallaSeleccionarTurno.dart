@@ -4,6 +4,7 @@ import 'package:mediturnos/componentes/turnos/carruselCalendario.dart';
 import 'package:mediturnos/componentes/turnos/grillaHorariosTurno.dart';
 import 'package:mediturnos/componentes/turnos/tarjetaDoctorResumen.dart';
 import 'package:mediturnos/configuracion/coloresApp.dart';
+
 import 'pantallaConfirmarSolicitud.dart';
 
 import 'package:mediturnos/componentes/comunes/dialogoDescartarCambios.dart';
@@ -11,10 +12,13 @@ import 'package:mediturnos/componentes/turnos/dialogoHorarioOcupado.dart';
 
 /// Pantalla para seleccionar fecha y hora disponible de un médico (07. Seleccionar turno).
 class PantallaSeleccionarTurno extends StatefulWidget {
-  const PantallaSeleccionarTurno({super.key});
+  final int medicoId;
+
+  const PantallaSeleccionarTurno({super.key, required this.medicoId});
 
   @override
-  State<PantallaSeleccionarTurno> createState() => _PantallaSeleccionarTurnoState();
+  State<PantallaSeleccionarTurno> createState() =>
+      _PantallaSeleccionarTurnoState();
 }
 
 class _PantallaSeleccionarTurnoState extends State<PantallaSeleccionarTurno> {
@@ -33,7 +37,9 @@ class _PantallaSeleccionarTurnoState extends State<PantallaSeleccionarTurno> {
           icon: const Icon(Icons.arrow_back, color: ColoresApp.textoTitulo),
           onPressed: () async {
             // 👈 Abre el diálogo modal de confirmación antes de salir
-            final bool? descarto = await mostrarDialogoDescartarCambios(context);
+            final bool? descarto = await mostrarDialogoDescartarCambios(
+              context,
+            );
             if (descarto == true && context.mounted) {
               Navigator.pop(context);
             }
@@ -63,7 +69,8 @@ class _PantallaSeleccionarTurnoState extends State<PantallaSeleccionarTurno> {
               alSeleccionarFecha: (fecha) {
                 setState(() {
                   _fechaSeleccionada = fecha;
-                  _horaSeleccionada = null; // Al cambiar de día, reseteamos la hora
+                  _horaSeleccionada =
+                      null; // Al cambiar de día, reseteamos la hora
                 });
               },
             ),
@@ -98,7 +105,11 @@ class _PantallaSeleccionarTurnoState extends State<PantallaSeleccionarTurno> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const PantallaConfirmarSolicitud(),
+                    builder: (context) => PantallaConfirmarSolicitud(
+                      fecha: _fechaSeleccionada,
+                      hora: _horaSeleccionada!,
+                      medicoId: widget.medicoId,
+                    ),
                   ),
                 );
               }
@@ -117,11 +128,18 @@ class _PantallaSeleccionarTurnoState extends State<PantallaSeleccionarTurno> {
             const SizedBox(width: 6),
             Text(
               'Horarios para el ${_fechaSeleccionada.day}/${_fechaSeleccionada.month}',
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: ColoresApp.textoTitulo),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: ColoresApp.textoTitulo,
+              ),
             ),
           ],
         ),
-        const Text('Zona horaria: ART', style: TextStyle(fontSize: 11, color: ColoresApp.textoSecundario)),
+        const Text(
+          'Zona horaria: ART',
+          style: TextStyle(fontSize: 11, color: ColoresApp.textoSecundario),
+        ),
       ],
     );
   }
@@ -141,7 +159,11 @@ class _PantallaSeleccionarTurnoState extends State<PantallaSeleccionarTurno> {
           Expanded(
             child: Text(
               'Los turnos se reservan de forma provisoria durante 10 minutos para completar la solicitud.',
-              style: TextStyle(fontSize: 12, color: ColoresApp.textoSecundario, height: 1.3),
+              style: TextStyle(
+                fontSize: 12,
+                color: ColoresApp.textoSecundario,
+                height: 1.3,
+              ),
             ),
           ),
         ],

@@ -4,11 +4,9 @@ import '../modelos/turno.dart';
 import 'repositorioTurnos.dart';
 
 class RepositorioTurnosImpl implements RepositorioTurnos {
-
   @override
   Future<List<Turno>> obtenerTurnos() async {
     final db = await BaseDatosLocal.obtenerBaseDatos();
-
     final datos = await db.query('turnos');
 
     return datos.map((dato) {
@@ -21,6 +19,9 @@ class RepositorioTurnosImpl implements RepositorioTurnos {
         hora: dato['hora'] as String,
         estado: dato['estado'] as String,
         sincronizado: (dato['sincronizado'] as int) == 1,
+        pacienteId: dato['pacienteId'] as int?,
+        medicoId: dato['medicoId'] as int?,
+        claveSolicitud: dato['claveSolicitud'] as String?,
       );
     }).toList();
   }
@@ -40,6 +41,9 @@ class RepositorioTurnosImpl implements RepositorioTurnos {
         'hora': turno.hora,
         'estado': turno.estado,
         'sincronizado': turno.sincronizado ? 1 : 0,
+        'pacienteId': turno.pacienteId,
+        'medicoId': turno.medicoId,
+        'claveSolicitud': turno.claveSolicitud,
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
@@ -59,6 +63,9 @@ class RepositorioTurnosImpl implements RepositorioTurnos {
         'hora': turno.hora,
         'estado': turno.estado,
         'sincronizado': turno.sincronizado ? 1 : 0,
+        'pacienteId': turno.pacienteId,
+        'medicoId': turno.medicoId,
+        'claveSolicitud': turno.claveSolicitud,
       },
       where: 'id = ?',
       whereArgs: [turno.id],
@@ -76,7 +83,3 @@ class RepositorioTurnosImpl implements RepositorioTurnos {
     );
   }
 }
-/*RepositorioTurnos → sería como una interfaz. Dice qué operaciones existen.
-Seria QUE PUEDE HACER? obtener, guardar, modificar
-RepositorioTurnosImpl → es la clase que implementa esa interfaz y contiene el código real.
-Seria COMO LO HACE? SQLite - API - sincronizacion */

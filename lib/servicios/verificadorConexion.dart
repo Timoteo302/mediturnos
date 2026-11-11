@@ -39,19 +39,22 @@ class VerificadorConexion {
 
   /// Comprueba en tiempo real si el celular tiene acceso activo e instantáneo a internet.
   static Future<bool> tieneConexionReal() async {
+  try {
+    final socket = await Socket.connect(
+      '8.8.8.8',
+      53,
+      timeout: const Duration(seconds: 2),
+    );
+    socket.destroy();
+    return true;
+  } catch (_) {
     try {
-      // Prueba de socket de red directo (Detección instantánea de Modo Avión o Wi-Fi cortado)
-      final socket = await Socket.connect('8.8.8.8', 53, timeout: const Duration(seconds: 2));
-      socket.destroy();
-      return true;
+      final resultado = await InternetAddress.lookup('google.com')
+          .timeout(const Duration(seconds: 2));
+      return resultado.isNotEmpty && resultado[0].rawAddress.isNotEmpty;
     } catch (_) {
-      try {
-        final resultado = await InternetAddress.lookup('google.com')
-            .timeout(const Duration(seconds: 2));
-        return resultado.isNotEmpty && resultado[0].rawAddress.isNotEmpty;
-      } catch (_) {
-        return false; // Sin conexión a internet
-      }
+      return false;
     }
   }
+}
 }

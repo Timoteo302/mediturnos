@@ -16,7 +16,7 @@ class BaseDatosLocal {
 
     _baseDatos = await openDatabase(
       ruta,
-      version: 1,
+      version: 2,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE turnos (
@@ -27,27 +27,28 @@ class BaseDatosLocal {
             fecha TEXT NOT NULL,
             hora TEXT NOT NULL,
             estado TEXT NOT NULL,
-            sincronizado INTEGER NOT NULL DEFAULT 0
+            sincronizado INTEGER NOT NULL DEFAULT 0,
+            pacienteId INTEGER,
+            medicoId INTEGER,
+            claveSolicitud TEXT
           )
         ''');
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          await db.execute(
+            'ALTER TABLE turnos ADD COLUMN pacienteId INTEGER',
+          );
+          await db.execute(
+            'ALTER TABLE turnos ADD COLUMN medicoId INTEGER',
+          );
+          await db.execute(
+            'ALTER TABLE turnos ADD COLUMN claveSolicitud TEXT',
+          );
+        }
       },
     );
 
     return _baseDatos!;
   }
 }
-
-/*Esta clase va a ser la encargada de crear y abrir la base SQLite del celular.
-Que hace?
-BaseDatosLocal
-      ↓
-Busca la base SQLite
-      ↓
-Si no existe → la crea
-      ↓
-Si ya existe → la abre
-*/
-
-
-
-

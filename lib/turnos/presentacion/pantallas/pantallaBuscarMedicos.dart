@@ -134,7 +134,9 @@ class _PantallaBuscarMedicosState extends State<PantallaBuscarMedicos> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const PantallaSeleccionarTurno(),
+                    builder: (context) => const PantallaSeleccionarTurno(
+                      medicoId: 1,
+                    ),
                   ),
                 );
               },

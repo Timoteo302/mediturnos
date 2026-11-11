@@ -2,11 +2,15 @@ class Turno {
   final int id;
   final String paciente;
   final String medico;
-  final String especialidad; //Ej: Cardiologia
+  final String especialidad;
   final String fecha;
   final String hora;
-  final String estado; //Pendiente, confirmado, cancelado, etc.
-  final bool sincronizado;  //Saber si ya se envió al servidor o todavía está pendiente
+  final String estado;
+  final bool sincronizado;
+
+  final int? pacienteId;
+  final int? medicoId;
+  final String? claveSolicitud;
 
   Turno({
     required this.id,
@@ -17,5 +21,8 @@ class Turno {
     required this.hora,
     required this.estado,
     required this.sincronizado,
+    this.pacienteId,
+    this.medicoId,
+    this.claveSolicitud,
   });
 }
