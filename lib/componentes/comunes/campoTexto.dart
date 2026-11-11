@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../configuracion/coloresApp.dart';
 
-/// Campo de texto reutilizable personalizable para correos, contraseñas, etc.
-
 /// Componente de entrada de texto reutilizable.
 class CampoTexto extends StatelessWidget {
   final TextEditingController controller;
@@ -12,6 +10,8 @@ class CampoTexto extends StatelessWidget {
   final Widget? iconoSufijo;
   final bool ocultarTexto;
   final TextInputType tipoTeclado;
+  final String? mensajeError;
+  final ValueChanged<String>? alCambiar;
 
   const CampoTexto({
     super.key,
@@ -22,6 +22,8 @@ class CampoTexto extends StatelessWidget {
     this.iconoSufijo,
     this.ocultarTexto = false,
     this.tipoTeclado = TextInputType.text,
+    this.mensajeError,
+    this.alCambiar,
   });
 
   @override
@@ -30,9 +32,11 @@ class CampoTexto extends StatelessWidget {
       controller: controller,
       obscureText: ocultarTexto,
       keyboardType: tipoTeclado,
+      onChanged: alCambiar,
       decoration: InputDecoration(
         labelText: etiqueta,
         hintText: hintText,
+        errorText: mensajeError,
         prefixIcon: Icon(iconoPrefijo, color: ColoresApp.textoSecundario),
         suffixIcon: iconoSufijo,
       ),
