@@ -1,3 +1,4 @@
+import 'package:sqflite/sqflite.dart';
 import '../fuentes/baseDatosLocal.dart';
 import '../modelos/turno.dart';
 import 'repositorioTurnos.dart';
@@ -40,6 +41,7 @@ class RepositorioTurnosImpl implements RepositorioTurnos {
         'estado': turno.estado,
         'sincronizado': turno.sincronizado ? 1 : 0,
       },
+      conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
 
