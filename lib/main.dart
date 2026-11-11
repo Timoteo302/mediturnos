@@ -4,6 +4,7 @@ import 'turnos/presentacion/pantallas/pantallaTurnos.dart';
 import 'autenticacion/presentacion/pantallaLogin.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MediTurnosApp());
 }
 

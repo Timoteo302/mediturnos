@@ -48,7 +48,7 @@ class _PantallaRegistrarTurnoState extends State<PantallaRegistrarTurno> {
         title: const Text('Registrar turno'),
       ),
 
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
@@ -90,6 +90,8 @@ class _PantallaRegistrarTurnoState extends State<PantallaRegistrarTurno> {
               },
             ),
 
+            const SizedBox(height: 15),
+
             TextField(
               controller: fechaController,
               readOnly: true,
@@ -111,6 +113,8 @@ class _PantallaRegistrarTurnoState extends State<PantallaRegistrarTurno> {
                 }
               },
             ),
+
+            const SizedBox(height: 15),
 
             TextField(
               controller: horaController,

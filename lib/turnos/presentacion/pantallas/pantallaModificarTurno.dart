@@ -74,7 +74,7 @@ class _PantallaModificarTurnoState extends State<PantallaModificarTurno> {
         title: const Text('Modificar turno'),
       ),
 
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
 
         child: Column(
