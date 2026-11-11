@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../../configuracion/configuracionServidor.dart';
 import '../modelos/usuario.dart';
@@ -28,38 +29,39 @@ class ClienteAutenticacionApi {
     }
 
     if (respuesta.statusCode >= 500) {
-      throw ExcepcionAutenticacion(ErrorAutenticacion.errorServidor);
+      throw ExcepcionAutenticacion(ErrorAutenticacion.errorServidor, mensaje: jsonCuerpo['error']?.toString());
     }
 
     final codigo = jsonCuerpo['codigo']?.toString() ?? '';
     final campo = jsonCuerpo['campo']?.toString();
+    final mensaje = jsonCuerpo['error']?.toString();
     final intentos = jsonCuerpo['intentosRestantes'] is int 
         ? jsonCuerpo['intentosRestantes'] 
         : int.tryParse(jsonCuerpo['intentosRestantes']?.toString() ?? '');
 
     switch (codigo) {
       case 'CREDENCIALES_INVALIDAS':
-        throw ExcepcionAutenticacion(ErrorAutenticacion.credencialesInvalidas);
+        throw ExcepcionAutenticacion(ErrorAutenticacion.credencialesInvalidas, mensaje: mensaje);
       case 'CUENTA_INACTIVA':
-        throw ExcepcionAutenticacion(ErrorAutenticacion.cuentaInactiva);
+        throw ExcepcionAutenticacion(ErrorAutenticacion.cuentaInactiva, mensaje: mensaje);
       case 'EMAIL_DUPLICADO':
-        throw ExcepcionAutenticacion(ErrorAutenticacion.emailDuplicado, campo: campo);
+        throw ExcepcionAutenticacion(ErrorAutenticacion.emailDuplicado, campo: campo, mensaje: mensaje);
       case 'DNI_DUPLICADO':
-        throw ExcepcionAutenticacion(ErrorAutenticacion.dniDuplicado, campo: campo);
+        throw ExcepcionAutenticacion(ErrorAutenticacion.dniDuplicado, campo: campo, mensaje: mensaje);
       case 'CUENTA_NO_ENCONTRADA':
-        throw ExcepcionAutenticacion(ErrorAutenticacion.cuentaNoEncontrada);
+        throw ExcepcionAutenticacion(ErrorAutenticacion.cuentaNoEncontrada, mensaje: mensaje);
       case 'DATOS_INVALIDOS':
-        throw ExcepcionAutenticacion(ErrorAutenticacion.datosInvalidos, campo: campo);
+        throw ExcepcionAutenticacion(ErrorAutenticacion.datosInvalidos, campo: campo, mensaje: mensaje);
       case 'CODIGO_INVALIDO':
-        throw ExcepcionAutenticacion(ErrorAutenticacion.codigoInvalido, intentosRestantes: intentos);
+        throw ExcepcionAutenticacion(ErrorAutenticacion.codigoInvalido, mensaje: mensaje, intentosRestantes: intentos);
       case 'CODIGO_VENCIDO':
-        throw ExcepcionAutenticacion(ErrorAutenticacion.codigoVencido);
+        throw ExcepcionAutenticacion(ErrorAutenticacion.codigoVencido, mensaje: mensaje);
       case 'DEMASIADOS_INTENTOS':
-        throw ExcepcionAutenticacion(ErrorAutenticacion.demasiadosIntentos);
+        throw ExcepcionAutenticacion(ErrorAutenticacion.demasiadosIntentos, mensaje: mensaje);
       case 'SOLICITUD_NO_ENCONTRADA':
-        throw ExcepcionAutenticacion(ErrorAutenticacion.solicitudNoEncontrada);
+        throw ExcepcionAutenticacion(ErrorAutenticacion.solicitudNoEncontrada, mensaje: mensaje);
       default:
-        throw ExcepcionAutenticacion(ErrorAutenticacion.desconocido);
+        throw ExcepcionAutenticacion(ErrorAutenticacion.desconocido, mensaje: mensaje);
     }
   }
 
@@ -73,16 +75,21 @@ class ClienteAutenticacionApi {
 
       final jsonMap = await _procesarRespuesta(respuesta);
       return Usuario.fromJson(jsonMap);
-    } on SocketException catch (_) {
+    } on SocketException catch (e) {
+      debugPrint('API iniciarSesion → $e');
       throw ExcepcionAutenticacion(ErrorAutenticacion.sinConexion);
-    } on TimeoutException catch (_) {
+    } on TimeoutException catch (e) {
+      debugPrint('API iniciarSesion → $e');
       throw ExcepcionAutenticacion(ErrorAutenticacion.sinConexion);
-    } on http.ClientException catch (_) {
+    } on http.ClientException catch (e) {
+      debugPrint('API iniciarSesion → $e');
       throw ExcepcionAutenticacion(ErrorAutenticacion.sinConexion);
-    } on ExcepcionAutenticacion {
+    } on ExcepcionAutenticacion catch (e) {
+      debugPrint('API iniciarSesion → $e');
       rethrow;
-    } catch (_) {
-      throw ExcepcionAutenticacion(ErrorAutenticacion.sinConexion);
+    } catch (e) {
+      debugPrint('API iniciarSesion → $e');
+      throw ExcepcionAutenticacion(ErrorAutenticacion.desconocido);
     }
   }
 
@@ -108,16 +115,21 @@ class ClienteAutenticacionApi {
 
       final jsonMap = await _procesarRespuesta(respuesta);
       return Usuario.fromJson(jsonMap);
-    } on SocketException catch (_) {
+    } on SocketException catch (e) {
+      debugPrint('API registrarPaciente → $e');
       throw ExcepcionAutenticacion(ErrorAutenticacion.sinConexion);
-    } on TimeoutException catch (_) {
+    } on TimeoutException catch (e) {
+      debugPrint('API registrarPaciente → $e');
       throw ExcepcionAutenticacion(ErrorAutenticacion.sinConexion);
-    } on http.ClientException catch (_) {
+    } on http.ClientException catch (e) {
+      debugPrint('API registrarPaciente → $e');
       throw ExcepcionAutenticacion(ErrorAutenticacion.sinConexion);
-    } on ExcepcionAutenticacion {
+    } on ExcepcionAutenticacion catch (e) {
+      debugPrint('API registrarPaciente → $e');
       rethrow;
-    } catch (_) {
-      throw ExcepcionAutenticacion(ErrorAutenticacion.sinConexion);
+    } catch (e) {
+      debugPrint('API registrarPaciente → $e');
+      throw ExcepcionAutenticacion(ErrorAutenticacion.desconocido);
     }
   }
 
@@ -135,16 +147,21 @@ class ClienteAutenticacionApi {
 
       final jsonMap = await _procesarRespuesta(respuesta);
       return SolicitudRecuperacion.fromJson(jsonMap);
-    } on SocketException catch (_) {
+    } on SocketException catch (e) {
+      debugPrint('API solicitarRecuperacion → $e');
       throw ExcepcionAutenticacion(ErrorAutenticacion.sinConexion);
-    } on TimeoutException catch (_) {
+    } on TimeoutException catch (e) {
+      debugPrint('API solicitarRecuperacion → $e');
       throw ExcepcionAutenticacion(ErrorAutenticacion.sinConexion);
-    } on http.ClientException catch (_) {
+    } on http.ClientException catch (e) {
+      debugPrint('API solicitarRecuperacion → $e');
       throw ExcepcionAutenticacion(ErrorAutenticacion.sinConexion);
-    } on ExcepcionAutenticacion {
+    } on ExcepcionAutenticacion catch (e) {
+      debugPrint('API solicitarRecuperacion → $e');
       rethrow;
-    } catch (_) {
-      throw ExcepcionAutenticacion(ErrorAutenticacion.sinConexion);
+    } catch (e) {
+      debugPrint('API solicitarRecuperacion → $e');
+      throw ExcepcionAutenticacion(ErrorAutenticacion.desconocido);
     }
   }
 
@@ -165,16 +182,21 @@ class ClienteAutenticacionApi {
       ).timeout(ConfiguracionServidor.tiempoEspera);
 
       await _procesarRespuesta(respuesta);
-    } on SocketException catch (_) {
+    } on SocketException catch (e) {
+      debugPrint('API restablecerContrasena → $e');
       throw ExcepcionAutenticacion(ErrorAutenticacion.sinConexion);
-    } on TimeoutException catch (_) {
+    } on TimeoutException catch (e) {
+      debugPrint('API restablecerContrasena → $e');
       throw ExcepcionAutenticacion(ErrorAutenticacion.sinConexion);
-    } on http.ClientException catch (_) {
+    } on http.ClientException catch (e) {
+      debugPrint('API restablecerContrasena → $e');
       throw ExcepcionAutenticacion(ErrorAutenticacion.sinConexion);
-    } on ExcepcionAutenticacion {
+    } on ExcepcionAutenticacion catch (e) {
+      debugPrint('API restablecerContrasena → $e');
       rethrow;
-    } catch (_) {
-      throw ExcepcionAutenticacion(ErrorAutenticacion.sinConexion);
+    } catch (e) {
+      debugPrint('API restablecerContrasena → $e');
+      throw ExcepcionAutenticacion(ErrorAutenticacion.desconocido);
     }
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:mediturnos/autenticacion/datos/modelos/excepcionAutenticacion.dart';
 import 'package:mediturnos/autenticacion/datos/repositorios/repositorioAutenticacion.dart';
+import 'package:mediturnos/configuracion/configuracionServidor.dart';
 
 class RegistroViewModel extends ChangeNotifier {
   final RepositorioAutenticacion _repositorio;
@@ -69,7 +70,7 @@ class RegistroViewModel extends ChangeNotifier {
     if (v == null || v.trim().isEmpty) return 'El nombre es obligatorio.';
     final val = v.trim();
     if (val.length < 2 || val.length > 100) return 'El nombre debe tener entre 2 y 100 caracteres.';
-    final regex = RegExp(r"^[a-zA-ZÁÉÍÓÚáéíóúÑñ\s'\-]+$");
+    final regex = RegExp(r"^[\p{L}\s'\-]+$", unicode: true);
     if (!regex.hasMatch(val)) return 'El nombre contiene caracteres inválidos.';
     return null;
   }
@@ -78,7 +79,7 @@ class RegistroViewModel extends ChangeNotifier {
     if (v == null || v.trim().isEmpty) return 'El apellido es obligatorio.';
     final val = v.trim();
     if (val.length < 2 || val.length > 100) return 'El apellido debe tener entre 2 y 100 caracteres.';
-    final regex = RegExp(r"^[a-zA-ZÁÉÍÓÚáéíóúÑñ\s'\-]+$");
+    final regex = RegExp(r"^[\p{L}\s'\-]+$", unicode: true);
     if (!regex.hasMatch(val)) return 'El apellido contiene caracteres inválidos.';
     return null;
   }
@@ -94,7 +95,7 @@ class RegistroViewModel extends ChangeNotifier {
   String? validarEmail(String? v) {
     if (v == null || v.trim().isEmpty) return 'El correo electrónico es obligatorio.';
     final val = v.trim().toLowerCase();
-    final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    final regex = RegExp(ConfiguracionServidor.regexEmail);
     if (!regex.hasMatch(val) || val.length > 150) return 'Ingresá un correo electrónico válido.';
     return null;
   }
@@ -153,16 +154,40 @@ class RegistroViewModel extends ChangeNotifier {
       return true;
     } on ExcepcionAutenticacion catch (e) {
       _cargando = false;
+      final msg = e.mensaje;
+
       if (e.tipo == ErrorAutenticacion.emailDuplicado) {
-        _errorEmail = 'Ese correo ya está registrado.';
+        _errorEmail = msg ?? 'Ese correo ya está registrado.';
       } else if (e.tipo == ErrorAutenticacion.dniDuplicado) {
-        _errorDni = 'Ese DNI ya está registrado.';
+        _errorDni = msg ?? 'Ese DNI ya está registrado.';
+      } else if (e.tipo == ErrorAutenticacion.datosInvalidos && e.campo != null) {
+        final errorMsg = msg ?? 'Dato inválido.';
+        switch (e.campo) {
+          case 'nombre':
+            _errorNombre = errorMsg;
+            break;
+          case 'apellido':
+            _errorApellido = errorMsg;
+            break;
+          case 'dni':
+            _errorDni = errorMsg;
+            break;
+          case 'email':
+            _errorEmail = errorMsg;
+            break;
+          case 'contrasena':
+            _errorContrasena = errorMsg;
+            break;
+          default:
+            _errorGeneral = errorMsg;
+            break;
+        }
       } else if (e.tipo == ErrorAutenticacion.sinConexion) {
         _errorGeneral = 'Necesitás conexión con el servidor para crear la cuenta.';
       } else if (e.tipo == ErrorAutenticacion.errorServidor) {
-        _errorGeneral = 'El servidor tuvo un problema. Intentá de nuevo.';
+        _errorGeneral = msg ?? 'El servidor tuvo un problema. Intentá de nuevo.';
       } else {
-        _errorGeneral = 'No pudimos registrar tu cuenta. Intentá de nuevo.';
+        _errorGeneral = msg ?? 'No pudimos registrar tu cuenta. Intentá de nuevo.';
       }
       notifyListeners();
       return false;
