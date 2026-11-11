@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'turnos/presentacion/pantallas/pantallaTurnos.dart';
-
-import 'autenticacion/presentacion/pantallaLogin.dart';
+import 'autenticacion/presentacion/pantallas/pantallaLogin.dart';
+import 'configuracion/temaApp.dart';
+import 'package:mediturnos/servicios/verificadorConexion.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  VerificadorConexion.iniciarMonitoreoGlobal();
   runApp(const MediTurnosApp());
 }
 
@@ -20,41 +22,11 @@ class MediTurnosApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: claveNavegacionGlobal,
       debugShowCheckedModeBanner: false,
       title: 'MediTurnos',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-        ),
-        useMaterial3: true,
-      ),
+      theme: TemaApp.tema,
       home: const PantallaLogin(),
     );
   }
 }
-
-/*Pantalla de nuestra aplicacion, aqui podemos tener
--PantallInicio, PantallaTurnos, RegistrarTurno, DetalleTurno*/
-/*
-class PantallaInicio extends StatelessWidget {
-  const PantallaInicio({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('MediTurnos'),
-      ),
-      body: const Center(
-        child: Text(
-          'Bienvenido a MediTurnos',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-}
-*/
