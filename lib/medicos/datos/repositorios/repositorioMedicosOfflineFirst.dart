@@ -1,0 +1,5 @@
+// TODO(offline-first): lo implementa el compañero de offline-first. No borrar estos comentarios hasta implementarlo.
+// Implementación offline-first de RepositorioMedicos usando ClienteMedicosApi + AlmacenMedicosLocal.
+// - Lecturas: si hay conexión, pedir a la API y REEMPLAZAR la caché con lo recibido; si la API responde sinConexion, devolver lo que haya en la caché; si la caché está vacía, relanzar sinConexion.
+// - Escrituras del administrador (crear, editar, activar/desactivar médicos o especialidades, guardar horarios): hoy requieren conexión. Para hacerlas offline hay que decidir, junto con el compañero de la API, si se encolan en una tabla operaciones_pendientes_medicos (tipo, payload_json, clave_operacion UUID, creado_en) y se envían al volver la red desde ServicioMonitoreoSincronizacion; eso exige que la API soporte idempotencia por clave. Mientras tanto, dejarlas solo online.
+// - En main.dart cambiar SOLO la línea del Provider<RepositorioMedicos>. Los ViewModels y las pantallas no se tocan: dependen solo de la interfaz RepositorioMedicos.

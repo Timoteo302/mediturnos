@@ -1,7 +1,17 @@
+C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\controller\EspecialidadController.java
 C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\controller\MedicoController.java
 C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\controller\RecuperacionController.java
 C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\controller\TurnoController.java
 C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\controller\UsuarioController.java
+C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\dto\AgendaSolicitud.java
+C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\dto\EspecialidadRespuesta.java
+C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\dto\EspecialidadResumen.java
+C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\dto\EspecialidadSolicitud.java
+C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\dto\EstadoSolicitud.java
+C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\dto\HorarioRespuesta.java
+C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\dto\HorarioSolicitud.java
+C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\dto\MedicoRespuesta.java
+C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\dto\MedicoSolicitud.java
 C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\dto\PacienteResumen.java
 C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\dto\UsuarioRespuesta.java
 C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\exception\ExcepcionApi.java
@@ -19,6 +29,8 @@ C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\ja
 C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\repository\PacienteRepository.java
 C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\repository\TurnoRepository.java
 C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\repository\UsuarioRepository.java
+C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\service\EspecialidadService.java
+C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\service\HorarioAtencionService.java
 C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\service\MedicoService.java
 C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\service\RecuperacionService.java
 C:\Users\Usuario\Documents\GitHub\mediturnos\servidor\mediturnos-api\src\main\java\com\mediturnos\service\TurnoService.java
