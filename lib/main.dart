@@ -13,6 +13,10 @@ import 'autenticacion/presentacion/pantallas/pantallaLogin.dart';
 import 'autenticacion/presentacion/viewmodels/autenticacionViewModel.dart';
 import 'configuracion/temaApp.dart';
 
+import 'medicos/datos/repositorios/repositorioMedicos.dart';
+import 'medicos/datos/repositorios/repositorioMedicosApi.dart';
+import 'medicos/datos/fuentes/clienteMedicosApi.dart';
+
 import 'package:mediturnos/servicios/verificadorConexion.dart';
 
 import 'servicios/servicioMonitoreoSincronizacion.dart';
@@ -48,6 +52,11 @@ class MediTurnosApp extends StatelessWidget {
         ChangeNotifierProvider<AutenticacionViewModel>(
           create: (context) =>
               AutenticacionViewModel(context.read<RepositorioAutenticacion>()),
+        ),
+        Provider<RepositorioMedicos>(
+          create: (_) => RepositorioMedicosApi(
+            ClienteMedicosApi(http.Client()),
+          ),
         ),
 
         Provider<ServicioMonitoreoSincronizacion>(

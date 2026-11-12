@@ -5,7 +5,7 @@ import 'package:mediturnos/componentes/admin/tarjetaTurnoPendiente.dart';
 import 'package:mediturnos/configuracion/coloresApp.dart';
 import 'package:mediturnos/configuracion/estilosTexto.dart';
 
-import 'package:mediturnos/componentes/comunes/barraNavegacion.dart';
+import 'package:mediturnos/navegacion/barraNavegacionAdmin.dart';
 import '../../../autenticacion/presentacion/pantallas/pantallaLogin.dart';
 import '../../../medicos/presentacion/pantallas/pantallaGestionHorarios.dart';
 import '../../../medicos/presentacion/pantallas/pantallaGestionMedicos.dart';
@@ -21,8 +21,6 @@ class PantallaInicioAdmin extends StatefulWidget {
 }
 
 class _PantallaInicioAdminState extends State<PantallaInicioAdmin> {
-  int _indiceNavegacion = 0;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,7 +44,7 @@ class _PantallaInicioAdminState extends State<PantallaInicioAdmin> {
           ),
         ),
       ),
-      bottomNavigationBar: _construirNavegacionInferior(),
+      bottomNavigationBar: const BarraNavegacionAdmin(indiceActual: 0),
     );
   }
 
@@ -281,51 +279,6 @@ class _PantallaInicioAdminState extends State<PantallaInicioAdmin> {
           horaConsultorio: '11:15 hs (Cons. 5)',
           onLlamar: () {},
           onRevisar: () {},
-        ),
-      ],
-    );
-  }
-
-  Widget _construirNavegacionInferior() {
-    return BarraNavegacionApp(
-      indiceSeleccionado: _indiceNavegacion,
-      alSeleccionar: (index) {
-        setState(() {
-          _indiceNavegacion = index;
-        });
-
-        if (index == 1) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const PantallaTodosLosTurnos()),
-          );
-        } else if (index == 2) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const PantallaGestionMedicos()),
-          );
-        }
-      },
-      destinos: const [
-        ElementoNavegacion(
-          etiqueta: 'Inicio',
-          icono: Icons.home_outlined,
-          iconoSeleccionado: Icons.home,
-        ),
-        ElementoNavegacion(
-          etiqueta: 'Turnos',
-          icono: Icons.calendar_today_outlined,
-          iconoSeleccionado: Icons.calendar_today,
-        ),
-        ElementoNavegacion(
-          etiqueta: 'Médicos',
-          icono: Icons.medical_services_outlined,
-          iconoSeleccionado: Icons.medical_services,
-        ),
-        ElementoNavegacion(
-          etiqueta: 'Mi perfil',
-          icono: Icons.person_outline,
-          iconoSeleccionado: Icons.person,
         ),
       ],
     );

@@ -1,8 +1,13 @@
 package com.mediturnos.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mediturnos.model.Especialidad;
+import com.mediturnos.model.Medico;
 import com.mediturnos.model.Paciente;
 import com.mediturnos.model.Usuario;
+import com.mediturnos.repository.EspecialidadRepository;
+import com.mediturnos.repository.HorarioAtencionRepository;
+import com.mediturnos.repository.MedicoRepository;
 import com.mediturnos.repository.PacienteRepository;
 import com.mediturnos.repository.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,14 +17,14 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Map;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
@@ -36,10 +41,22 @@ class ApiIntegrationTest {
     @Autowired
     private PacienteRepository pacienteRepository;
 
+    @Autowired
+    private EspecialidadRepository especialidadRepository;
+
+    @Autowired
+    private MedicoRepository medicoRepository;
+
+    @Autowired
+    private HorarioAtencionRepository horarioAtencionRepository;
+
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @BeforeEach
     void setUp() {
+        horarioAtencionRepository.deleteAll();
+        medicoRepository.deleteAll();
+        especialidadRepository.deleteAll();
         pacienteRepository.deleteAll();
         usuarioRepository.deleteAll();
 
@@ -245,5 +262,126 @@ class ApiIntegrationTest {
                         .content(new ObjectMapper().writeValueAsString(solicitarDni)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.idRecuperacion").exists());
+    }
+
+    @Test
+    void test6_especialidadesEndpoints() throws Exception {
+        // Crear especialidad válida
+        Map<String, String> espData = Map.of(
+                "nombre", "Cardiología",
+                "descripcion", "Especialidad del corazón"
+        );
+        mockMvc.perform(post("/especialidades")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(espData)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").exists())
+                .andExpect(jsonPath("$.nombre").value("Cardiología"))
+                .andExpect(jsonPath("$.activo").value(true));
+
+        // Probar especialidad duplicada (con sin tilde)
+        Map<String, String> espDuplicada = Map.of("nombre", "cardiologia");
+        mockMvc.perform(post("/especialidades")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(espDuplicada)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.codigo").value("ESPECIALIDAD_DUPLICADA"))
+                .andExpect(jsonPath("$.campo").value("nombre"));
+
+        // Nombre vacío -> 400
+        Map<String, String> espVacia = Map.of("nombre", "");
+        mockMvc.perform(post("/especialidades")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(espVacia)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.codigo").value("DATOS_INVALIDOS"))
+                .andExpect(jsonPath("$.campo").value("nombre"));
+    }
+
+    @Test
+    void test7_medicosEndpoints() throws Exception {
+        // Guardar especialidad
+        Especialidad esp = new Especialidad();
+        esp.setNombre("Cardiología");
+        esp.setDescripcion("Corazón");
+        esp.setActivo(true);
+        esp = especialidadRepository.save(esp);
+
+        // POST Médico válido
+        Map<String, Object> medicoBody = Map.of(
+                "nombre", "Juan Manuel",
+                "apellido", "Gómez",
+                "especialidadId", esp.getId(),
+                "matricula", "114820",
+                "activo", true
+        );
+        MvcResult res = mockMvc.perform(post("/medicos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(medicoBody)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").exists())
+                .andExpect(jsonPath("$.nombre").value("Juan Manuel"))
+                .andExpect(jsonPath("$.especialidad.nombre").value("Cardiología"))
+                .andReturn();
+
+        // Repetir matrícula -> 409 MATRICULA_DUPLICADA
+        mockMvc.perform(post("/medicos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(medicoBody)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.codigo").value("MATRICULA_DUPLICADA"))
+                .andExpect(jsonPath("$.campo").value("matricula"));
+    }
+
+    @Test
+    void test8_horariosEndpoints() throws Exception {
+        // Crear especialidad y médico
+        Especialidad esp = new Especialidad();
+        esp.setNombre("Dermatología");
+        esp.setActivo(true);
+        esp = especialidadRepository.save(esp);
+
+        Medico medico = new Medico();
+        medico.setNombre("Lucía");
+        medico.setApellido("Benítez");
+        medico.setMatricula("128450");
+        medico.setEspecialidad(esp);
+        medico.setActivo(true);
+        medico = medicoRepository.save(medico);
+
+        // Cargar agenda de horarios
+        Map<String, Object> agenda = Map.of(
+                "horarios", List.of(
+                        Map.of("diaSemana", 1, "horaInicio", "08:30", "horaFin", "12:30", "duracionTurno", 30)
+                )
+        );
+
+        mockMvc.perform(put("/medicos/" + medico.getId() + "/horarios")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(agenda)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].horaInicio").value("08:30"))
+                .andExpect(jsonPath("$[0].horaFin").value("12:30"));
+    }
+
+    @Test
+    void test9_corsPreflight() throws Exception {
+        mockMvc.perform(options("/medicos/1/estado")
+                        .header("Origin", "http://localhost:3000")
+                        .header("Access-Control-Request-Method", "PATCH"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Methods", org.hamcrest.Matchers.containsString("PATCH")));
+
+        mockMvc.perform(options("/medicos/1")
+                        .header("Origin", "http://localhost:3000")
+                        .header("Access-Control-Request-Method", "PUT"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Methods", org.hamcrest.Matchers.containsString("PUT")));
+
+        mockMvc.perform(options("/especialidades/1")
+                        .header("Origin", "http://localhost:3000")
+                        .header("Access-Control-Request-Method", "PUT"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Methods", org.hamcrest.Matchers.containsString("PUT")));
     }
 }

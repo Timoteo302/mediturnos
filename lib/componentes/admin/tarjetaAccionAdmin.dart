@@ -25,82 +25,86 @@ class TarjetaAccionAdmin extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (esBannerAncho) {
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF0F7FF),
+      return Material(
+        color: const Color(0xFFF0F7FF),
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFBFDBFE)),
-        ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0284C7),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(icono, color: Colors.white, size: 24),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        titulo,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: ColoresApp.textoTitulo,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        subtitulo,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: ColoresApp.textoSecundario,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(
-                  Icons.arrow_forward,
-                  color: ColoresApp.primario,
-                  size: 20,
-                ),
-              ],
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFBFDBFE)),
             ),
-            const SizedBox(height: 14),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
               children: [
-                Text(
-                  infoPie ?? '',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: ColoresApp.textoSecundario,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: onTap,
-                  child: Text(
-                    textoEnlace ?? 'Abrir grilla >',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: ColoresApp.primario,
+                Row(
+                  children: [
+                    Container(
+                      width: 46,
+                      height: 46,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0284C7),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(icono, color: Colors.white, size: 24),
                     ),
-                  ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            titulo,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: ColoresApp.textoTitulo,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            subtitulo,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: ColoresApp.textoSecundario,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.arrow_forward,
+                      color: ColoresApp.primario,
+                      size: 20,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      infoPie ?? '',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: ColoresApp.textoSecundario,
+                      ),
+                    ),
+                    Text(
+                      textoEnlace ?? 'Abrir grilla >',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: ColoresApp.primario,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
       );
     }

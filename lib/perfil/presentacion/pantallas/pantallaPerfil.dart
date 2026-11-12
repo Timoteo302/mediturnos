@@ -8,6 +8,7 @@ import 'package:mediturnos/configuracion/coloresApp.dart';
 import 'package:mediturnos/turnos/presentacion/pantallas/pantallaBuscarMedicos.dart';
 import 'package:mediturnos/turnos/presentacion/pantallas/pantallaInicio.dart';
 import 'package:mediturnos/turnos/presentacion/pantallas/pantallaMisTurnos.dart';
+import 'pantallaEditarPerfil.dart';
 
 import 'package:mediturnos/componentes/comunes/notificacionCambiosGuardados.dart';
 
@@ -59,7 +60,14 @@ class _PantallaPerfilState extends State<PantallaPerfil> {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         child: Column(
           children: [
-            TarjetaEncabezadoPerfil(onEditar: () {}),
+            TarjetaEncabezadoPerfil(
+              onEditar: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PantallaEditarPerfil()),
+                );
+              },
+            ),
             const SizedBox(height: 16),
             _construirSeccionDatosPersonales(),
             const SizedBox(height: 16),

@@ -92,32 +92,13 @@ class _PantallaBuscarMedicosState extends State<PantallaBuscarMedicos> {
             const SizedBox(height: 20),
 
             // Encabezado de Resultados
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                Text(
-                  '5 ESPECIALISTAS DISPONIBLES',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: ColoresApp.textoSecundario,
-                  ),
-                ),
-                Row(
-                  children: [
-                    Icon(Icons.location_on_outlined, size: 14, color: ColoresApp.primario),
-                    SizedBox(width: 2),
-                    Text(
-                      'CABA',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: ColoresApp.primario,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+            const Text(
+              '5 ESPECIALISTAS DISPONIBLES',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: ColoresApp.textoSecundario,
+              ),
             ),
             const SizedBox(height: 14),
 
@@ -141,11 +122,6 @@ class _PantallaBuscarMedicosState extends State<PantallaBuscarMedicos> {
                 );
               },
             ),
-
-            const SizedBox(height: 16),
-
-            // Banner de soporte WhatsApp
-            _construirBannerSoporte(),
           ],
         ),
       ),
@@ -192,43 +168,6 @@ class _PantallaBuscarMedicosState extends State<PantallaBuscarMedicos> {
             etiqueta: 'Mi Perfil',
             icono: Icons.person_outline,
             iconoSeleccionado: Icons.person,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _construirBannerSoporte() {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF0F7FF),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFBFDBFE)),
-      ),
-      child: Row(
-        children: const [
-          Icon(Icons.headset_mic_outlined, color: ColoresApp.primario, size: 24),
-          SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '¿Buscás otra especialidad o estudio?',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: ColoresApp.textoTitulo,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  'Podés solicitar asistencia por turnos especiales por WhatsApp.',
-                  style: TextStyle(fontSize: 12, color: ColoresApp.textoSecundario),
-                ),
-              ],
-            ),
           ),
         ],
       ),

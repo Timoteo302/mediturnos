@@ -37,7 +37,8 @@ class AlmacenSesionLocalSqlite implements AlmacenSesionLocal {
   Future<void> guardar(Usuario usuario, String contrasenaHash) async {
     final db = await database;
     final jsonMap = usuario.toJson();
-    jsonMap['sesionOffline'] = true;
+    // Mantenemos el estado real de sesionOffline del usuario (false si es online, true si es offline)
+    jsonMap['sesionOffline'] = usuario.sesionOffline;
     final usuarioJsonStr = json.encode(jsonMap);
 
     await db.insert(
