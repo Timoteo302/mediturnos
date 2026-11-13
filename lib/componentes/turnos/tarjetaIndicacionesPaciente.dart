@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mediturnos/configuracion/coloresApp.dart';
+import '../../configuracion/coloresApp.dart';
 
 /// Tarjeta azul con instrucciones e indicaciones para el paciente antes de asistir a la consulta.
 class TarjetaIndicacionesPaciente extends StatelessWidget {
@@ -33,7 +33,7 @@ class TarjetaIndicacionesPaciente extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           const Text(
-            'Llegar 10 minutos antes con DNI y credencial médica física o digital. En caso de no poder asistir, por favor cancelar con al menos 24 hs de anticipación.',
+            'Llegar 10 minutos antes con DNI. En caso de no poder asistir, por favor cancelar con al menos 24 hs de anticipación.',
             style: TextStyle(
               fontSize: 12,
               color: ColoresApp.textoSecundario,
@@ -48,11 +48,10 @@ class TarjetaIndicacionesPaciente extends StatelessWidget {
             children: [
               Row(
                 children: const [
-                  Icon(Icons.apartment_outlined,
-                      size: 16, color: ColoresApp.textoSecundario),
+                  Icon(Icons.apartment_outlined, size: 16, color: ColoresApp.textoSecundario),
                   SizedBox(width: 6),
                   Text(
-                    'Presentarse en Recepción Piso 3',
+                    'Presentarse en Recepción',
                     style: TextStyle(
                       fontSize: 12,
                       color: ColoresApp.textoSecundario,

@@ -1,296 +1,194 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import 'package:mediturnos/componentes/comunes/barraNavegacion.dart';
+import 'package:mediturnos/navegacion/barraNavegacionPaciente.dart';
 import 'package:mediturnos/componentes/turnos/bannerNuevaConsulta.dart';
 import 'package:mediturnos/componentes/turnos/estadoSinTurnos.dart';
 import 'package:mediturnos/componentes/turnos/selectorPestanasTurnos.dart';
 import 'package:mediturnos/componentes/turnos/tarjetaTurnoPaciente.dart';
 import 'package:mediturnos/configuracion/coloresApp.dart';
 import 'package:mediturnos/configuracion/estilosTexto.dart';
-import 'package:mediturnos/perfil/presentacion/pantallas/pantallaPerfil.dart';
-import 'package:mediturnos/turnos/datos/modelos/turno.dart';
-import 'package:mediturnos/turnos/datos/repositorios/repositorioTurnosImpl.dart';
-import 'package:mediturnos/turnos/presentacion/pantallas/pantallaBuscarMedicos.dart';
-import 'package:mediturnos/turnos/presentacion/pantallas/pantallaInicio.dart';
+import 'package:mediturnos/autenticacion/presentacion/viewmodels/autenticacionViewModel.dart';
+import 'package:mediturnos/turnos/datos/repositorios/repositorioGestionTurnos.dart';
+import '../viewmodels/misTurnosViewModel.dart';
+import 'pantallaDetalleTurno.dart';
+import 'pantallaBuscarMedicos.dart';
 
 /// Pantalla "Mis Turnos" para gestionar consultas activas e historial médico.
-class PantallaMisTurnos extends StatefulWidget {
+class PantallaMisTurnos extends StatelessWidget {
   const PantallaMisTurnos({super.key});
 
   @override
-  State<PantallaMisTurnos> createState() => _PantallaMisTurnosState();
+  Widget build(BuildContext context) {
+    final authVm = context.read<AutenticacionViewModel>();
+    final pacienteId = authVm.usuarioActual?.paciente?.id ?? 1;
+
+    return ChangeNotifierProvider(
+      create: (context) => MisTurnosViewModel(
+        context.read<RepositorioGestionTurnos>(),
+        pacienteId: pacienteId,
+      ),
+      child: const _VistaMisTurnos(),
+    );
+  }
 }
 
-class _PantallaMisTurnosState extends State<PantallaMisTurnos> {
-  final RepositorioTurnosImpl _repositorio = RepositorioTurnosImpl();
+class _VistaMisTurnos extends StatefulWidget {
+  const _VistaMisTurnos();
+
+  @override
+  State<_VistaMisTurnos> createState() => _VistaMisTurnosState();
+}
+
+class _VistaMisTurnosState extends State<_VistaMisTurnos> {
   final ScrollController _scrollController = ScrollController();
+  int _indicePestana = 0; // 0 = Próximos, 1 = Historial
 
-  List<Turno> _turnos = [];
-  bool _cargando = true;
-  int _indiceNavegacion = 2;
-  bool _verProximos = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _cargarTurnos();
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _cargarTurnos() async {
-    final turnos = await _repositorio.obtenerTurnos();
-    if (!mounted) return;
-    setState(() {
-      _turnos = turnos;
-      _cargando = false;
-    });
-  }
-
-  bool _esHistorial(Turno turno) {
-    final estadoNorm = turno.estado.toLowerCase().trim();
-    if (estadoNorm == 'cancelado' || estadoNorm == 'atendido') {
-      return true;
-    }
-    final fechaDt = DateTime.tryParse(turno.fecha);
-    if (fechaDt != null) {
-      final fechaSolo = DateTime(fechaDt.year, fechaDt.month, fechaDt.day);
-      final ahora = DateTime.now();
-      final hoy = DateTime(ahora.year, ahora.month, ahora.day);
-      if (fechaSolo.isBefore(hoy)) return true;
-    }
-    return false;
-  }
-
-  List<Turno> get _turnosProximos {
-    return _turnos.where((t) => !_esHistorial(t)).toList();
-  }
-
-  List<Turno> get _turnosHistorial {
-    final historial = _turnos.where((t) => _esHistorial(t)).toList();
-    historial.sort((a, b) {
-      final compFecha = b.fecha.compareTo(a.fecha);
-      if (compFecha != 0) return compFecha;
-      return b.hora.compareTo(a.hora);
-    });
-    return historial;
-  }
-
-  void _irAHistorial() {
-    setState(() => _verProximos = false);
-    _scrollController.animateTo(
-      0,
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
+  Future<void> _confirmarCancelar(BuildContext context, MisTurnosViewModel vm, turno) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('¿Cancelar turno?'),
+        content: const Text('¿Estás seguro de que deseas cancelar este turno? Esta acción no se puede deshacer.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Volver')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Sí, cancelar'),
+          ),
+        ],
+      ),
     );
-  }
 
-  void _irABuscarMedicos() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const PantallaBuscarMedicos()),
-    );
+    if (confirmar == true && mounted) {
+      final exito = await vm.cancelar(turno);
+      if (!mounted) return;
+      if (exito) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Turno cancelado con éxito.'), backgroundColor: Colors.orange),
+        );
+      } else if (vm.errorAccion != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(vm.errorAccion!), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final proximos = _turnosProximos;
-    final historial = _turnosHistorial;
+    final vm = context.watch<MisTurnosViewModel>();
+    final turnosMostrados = _indicePestana == 0 ? vm.proximos : vm.historial;
 
     return Scaffold(
       backgroundColor: ColoresApp.fondoPantalla,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        automaticallyImplyLeading: false,
-        title: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.health_and_safety_outlined,
-                color: ColoresApp.primario, size: 22),
-            SizedBox(width: 8),
-            Text(
-              'MediTurnos',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: ColoresApp.textoTitulo,
-              ),
-            ),
-          ],
+        title: const Text(
+          'Mis Turnos',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: ColoresApp.textoTitulo),
         ),
         centerTitle: true,
+        automaticallyImplyLeading: false,
       ),
-      body: SingleChildScrollView(
-        controller: _scrollController,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Mis turnos', style: EstilosTexto.tituloGrande),
-            const SizedBox(height: 4),
-            const Text(
-              'Gestioná tus consultas y revisá tu historial médico',
-              style: EstilosTexto.subtitulo,
-            ),
-            const SizedBox(height: 20),
-
-            // Selector de pestañas (Próximos / Historial)
-            SelectorPestanasTurnos(
-              verProximos: _verProximos,
-              cantProximos: proximos.length,
-              onSeleccionarProximos: () => setState(() => _verProximos = true),
-              onSeleccionarHistorial: () => setState(() => _verProximos = false),
-            ),
-
-            const SizedBox(height: 24),
-
-            if (_cargando) ...[
-              const Center(child: CircularProgressIndicator()),
-            ] else if (_verProximos) ...[
-              // Pestaña PRÓXIMOS
-              if (proximos.isEmpty) ...[
-                EstadoSinTurnos(onSolicitarTurno: _irABuscarMedicos),
-              ] else ...[
-                ...proximos.map((t) => Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: TarjetaTurnoPaciente(turno: t, esHistorial: false),
-                    )),
-              ],
-
-              const SizedBox(height: 32),
-
-              // Encabezado de HISTORIAL RECIENTE
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Container(
+              color: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Column(
                 children: [
-                  const Text(
-                    'HISTORIAL RECIENTE',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: ColoresApp.textoSecundario,
-                      letterSpacing: 0.8,
-                    ),
+                  SelectorPestanasTurnos(
+                    verProximos: _indicePestana == 0,
+                    cantProximos: vm.cantProximos,
+                    onSeleccionarProximos: () => setState(() => _indicePestana = 0),
+                    onSeleccionarHistorial: () => setState(() => _indicePestana = 1),
                   ),
-                  GestureDetector(
-                    onTap: _irAHistorial,
-                    child: Row(
-                      children: const [
-                        Text(
-                          'Ver todo',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: ColoresApp.primario,
-                          ),
-                        ),
-                        SizedBox(width: 2),
-                        Icon(Icons.chevron_right,
-                            size: 16, color: ColoresApp.primario),
-                      ],
-                    ),
+                  const SizedBox(height: 12),
+                  BannerNuevaConsulta(
+                    onReservar: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const PantallaBuscarMedicos()),
+                      ).then((_) => vm.cargar());
+                    },
                   ),
                 ],
               ),
-
-              const SizedBox(height: 12),
-
-              if (historial.isEmpty) ...[
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Text(
-                    'Todavía no tenés turnos en tu historial.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: ColoresApp.primario,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ] else ...[
-                ...historial.take(2).map((t) => Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: TarjetaTurnoPaciente(turno: t, esHistorial: true),
-                    )),
-              ],
-            ] else ...[
-              // Pestaña HISTORIAL
-              if (historial.isEmpty) ...[
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Text(
-                    'Todavía no tenés turnos en tu historial.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: ColoresApp.primario,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ] else ...[
-                ...historial.map((t) => Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: TarjetaTurnoPaciente(turno: t, esHistorial: true),
-                    )),
-              ],
-            ],
-
-            const SizedBox(height: 20),
-
-            // Banner promocional para reservar consulta
-            BannerNuevaConsulta(onReservar: _irABuscarMedicos),
+            ),
+            const SizedBox(height: 8),
+            Expanded(
+              child: vm.cargando
+                  ? const Center(child: CircularProgressIndicator())
+                  : vm.error != null
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(vm.error!, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
+                              const SizedBox(height: 12),
+                              ElevatedButton(onPressed: () => vm.cargar(), child: const Text('Reintentar')),
+                            ],
+                          ),
+                        )
+                      : turnosMostrados.isEmpty
+                          ? SingleChildScrollView(
+                              child: Padding(
+                                padding: const EdgeInsets.all(20),
+                                child: _indicePestana == 0
+                                    ? EstadoSinTurnos(
+                                        onSolicitarTurno: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(builder: (context) => const PantallaBuscarMedicos()),
+                                          ).then((_) => vm.cargar());
+                                        },
+                                      )
+                                    : const Column(
+                                        children: [
+                                          SizedBox(height: 40),
+                                          Text('Todavía no tenés turnos en el historial.', style: EstilosTexto.subtitulo),
+                                        ],
+                                      ),
+                              ),
+                            )
+                          : ListView.builder(
+                              controller: _scrollController,
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                              itemCount: turnosMostrados.length,
+                              itemBuilder: (context, index) {
+                                final turno = turnosMostrados[index];
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child: TarjetaTurnoPaciente(
+                                    turno: turno,
+                                    esHistorial: _indicePestana == 1,
+                                    alVerDetalle: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => PantallaDetalleTurno(
+                                            turno: turno,
+                                            soloLectura: _indicePestana == 1,
+                                          ),
+                                        ),
+                                      ).then((_) => vm.cargar());
+                                    },
+                                    alCancelar: _indicePestana == 0
+                                        ? () => _confirmarCancelar(context, vm, turno)
+                                        : null,
+                                  ),
+                                );
+                              },
+                            ),
+            ),
           ],
         ),
       ),
-      bottomNavigationBar: BarraNavegacionApp(
-        indiceSeleccionado: _indiceNavegacion,
-        alSeleccionar: (index) {
-          setState(() => _indiceNavegacion = index);
-          if (index == 0) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const PantallaInicio()),
-            );
-          } else if (index == 1) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const PantallaBuscarMedicos()),
-            ).then((_) => setState(() => _indiceNavegacion = 2));
-          } else if (index == 3) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const PantallaPerfil()),
-            ).then((_) => setState(() => _indiceNavegacion = 2));
-          }
-        },
-        destinos: const [
-          ElementoNavegacion(
-            etiqueta: 'Inicio',
-            icono: Icons.home_outlined,
-            iconoSeleccionado: Icons.home,
-          ),
-          ElementoNavegacion(
-            etiqueta: 'Especialistas',
-            icono: Icons.search,
-            iconoSeleccionado: Icons.search,
-          ),
-          ElementoNavegacion(
-            etiqueta: 'Mis Turnos',
-            icono: Icons.calendar_today_outlined,
-            iconoSeleccionado: Icons.calendar_today,
-          ),
-          ElementoNavegacion(
-            etiqueta: 'Mi Perfil',
-            icono: Icons.person_outline,
-            iconoSeleccionado: Icons.person,
-          ),
-        ],
-      ),
+      bottomNavigationBar: const BarraNavegacionPaciente(indiceActual: 2),
     );
   }
 }

@@ -7,23 +7,19 @@ import 'package:mediturnos/componentes/inicio/tarjetaProximoTurno.dart';
 import 'package:mediturnos/configuracion/coloresApp.dart';
 import 'package:mediturnos/configuracion/estilosTexto.dart';
 
-import 'package:mediturnos/componentes/comunes/barraNavegacion.dart';
-import 'pantallaBuscarMedicos.dart';
-import 'pantallaMisTurnos.dart';
-import '../../../perfil/presentacion/pantallas/pantallaPerfil.dart';
-import 'package:mediturnos/servicios/verificadorConexion.dart';
+import 'package:mediturnos/navegacion/barraNavegacionPaciente.dart';
+import 'package:mediturnos/turnos/presentacion/pantallas/pantallaBuscarMedicos.dart';
+import 'package:mediturnos/turnos/presentacion/pantallas/pantallaMisTurnos.dart';
 
 /// Pantalla principal de inicio para el paciente (03A. Inicio).
-class PantallaInicio extends StatefulWidget {
-  const PantallaInicio({super.key});
+class PantallaInicioPaciente extends StatefulWidget {
+  const PantallaInicioPaciente({super.key});
 
   @override
-  State<PantallaInicio> createState() => _PantallaInicioState();
+  State<PantallaInicioPaciente> createState() => _PantallaInicioPacienteState();
 }
 
-class _PantallaInicioState extends State<PantallaInicio> {
-  int _indiceNavegacion = 0;
-
+class _PantallaInicioPacienteState extends State<PantallaInicioPaciente> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -59,7 +55,7 @@ class _PantallaInicioState extends State<PantallaInicio> {
           ),
         ),
       ),
-      bottomNavigationBar: _construirNavegacionInferior(),
+      bottomNavigationBar: const BarraNavegacionPaciente(indiceActual: 0),
     );
   }
 
@@ -191,57 +187,6 @@ class _PantallaInicioState extends State<PantallaInicio> {
               },
             ),
           ],
-        ),
-      ],
-    );
-  }
-
-  Widget _construirNavegacionInferior() {
-    return BarraNavegacionApp(
-      indiceSeleccionado: _indiceNavegacion,
-      alSeleccionar: (index) {
-        setState(() {
-          _indiceNavegacion = index;
-        });
-
-        // Si toca la pestaña 1 ("Especialistas"), va a la pantalla de Buscar Médicos:
-        if (index == 1) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const PantallaBuscarMedicos()),
-          ).then((_) => setState(() => _indiceNavegacion = 0));
-        } else if (index == 2) { // 👈 Pestaña "Mis Turnos"
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const PantallaMisTurnos()),
-          ).then((_) => setState(() => _indiceNavegacion = 0));
-        } else if (index == 3) { // 👈 Pestaña "Mi Perfil"
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const PantallaPerfil()),
-          ).then((_) => setState(() => _indiceNavegacion = 0));
-        }
-      },
-      destinos: const [
-        ElementoNavegacion(
-          etiqueta: 'Inicio',
-          icono: Icons.home_outlined,
-          iconoSeleccionado: Icons.home,
-        ),
-        ElementoNavegacion(
-          etiqueta: 'Especialistas',
-          icono: Icons.search,
-          iconoSeleccionado: Icons.search,
-        ),
-        ElementoNavegacion(
-          etiqueta: 'Mis Turnos',
-          icono: Icons.calendar_today_outlined,
-          iconoSeleccionado: Icons.calendar_today,
-        ),
-        ElementoNavegacion(
-          etiqueta: 'Mi Perfil',
-          icono: Icons.person_outline,
-          iconoSeleccionado: Icons.person,
         ),
       ],
     );

@@ -1,29 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:mediturnos/configuracion/coloresApp.dart';
-import 'package:mediturnos/turnos/presentacion/pantallas/pantallaDetalleTurno.dart';
+import 'package:mediturnos/turnos/datos/modelos/turnoDetalle.dart';
+import 'package:mediturnos/turnos/datos/modelos/estadoTurno.dart';
+import 'package:mediturnos/turnos/presentacion/estadoTurnoUi.dart';
 
 /// Tarjeta destacada del próximo turno programado.
 class TarjetaProximoTurno extends StatelessWidget {
-  final String especialidad;
-  final String medico;
-  final String fechaHora;
-  final String lugar;
+  final TurnoDetalle? turno;
   final String tiempoRestante;
   final VoidCallback? onVerDetalle;
 
   const TarjetaProximoTurno({
     super.key,
-    this.especialidad = 'Cardiología',
-    this.medico = 'Dr. Juan Manuel Gómez',
-    this.fechaHora = 'Jueves 24 de Octubre - 10:30 hs',
-    this.lugar = 'Consultorio 4 - Sede Central',
-    this.tiempoRestante = 'En 24 hs',
+    this.turno,
+    this.tiempoRestante = '',
     this.onVerDetalle,
   });
 
   @override
   Widget build(BuildContext context) {
+    if (turno == null) return const SizedBox.shrink();
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -77,7 +76,7 @@ class TarjetaProximoTurno extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          especialidad,
+                          turno!.medico.especialidad.nombre,
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -86,7 +85,7 @@ class TarjetaProximoTurno extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          medico,
+                          turno!.medico.nombreCompleto,
                           style: const TextStyle(
                             fontSize: 13,
                             color: ColoresApp.textoSecundario,
@@ -101,24 +100,24 @@ class TarjetaProximoTurno extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFDCFCE7),
+                      color: turno!.estado.fondo,
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          Icons.check_circle_outline,
+                          turno!.estado.icono,
                           size: 14,
-                          color: Color(0xFF166534),
+                          color: turno!.estado.color,
                         ),
-                        SizedBox(width: 4),
+                        const SizedBox(width: 4),
                         Text(
-                          'Confirmado',
+                          turno!.estado.etiqueta,
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF166534),
+                            color: turno!.estado.color,
                           ),
                         ),
                       ],
@@ -134,43 +133,21 @@ class TarjetaProximoTurno extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
-                child: Column(
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.calendar_today_outlined,
-                          size: 16,
-                          color: ColoresApp.primario,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          fechaHora,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: ColoresApp.textoTitulo,
-                          ),
-                        ),
-                      ],
+                    const Icon(
+                      Icons.calendar_today_outlined,
+                      size: 16,
+                      color: ColoresApp.primario,
                     ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on_outlined,
-                          size: 16,
-                          color: ColoresApp.textoSecundario,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          lugar,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: ColoresApp.textoSecundario,
-                          ),
-                        ),
-                      ],
+                    const SizedBox(width: 8),
+                    Text(
+                      '${turno!.fecha.day}/${turno!.fecha.month}/${turno!.fecha.year} - ${turno!.hora} hs',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: ColoresApp.textoTitulo,
+                      ),
                     ),
                   ],
                 ),
@@ -180,15 +157,7 @@ class TarjetaProximoTurno extends StatelessWidget {
                 width: double.infinity,
                 height: 44,
                 child: OutlinedButton.icon(
-                  onPressed: onVerDetalle ??
-                      () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const PantallaDetalleTurno(),
-                          ),
-                        );
-                      },
+                  onPressed: onVerDetalle ?? () {},
                   icon: const Icon(
                     Icons.description_outlined,
                     size: 18,

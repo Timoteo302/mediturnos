@@ -9,9 +9,9 @@ class TarjetaResumenJornada extends StatelessWidget {
 
   const TarjetaResumenJornada({
     super.key,
-    this.turnosHoy = 28,
-    this.pendientes = 5,
-    this.medicosActivos = 12,
+    required this.turnosHoy,
+    required this.pendientes,
+    required this.medicosActivos,
   });
 
   @override
@@ -47,7 +47,7 @@ class TarjetaResumenJornada extends StatelessWidget {
                 ],
               ),
               Text(
-                'Actualizado hace 2 min',
+                'Actualizado',
                 style: TextStyle(
                   fontSize: 12,
                   color: ColoresApp.textoSecundario,
@@ -61,7 +61,7 @@ class TarjetaResumenJornada extends StatelessWidget {
               _construirMetrica(
                 valor: '$turnosHoy',
                 etiqueta: 'Turnos hoy',
-                subetiqueta: '85% asignados',
+                subetiqueta: 'Asignados',
                 colorSubetiqueta: ColoresApp.primario,
               ),
               _construirDivisor(),

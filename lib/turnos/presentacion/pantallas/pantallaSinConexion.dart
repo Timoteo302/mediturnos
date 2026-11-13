@@ -6,9 +6,9 @@ import 'package:mediturnos/configuracion/coloresApp.dart';
 import 'package:mediturnos/perfil/presentacion/pantallas/pantallaPerfil.dart';
 import 'package:mediturnos/servicios/verificadorConexion.dart';
 import 'package:mediturnos/turnos/presentacion/pantallas/pantallaBuscarMedicos.dart';
-import 'package:mediturnos/turnos/presentacion/pantallas/pantallaInicio.dart';
+import 'package:mediturnos/inicio/presentacion/pantallas/pantallaInicioPaciente.dart';
 
-/// Pantalla que informa la falta de conexión a internet (17. Estado: Sin conexión).
+// Pantalla que informa la falta de conexión a internet (17. Estado: Sin conexión).
 class PantallaSinConexion extends StatefulWidget {
   const PantallaSinConexion({super.key});
 
@@ -156,7 +156,7 @@ class _PantallaSinConexionState extends State<PantallaSinConexion> {
           if (index == 0) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const PantallaInicio()),
+              MaterialPageRoute(builder: (context) => const PantallaInicioPaciente()),
             );
           } else if (index == 1) {
             Navigator.pushReplacement(

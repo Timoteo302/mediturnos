@@ -1,80 +1,120 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter/services.dart';
 
 import 'package:mediturnos/componentes/admin/barraSelectoresAdmin.dart';
 import 'package:mediturnos/componentes/admin/chipFiltroEstadoAdmin.dart';
-import 'package:mediturnos/componentes/admin/datosEjemploTurnosAdmin.dart';
 import 'package:mediturnos/componentes/admin/modalSelectorMedicosAdmin.dart';
 import 'package:mediturnos/componentes/admin/tarjetaTurnoAdmin.dart';
 import 'package:mediturnos/configuracion/coloresApp.dart';
 import 'package:mediturnos/navegacion/barraNavegacionAdmin.dart';
+import '../../datos/modelos/estadoTurno.dart';
+import '../../datos/modelos/turnoDetalle.dart';
+import '../../datos/repositorios/repositorioGestionTurnos.dart';
+import '../../../medicos/datos/repositorios/repositorioMedicos.dart';
+import '../viewmodels/turnosAdminViewModel.dart';
+import 'pantallaDetalleTurno.dart';
 
-/// Esta pantalla muestra al administrador la grilla completa de todos los turnos de la clínica,
-/// permitiendo filtrar por fecha, médico y estado (Todos, Pendientes, Confirmados).
-class PantallaTodosLosTurnos extends StatefulWidget {
-  const PantallaTodosLosTurnos({super.key});
+/// Esta pantalla muestra al administrador la grilla completa de todos los turnos de la clínica.
+class PantallaTodosLosTurnos extends StatelessWidget {
+  final EstadoTurno? filtroInicial;
+
+  const PantallaTodosLosTurnos({super.key, this.filtroInicial});
 
   @override
-  State<PantallaTodosLosTurnos> createState() => _PantallaTodosLosTurnosState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (context) => TurnosAdminViewModel(
+        context.read<RepositorioGestionTurnos>(),
+        context.read<RepositorioMedicos>(),
+        filtroInicial: filtroInicial,
+      ),
+      child: const _VistaTodosLosTurnos(),
+    );
+  }
 }
 
-class _PantallaTodosLosTurnosState extends State<PantallaTodosLosTurnos> {
-  String _filtroEstado = 'Todos';
-  String _medicoSeleccionado = 'Todos';
-  DateTime _fechaSeleccionada = DateTime.now();
+class _VistaTodosLosTurnos extends StatefulWidget {
+  const _VistaTodosLosTurnos();
 
-  bool _esHoy(DateTime fecha) {
-    final ahora = DateTime.now();
-    return fecha.year == ahora.year &&
-        fecha.month == ahora.month &&
-        fecha.day == ahora.day;
-  }
+  @override
+  State<_VistaTodosLosTurnos> createState() => _VistaTodosLosTurnosState();
+}
 
-  String _formatearFechaBarra(DateTime fecha) {
-    final diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-    final meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-
-    final nombreDia = diasSemana[fecha.weekday % 7];
-    final nombreMes = meses[fecha.month - 1];
-    final textoFecha = '$nombreDia ${fecha.day} $nombreMes ${fecha.year}';
-
-    return _esHoy(fecha) ? 'Hoy: $textoFecha' : textoFecha;
-  }
-
-  Future<void> _seleccionarFecha() async {
+class _VistaTodosLosTurnosState extends State<_VistaTodosLosTurnos> {
+  Future<void> _seleccionarFecha(BuildContext context, TurnosAdminViewModel vm) async {
     final seleccionada = await showDatePicker(
       context: context,
-      initialDate: _fechaSeleccionada,
+      initialDate: vm.fechaSeleccionada,
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
     );
     if (seleccionada != null) {
-      setState(() => _fechaSeleccionada = seleccionada);
+      await vm.cambiarFecha(seleccionada);
+    }
+  }
+
+  void _mostrarDialogoLlamar(BuildContext context, TurnoDetalle turno) {
+    final telefono = turno.paciente.telefono;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Llamar a ${turno.paciente.nombreCompleto}'),
+        content: Text(
+          telefono != null && telefono.isNotEmpty
+              ? 'Teléfono de contacto:\n$telefono'
+              : 'El paciente no cargó un teléfono.',
+        ),
+        actions: [
+          if (telefono != null && telefono.isNotEmpty)
+            TextButton(
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: telefono));
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Teléfono copiado al portapapeles.'), backgroundColor: Colors.green),
+                );
+              },
+              child: const Text('Copiar'),
+            ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cerrar')),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmarTurno(TurnosAdminViewModel vm, TurnoDetalle turno) async {
+    final exito = await vm.confirmar(turno);
+    if (!mounted) return;
+    if (exito) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Turno confirmado.'), backgroundColor: Colors.green),
+      );
+    } else if (vm.errorAccion != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(vm.errorAccion!), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Future<void> _marcarAtendido(TurnosAdminViewModel vm, TurnoDetalle turno) async {
+    final exito = await vm.marcarAtendido(turno);
+    if (!mounted) return;
+    if (exito) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Turno marcado como atendido.'), backgroundColor: Colors.green),
+      );
+    } else if (vm.errorAccion != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(vm.errorAccion!), backgroundColor: Colors.red),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final medicosDisponibles =
-        datosEjemploTurnosAdmin.map((t) => t.nombreMedico).toSet().toList();
-
-    final turnosHoyBase =
-        _esHoy(_fechaSeleccionada) ? datosEjemploTurnosAdmin : <TurnoEjemploAdmin>[];
-    final turnosBaseFechaMedico = turnosHoyBase.where((t) {
-      if (_medicoSeleccionado == 'Todos') return true;
-      return t.nombreMedico == _medicoSeleccionado;
-    }).toList();
-
-    final turnosFiltrados = turnosBaseFechaMedico.where((t) {
-      if (_filtroEstado == 'Pendientes') return t.estadoTexto == 'Pendiente';
-      if (_filtroEstado == 'Confirmados') return t.estadoTexto == 'Confirmado';
-      return true;
-    }).toList();
-
-    final cantTodos = turnosBaseFechaMedico.length;
-    final cantPendientes =
-        turnosBaseFechaMedico.where((t) => t.estadoTexto == 'Pendiente').length;
-    final cantConfirmados =
-        turnosBaseFechaMedico.where((t) => t.estadoTexto == 'Confirmado').length;
+    final vm = context.watch<TurnosAdminViewModel>();
+    final visibles = vm.visibles;
 
     return Scaffold(
       backgroundColor: ColoresApp.fondoPantalla,
@@ -109,107 +149,114 @@ class _PantallaTodosLosTurnosState extends State<PantallaTodosLosTurnos> {
         ),
         centerTitle: true,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. Selectores de Fecha y Médico
-            BarraSelectoresAdmin(
-              textoFecha: _formatearFechaBarra(_fechaSeleccionada),
-              textoMedico: _medicoSeleccionado,
-              onTapFecha: _seleccionarFecha,
-              onTapMedico: () => mostrarModalMedicosAdmin(
-                context,
-                medicoSeleccionado: _medicoSeleccionado,
-                medicosDisponibles: medicosDisponibles,
-                alSeleccionar: (medico) =>
-                    setState(() => _medicoSeleccionado = medico),
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // 2. Chips de estado (Todos, Pendientes, Confirmados)
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  ChipFiltroEstadoAdmin(
-                    etiqueta: 'Todos',
-                    cantidad: '$cantTodos',
-                    seleccionado: _filtroEstado == 'Todos',
-                    onTap: () => setState(() => _filtroEstado = 'Todos'),
+      body: vm.cargando
+          ? const Center(child: CircularProgressIndicator())
+          : vm.error != null
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(vm.error!, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
+                      const SizedBox(height: 12),
+                      ElevatedButton(onPressed: () => vm.cargarTurnos(), child: const Text('Reintentar')),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  ChipFiltroEstadoAdmin(
-                    etiqueta: 'Pendientes',
-                    cantidad: '$cantPendientes',
-                    seleccionado: _filtroEstado == 'Pendientes',
-                    onTap: () => setState(() => _filtroEstado = 'Pendientes'),
-                  ),
-                  const SizedBox(width: 8),
-                  ChipFiltroEstadoAdmin(
-                    etiqueta: 'Confirmados',
-                    cantidad: '$cantConfirmados',
-                    seleccionado: _filtroEstado == 'Confirmados',
-                    onTap: () => setState(() => _filtroEstado = 'Confirmados'),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // 3. Contador de registros
-            Text(
-              'Mostrando ${turnosFiltrados.length} de ${turnosBaseFechaMedico.length} registros',
-              style: const TextStyle(
-                  fontSize: 12, color: ColoresApp.textoSecundario),
-            ),
-
-            const SizedBox(height: 16),
-
-            // 4. Lista de tarjetas o mensaje según resultado de filtros
-            if (!_esHoy(_fechaSeleccionada)) ...[
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: Center(
-                  child: Text(
-                    'No hay turnos para esta fecha.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: ColoresApp.primario,
-                    ),
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      BarraSelectoresAdmin(
+                        textoFecha: '${vm.fechaSeleccionada.day}/${vm.fechaSeleccionada.month}/${vm.fechaSeleccionada.year}',
+                        textoMedico: vm.medicoSeleccionado?.nombreCompleto ?? 'Todos los médicos',
+                        onTapFecha: () => _seleccionarFecha(context, vm),
+                        onTapMedico: () => mostrarModalMedicosAdmin(
+                          context,
+                          medicoSeleccionado: vm.medicoSeleccionado,
+                          medicosDisponibles: vm.medicosActivos,
+                          alSeleccionar: (medico) => vm.seleccionarMedico(medico),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            ChipFiltroEstadoAdmin(
+                              etiqueta: 'Todos',
+                              cantidad: '${vm.cantTodos}',
+                              seleccionado: vm.filtroEstado == 'todos',
+                              onTap: () => vm.cambiarFiltroEstado('todos'),
+                            ),
+                            const SizedBox(width: 8),
+                            ChipFiltroEstadoAdmin(
+                              etiqueta: 'Pendientes',
+                              cantidad: '${vm.cantPendientes}',
+                              seleccionado: vm.filtroEstado == 'pendientes',
+                              onTap: () => vm.cambiarFiltroEstado('pendientes'),
+                            ),
+                            const SizedBox(width: 8),
+                            ChipFiltroEstadoAdmin(
+                              etiqueta: 'Confirmados',
+                              cantidad: '${vm.cantConfirmados}',
+                              seleccionado: vm.filtroEstado == 'confirmados',
+                              onTap: () => vm.cambiarFiltroEstado('confirmados'),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Mostrando ${visibles.length} de ${vm.cantTodos} registros',
+                        style: const TextStyle(fontSize: 12, color: ColoresApp.textoSecundario),
+                      ),
+                      const SizedBox(height: 16),
+                      if (vm.cantTodos == 0) ...[
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24),
+                          child: Center(
+                            child: Text(
+                              'No hay turnos para esta fecha.',
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: ColoresApp.primario),
+                            ),
+                          ),
+                        ),
+                      ] else if (visibles.isEmpty) ...[
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24),
+                          child: Center(
+                            child: Text(
+                              'No hay turnos con estos filtros.',
+                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: ColoresApp.primario),
+                            ),
+                          ),
+                        ),
+                      ] else ...[
+                        ...visibles.map((turno) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: TarjetaTurnoAdmin(
+                              turno: turno,
+                              procesando: vm.idProcesando == turno.id,
+                              alConfirmar: () => _confirmarTurno(vm, turno),
+                              alMarcarAtendido: () => _marcarAtendido(vm, turno),
+                              alVerDetalle: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => PantallaDetalleTurno(turno: turno, soloLectura: true),
+                                  ),
+                                ).then((_) => vm.cargarTurnos());
+                              },
+                              alLlamar: () => _mostrarDialogoLlamar(context, turno),
+                            ),
+                          );
+                        }),
+                      ],
+                    ],
                   ),
                 ),
-              ),
-            ] else if (turnosFiltrados.isEmpty) ...[
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: Center(
-                  child: Text(
-                    'No hay turnos con estos filtros.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: ColoresApp.primario,
-                    ),
-                  ),
-                ),
-              ),
-            ] else ...[
-              ...turnosFiltrados.map((turno) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: TarjetaTurnoAdmin(turno: turno),
-                );
-              }),
-            ],
-          ],
-        ),
-      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {},
         backgroundColor: ColoresApp.primarioBoton,
@@ -217,8 +264,7 @@ class _PantallaTodosLosTurnosState extends State<PantallaTodosLosTurnos> {
         icon: const Icon(Icons.add, color: ColoresApp.textoBoton),
         label: const Text(
           'Nuevo turno',
-          style: TextStyle(
-              fontWeight: FontWeight.bold, color: ColoresApp.textoBoton),
+          style: TextStyle(fontWeight: FontWeight.bold, color: ColoresApp.textoBoton),
         ),
       ),
       bottomNavigationBar: const BarraNavegacionAdmin(indiceActual: 1),

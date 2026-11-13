@@ -8,8 +8,8 @@ import '../../../configuracion/coloresApp.dart';
 import '../../../configuracion/estilosTexto.dart';
 
 // Importamos pantallas de destino segun rol
-import '../../../turnos/presentacion/pantallas/pantallaInicio.dart';
-import '../../../turnos/presentacion/pantallas/pantallaInicioAdmin.dart';
+import '../../../inicio/presentacion/pantallas/pantallaInicioPaciente.dart';
+import '../../../inicio/presentacion/pantallas/pantallaInicioAdmin.dart';
 import 'pantallaCrearCuenta.dart';
 import 'pantallaOlvideContrasena.dart';
 
@@ -69,7 +69,7 @@ class _PantallaLoginState extends State<PantallaLogin> {
       } else {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const PantallaInicio()),
+          MaterialPageRoute(builder: (context) => const PantallaInicioPaciente()),
         );
       }
     } else if (vm.errorGeneral != null) {

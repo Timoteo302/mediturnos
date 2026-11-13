@@ -10,6 +10,7 @@ import com.mediturnos.repository.HorarioAtencionRepository;
 import com.mediturnos.repository.MedicoRepository;
 import com.mediturnos.repository.PacienteRepository;
 import com.mediturnos.repository.UsuarioRepository;
+import com.mediturnos.repository.TurnoRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 
@@ -50,10 +53,14 @@ class ApiIntegrationTest {
     @Autowired
     private HorarioAtencionRepository horarioAtencionRepository;
 
+    @Autowired
+    private TurnoRepository turnoRepository;
+
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @BeforeEach
     void setUp() {
+        turnoRepository.deleteAll();
         horarioAtencionRepository.deleteAll();
         medicoRepository.deleteAll();
         especialidadRepository.deleteAll();
@@ -372,16 +379,92 @@ class ApiIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string("Access-Control-Allow-Methods", org.hamcrest.Matchers.containsString("PATCH")));
 
-        mockMvc.perform(options("/medicos/1")
+        mockMvc.perform(options("/turnos/1")
                         .header("Origin", "http://localhost:3000")
                         .header("Access-Control-Request-Method", "PUT"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Access-Control-Allow-Methods", org.hamcrest.Matchers.containsString("PUT")));
 
-        mockMvc.perform(options("/especialidades/1")
+        mockMvc.perform(options("/turnos/1/estado")
                         .header("Origin", "http://localhost:3000")
-                        .header("Access-Control-Request-Method", "PUT"))
+                        .header("Access-Control-Request-Method", "PATCH"))
                 .andExpect(status().isOk())
-                .andExpect(header().string("Access-Control-Allow-Methods", org.hamcrest.Matchers.containsString("PUT")));
+                .andExpect(header().string("Access-Control-Allow-Methods", org.hamcrest.Matchers.containsString("PATCH")));
+    }
+
+    @Test
+    void test10_turnosEndpoints() throws Exception {
+        // Crear especialidad, médico, agenda y paciente
+        Especialidad esp = new Especialidad();
+        esp.setNombre("Oftalmología");
+        esp.setActivo(true);
+        esp = especialidadRepository.save(esp);
+
+        Medico medico = new Medico();
+        medico.setNombre("Ramiro");
+        medico.setApellido("Vaca");
+        medico.setMatricula("98712");
+        medico.setEspecialidad(esp);
+        medico.setActivo(true);
+        medico = medicoRepository.save(medico);
+
+        Paciente paciente = pacienteRepository.findAll().get(0);
+
+        // Asignar agenda para un día futuro (ej: dentro de 10 días)
+        LocalDate fechaFutura = LocalDate.now(ZoneId.of("America/Argentina/Buenos_Aires")).plusDays(10);
+        int diaSemana = fechaFutura.getDayOfWeek().getValue();
+
+        Map<String, Object> agenda = Map.of(
+                "horarios", List.of(
+                        Map.of("diaSemana", diaSemana, "horaInicio", "09:00", "horaFin", "12:00", "duracionTurno", 30)
+                )
+        );
+        mockMvc.perform(put("/medicos/" + medico.getId() + "/horarios")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(agenda)))
+                .andExpect(status().isOk());
+
+        // POST Turno en horario libre
+        Map<String, Object> turnoPost = Map.of(
+                "paciente", Map.of("id", paciente.getId()),
+                "medico", Map.of("id", medico.getId()),
+                "fecha", fechaFutura.toString(),
+                "hora", "09:30",
+                "claveSolicitud", "uuid-test-123"
+        );
+
+        MvcResult result = mockMvc.perform(post("/turnos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(turnoPost)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").exists())
+                .andExpect(jsonPath("$.estado").value("PENDIENTE"))
+                .andExpect(jsonPath("$.paciente.id").value(paciente.getId()))
+                .andExpect(jsonPath("$.medico.id").value(medico.getId()))
+                .andReturn();
+
+        // Repetir el mismo POST con la misma claveSolicitud -> 200 OK con el mismo ID (idempotencia)
+        mockMvc.perform(post("/turnos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(turnoPost)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.claveSolicitud").value("uuid-test-123"));
+
+        // GET /turnos/{id}
+        String content = result.getResponse().getContentAsString();
+        Map<?, ?> map = new ObjectMapper().readValue(content, Map.class);
+        Integer turnoId = (Integer) map.get("id");
+
+        mockMvc.perform(get("/turnos/" + turnoId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(turnoId));
+
+        // GET /medicos/{id}/disponibilidad
+        mockMvc.perform(get("/medicos/" + medico.getId() + "/disponibilidad?fecha=" + fechaFutura))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].hora").value("09:00"))
+                .andExpect(jsonPath("$[0].disponible").value(true))
+                .andExpect(jsonPath("$[1].hora").value("09:30"))
+                .andExpect(jsonPath("$[1].disponible").value(false));
     }
 }

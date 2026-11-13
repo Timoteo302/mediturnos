@@ -5,7 +5,6 @@ import 'package:mediturnos/configuracion/coloresApp.dart';
 class SelectorDiaTurno extends StatelessWidget {
   final String diaSemana;
   final String numeroDia;
-  final String infoDisponibilidad;
   final bool estaSeleccionado;
   final bool estaHabilitado;
   final VoidCallback onTap;
@@ -14,7 +13,6 @@ class SelectorDiaTurno extends StatelessWidget {
     super.key,
     required this.diaSemana,
     required this.numeroDia,
-    required this.infoDisponibilidad,
     required this.estaSeleccionado,
     this.estaHabilitado = true,
     required this.onTap,
@@ -30,8 +28,8 @@ class SelectorDiaTurno extends StatelessWidget {
       colorFondo = const Color(0xFFFAFAFA);
       colorTexto = ColoresApp.textoHint;
     } else if (estaSeleccionado) {
-      colorFondo = const Color(0xFF60B2FA);
-      colorBorde = const Color(0xFF0284C7);
+      colorFondo = ColoresApp.primario;
+      colorBorde = ColoresApp.primario;
       colorTexto = Colors.white;
     }
 
@@ -40,7 +38,7 @@ class SelectorDiaTurno extends StatelessWidget {
       child: Container(
         width: 62,
         margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
         decoration: BoxDecoration(
           color: colorFondo,
           borderRadius: BorderRadius.circular(16),
@@ -65,24 +63,6 @@ class SelectorDiaTurno extends StatelessWidget {
                 color: colorTexto,
               ),
             ),
-            const SizedBox(height: 4),
-            if (estaSeleccionado)
-              Container(
-                width: 6,
-                height: 6,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF0F2942),
-                  shape: BoxShape.circle,
-                ),
-              )
-            else
-              Text(
-                infoDisponibilidad,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: estaHabilitado ? ColoresApp.primario : ColoresApp.textoHint,
-                ),
-              ),
           ],
         ),
       ),

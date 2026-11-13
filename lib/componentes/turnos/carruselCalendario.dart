@@ -2,17 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:mediturnos/componentes/turnos/selectorDiaTurno.dart';
 import 'package:mediturnos/configuracion/coloresApp.dart';
 
-/// Componente para el carrusel de calendario dinámico (5 días próximos y navegación por días).
+/// Componente para el carrusel de calendario dinámico (7 días próximos y navegación por días).
 class CarruselCalendario extends StatefulWidget {
   final DateTime fechaSeleccionada;
   final ValueChanged<DateTime> alSeleccionarFecha;
   final int cantidadDiasFuturos;
+  final Set<int> diasHabilitados;
 
   const CarruselCalendario({
     super.key,
     required this.fechaSeleccionada,
     required this.alSeleccionarFecha,
-    this.cantidadDiasFuturos = 5,
+    this.cantidadDiasFuturos = 7,
+    required this.diasHabilitados,
   });
 
   @override
@@ -29,7 +31,6 @@ class _CarruselCalendarioState extends State<CarruselCalendario> {
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
 
-  /// Abre un selector de fecha completo (DatePicker) al tocar el nombre del mes.
   Future<void> _abrirDatePickerCompleto(BuildContext context) async {
     final DateTime hoy = DateTime.now();
     final DateTime limiteMaximo = hoy.add(const Duration(days: 30));
@@ -40,7 +41,7 @@ class _CarruselCalendarioState extends State<CarruselCalendario> {
       firstDate: DateTime(hoy.year, hoy.month, hoy.day),
       lastDate: limiteMaximo,
       selectableDayPredicate: (DateTime fecha) {
-        return fecha.weekday != DateTime.sunday;
+        return widget.diasHabilitados.contains(fecha.weekday);
       },
       helpText: 'SELECCIONÁ UNA FECHA DE CONSULTA',
       cancelText: 'CANCELAR',
@@ -64,7 +65,6 @@ class _CarruselCalendarioState extends State<CarruselCalendario> {
     }
   }
 
-  /// Desplaza los días del carrusel hacia adelante o hacia atrás.
   void _desplazarDias(int dias) {
     final DateTime hoy = DateTime.now();
     final DateTime fechaBase = DateTime(hoy.year, hoy.month, hoy.day);
@@ -104,7 +104,6 @@ class _CarruselCalendarioState extends State<CarruselCalendario> {
 
     return Column(
       children: [
-        // Encabezado con Mes (cliqueable) y flechas < >
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -140,22 +139,20 @@ class _CarruselCalendarioState extends State<CarruselCalendario> {
                     Icons.chevron_left,
                     color: esHoy ? ColoresApp.textoHint : ColoresApp.textoSecundario,
                   ),
-                  onPressed: esHoy ? null : () => _desplazarDias(-5),
+                  onPressed: esHoy ? null : () => _desplazarDias(-7),
                 ),
                 IconButton(
                   icon: Icon(
                     Icons.chevron_right,
                     color: esLimiteMaximo ? ColoresApp.textoHint : ColoresApp.textoSecundario,
                   ),
-                  onPressed: esLimiteMaximo ? null : () => _desplazarDias(5),
+                  onPressed: esLimiteMaximo ? null : () => _desplazarDias(7),
                 ),
               ],
             ),
           ],
         ),
         const SizedBox(height: 10),
-
-        // Carrusel compacto de 5 días
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -164,7 +161,7 @@ class _CarruselCalendarioState extends State<CarruselCalendario> {
               final String nombreDia = _diasSemana[fecha.weekday - 1];
               final String numeroDia = '${fecha.day}';
 
-              final bool esDomingo = fecha.weekday == DateTime.sunday;
+              final bool estaHabilitado = widget.diasHabilitados.contains(fecha.weekday);
               final bool esMismaFecha =
                   widget.fechaSeleccionada.year == fecha.year &&
                       widget.fechaSeleccionada.month == fecha.month &&
@@ -174,21 +171,11 @@ class _CarruselCalendarioState extends State<CarruselCalendario> {
                   hoy.month == fecha.month &&
                   hoy.day == fecha.day;
 
-              String infoDisponibilidad = '3 disp.';
-              if (esDomingo) {
-                infoDisponibilidad = 'Sin turnos';
-              } else if (index % 3 == 0) {
-                infoDisponibilidad = '1 disp.';
-              } else if (index % 2 == 0) {
-                infoDisponibilidad = '4 disp.';
-              }
-
               return SelectorDiaTurno(
                 diaSemana: esHoyDia ? 'Hoy' : nombreDia,
                 numeroDia: numeroDia,
-                infoDisponibilidad: infoDisponibilidad,
                 estaSeleccionado: esMismaFecha,
-                estaHabilitado: !esDomingo,
+                estaHabilitado: estaHabilitado,
                 onTap: () => widget.alSeleccionarFecha(fecha),
               );
             }),

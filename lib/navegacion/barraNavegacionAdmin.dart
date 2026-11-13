@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mediturnos/componentes/comunes/barraNavegacion.dart';
 import 'package:mediturnos/medicos/presentacion/pantallas/pantallaGestionMedicos.dart';
 import 'package:mediturnos/perfil/presentacion/pantallas/pantallaPerfilAdmin.dart';
-import 'package:mediturnos/turnos/presentacion/pantallas/pantallaInicioAdmin.dart';
+import 'package:mediturnos/inicio/presentacion/pantallas/pantallaInicioAdmin.dart';
 import 'package:mediturnos/turnos/presentacion/pantallas/pantallaTodosLosTurnos.dart';
 
 /// Componente de barra de navegación inferior compartida para la sección de administración.

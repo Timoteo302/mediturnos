@@ -6,9 +6,6 @@ class TarjetaMedico extends StatelessWidget {
   final String iniciales;
   final String nombre;
   final String especialidad;
-  final String sede;
-  final String consultorio;
-  final String proximoTurno;
   final VoidCallback onVerDisponibilidad;
 
   const TarjetaMedico({
@@ -16,9 +13,6 @@ class TarjetaMedico extends StatelessWidget {
     required this.iniciales,
     required this.nombre,
     required this.especialidad,
-    required this.sede,
-    required this.consultorio,
-    required this.proximoTurno,
     required this.onVerDisponibilidad,
   });
 
@@ -37,7 +31,6 @@ class TarjetaMedico extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Avatar con iniciales
               CircleAvatar(
                 radius: 22,
                 backgroundColor: const Color(0xFFE8F3FF),
@@ -51,8 +44,6 @@ class TarjetaMedico extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-
-              // Información del médico
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,95 +57,50 @@ class TarjetaMedico extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE8F3FF),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            especialidad,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: ColoresApp.primario,
-                            ),
-                          ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE8F3FF),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        especialidad,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: ColoresApp.primario,
                         ),
-                        const SizedBox(width: 6),
-                        Text(
-                          '• $sede',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: ColoresApp.textoSecundario,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        const Icon(Icons.meeting_room_outlined, size: 14, color: ColoresApp.textoSecundario),
-                        const SizedBox(width: 4),
-                        Text(
-                          consultorio,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: ColoresApp.textoSecundario,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-
           const SizedBox(height: 14),
-
-          // Fila inferior con el próximo horario y el botón de acción
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.access_time, size: 15, color: Color(0xFF16A34A)),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Próximo: $proximoTurno',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: ColoresApp.textoSecundario,
-                    ),
-                  ),
-                ],
-              ),
-              ElevatedButton.icon(
-                onPressed: onVerDisponibilidad,
-                icon: const Text(
-                  'Ver disponibilidad',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: ColoresApp.primario,
-                  ),
-                ),
-                label: const Icon(Icons.arrow_forward, size: 14, color: ColoresApp.primario),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFF0F7FF),
-                  elevation: 0,
-                  side: const BorderSide(color: Color(0xFFBFDBFE)),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: ElevatedButton.icon(
+              onPressed: onVerDisponibilidad,
+              icon: const Text(
+                'Ver disponibilidad',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: ColoresApp.primario,
                 ),
               ),
-            ],
+              label: const Icon(Icons.arrow_forward, size: 14, color: ColoresApp.primario),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF0F7FF),
+                elevation: 0,
+                side: const BorderSide(color: Color(0xFFBFDBFE)),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+            ),
           ),
         ],
       ),

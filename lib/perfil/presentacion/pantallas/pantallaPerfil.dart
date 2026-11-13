@@ -6,7 +6,7 @@ import 'package:mediturnos/componentes/perfil/tarjetaDatosPersonales.dart';
 import 'package:mediturnos/componentes/perfil/tarjetaEncabezadoPerfil.dart';
 import 'package:mediturnos/configuracion/coloresApp.dart';
 import 'package:mediturnos/turnos/presentacion/pantallas/pantallaBuscarMedicos.dart';
-import 'package:mediturnos/turnos/presentacion/pantallas/pantallaInicio.dart';
+import 'package:mediturnos/inicio/presentacion/pantallas/pantallaInicioPaciente.dart';
 import 'package:mediturnos/turnos/presentacion/pantallas/pantallaMisTurnos.dart';
 import 'pantallaEditarPerfil.dart';
 
@@ -41,7 +41,7 @@ class _PantallaPerfilState extends State<PantallaPerfil> {
             } else {
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => const PantallaInicio()),
+                MaterialPageRoute(builder: (context) => const PantallaInicioPaciente()),
               );
             }
           },
@@ -90,7 +90,7 @@ class _PantallaPerfilState extends State<PantallaPerfil> {
           if (index == 0) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const PantallaInicio()),
+              MaterialPageRoute(builder: (context) => const PantallaInicioPaciente()),
             );
           } else if (index == 1) {
             Navigator.pushReplacement(
@@ -190,7 +190,6 @@ class _PantallaPerfilState extends State<PantallaPerfil> {
                 _notificacionesCorreo = val;
               });
 
-              // 👈 Muestra el SnackBar verde flotante M3
               mostrarNotificacionCambiosGuardados(
                 context,
                 titulo: 'Cambios guardados',

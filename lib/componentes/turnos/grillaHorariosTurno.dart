@@ -1,85 +1,94 @@
 import 'package:flutter/material.dart';
-import 'package:mediturnos/componentes/turnos/selectorHoraTurno.dart';
-import 'package:mediturnos/configuracion/coloresApp.dart';
+import '../../configuracion/coloresApp.dart';
+import '../../turnos/datos/modelos/horarioDisponible.dart';
 
-/// Componente de grillas de horarios por turno (Mañana y Tarde).
+/// Grilla interactiva para seleccionar la hora del turno entre los horarios disponibles.
 class GrillaHorariosTurno extends StatelessWidget {
-  final String horaSeleccionada;
+  final List<HorarioDisponible> horarios;
+  final String? horaSeleccionada;
   final ValueChanged<String> alSeleccionarHora;
+  final bool cargando;
 
   const GrillaHorariosTurno({
     super.key,
+    required this.horarios,
     required this.horaSeleccionada,
     required this.alSeleccionarHora,
+    this.cargando = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Turno Mañana
-        const Row(
-          children: [
-            Icon(Icons.wb_sunny_outlined, size: 16, color: ColoresApp.textoSecundario),
-            SizedBox(width: 6),
-            Text(
-              'Turno mañana',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: ColoresApp.textoSecundario),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        _construirFilaHorarios('09:00 hs', true, '09:30 hs', true),
-        const SizedBox(height: 10),
-        _construirFilaHorarios('10:00 hs', false, '10:30 hs', true),
-        const SizedBox(height: 10),
-        _construirFilaHorarios('11:15 hs', true, '11:45 hs', false),
+    if (cargando) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 30),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
 
-        const SizedBox(height: 16),
-
-        // Turno Tarde
-        const Row(
-          children: [
-            Icon(Icons.nights_stay_outlined, size: 16, color: ColoresApp.textoSecundario),
-            SizedBox(width: 6),
-            Text(
-              'Turno tarde',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: ColoresApp.textoSecundario),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        _construirFilaHorarios('16:00 hs', true, '16:45 hs', true),
-        const SizedBox(height: 10),
-        _construirFilaHorarios('17:15 hs', false, null, false),
-      ],
-    );
-  }
-
-  Widget _construirFilaHorarios(String hora1, bool disp1, String? hora2, bool disp2) {
-    return Row(
-      children: [
-        Expanded(
-          child: SelectorHoraTurno(
-            hora: hora1,
-            estaDisponible: disp1,
-            estaSeleccionado: horaSeleccionada == hora1,
-            onTap: () => alSeleccionarHora(hora1),
+    if (horarios.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 30),
+        child: Center(
+          child: Text(
+            'No hay horarios disponibles para esta fecha.',
+            style: TextStyle(color: ColoresApp.textoSecundario, fontSize: 14),
+            textAlign: TextAlign.center,
           ),
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: hora2 != null
-              ? SelectorHoraTurno(
-            hora: hora2,
-            estaDisponible: disp2,
-            estaSeleccionado: horaSeleccionada == hora2,
-            onTap: () => alSeleccionarHora(hora2),
-          )
-              : const SizedBox(),
-        ),
-      ],
+      );
+    }
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        childAspectRatio: 2.5,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+      ),
+      itemCount: horarios.length,
+      itemBuilder: (context, index) {
+        final h = horarios[index];
+        final seleccionado = h.hora == horaSeleccionada;
+        final disponible = h.disponible;
+
+        return InkWell(
+          onTap: disponible ? () => alSeleccionarHora(h.hora) : null,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: seleccionado
+                  ? ColoresApp.primario
+                  : disponible
+                      ? Colors.white
+                      : const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: seleccionado
+                    ? ColoresApp.primario
+                    : disponible
+                        ? const Color(0xFFCBD5E1)
+                        : const Color(0xFFE2E8F0),
+              ),
+            ),
+            child: Text(
+              h.hora,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: seleccionado
+                    ? Colors.white
+                    : disponible
+                        ? ColoresApp.textoTitulo
+                        : ColoresApp.textoHint,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

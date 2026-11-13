@@ -1,24 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:mediturnos/configuracion/coloresApp.dart';
+import '../../configuracion/coloresApp.dart';
+import '../../turnos/datos/modelos/turnoDetalle.dart';
+import '../../turnos/datos/modelos/estadoTurno.dart';
+import '../../turnos/presentacion/estadoTurnoUi.dart';
 
-/// Tarjeta que muestra el turno actualmente asignado al paciente antes de modificarlo.
+/// Tarjeta que muestra el turno actualmente asignado antes de modificarlo.
 class TarjetaTurnoActualAsignado extends StatelessWidget {
-  final String nombreMedico;
-  final String especialidad;
-  final String matricula;
-  final String fecha;
-  final String hora;
-  final String consultorioSede;
+  final TurnoDetalle turno;
 
   const TarjetaTurnoActualAsignado({
     super.key,
-    this.nombreMedico = 'Dr. Juan Manuel Gómez',
-    this.especialidad = 'Cardiología Clínica',
-    this.matricula = 'Matrícula Nac. 104.920',
-    this.fecha = 'Jueves 24 de Octubre',
-    this.hora = '10:30 hs',
-    this.consultorioSede =
-        'Consultorio 4, Sede Central (Av. Pueyrredón 1443, CABA)',
+    required this.turno,
   });
 
   @override
@@ -31,8 +23,7 @@ class TarjetaTurnoActualAsignado extends StatelessWidget {
           children: [
             Row(
               children: const [
-                Icon(Icons.calendar_today_outlined,
-                    color: ColoresApp.primario, size: 20),
+                Icon(Icons.calendar_today_outlined, color: ColoresApp.primario, size: 20),
                 SizedBox(width: 8),
                 Text(
                   'Turno actual asignado',
@@ -45,22 +36,20 @@ class TarjetaTurnoActualAsignado extends StatelessWidget {
               ],
             ),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color(0xFFD1FAE5),
+                color: turno.estado.fondo,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(Icons.check_circle_outline,
-                      size: 12, color: Color(0xFF10B981)),
-                  SizedBox(width: 4),
+                children: [
+                  Icon(turno.estado.icono, size: 12, color: turno.estado.color),
+                  const SizedBox(width: 4),
                   Text(
-                    'Confirmado',
+                    turno.estado.etiqueta,
                     style: TextStyle(
-                      color: Color(0xFF10B981),
+                      color: turno.estado.color,
                       fontSize: 11,
                       fontWeight: FontWeight.bold,
                     ),
@@ -91,8 +80,7 @@ class TarjetaTurnoActualAsignado extends StatelessWidget {
                       color: ColoresApp.fondoIcono,
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Icon(Icons.medical_services_outlined,
-                        color: ColoresApp.primario, size: 24),
+                    child: const Icon(Icons.medical_services_outlined, color: ColoresApp.primario, size: 24),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -100,24 +88,21 @@ class TarjetaTurnoActualAsignado extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          nombreMedico,
-                          style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: ColoresApp.textoTitulo),
+                          turno.medico.nombreCompleto,
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: ColoresApp.textoTitulo),
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          especialidad,
-                          style: const TextStyle(
-                              fontSize: 12, color: ColoresApp.textoSecundario),
+                          turno.medico.especialidad.nombre,
+                          style: const TextStyle(fontSize: 12, color: ColoresApp.textoSecundario),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          matricula,
-                          style: const TextStyle(
-                              fontSize: 11, color: ColoresApp.textoSecundario),
-                        ),
+                        if (turno.medico.matricula != null && turno.medico.matricula!.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            'Matrícula: ${turno.medico.matricula}',
+                            style: const TextStyle(fontSize: 11, color: ColoresApp.textoSecundario),
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -130,48 +115,18 @@ class TarjetaTurnoActualAsignado extends StatelessWidget {
                   color: ColoresApp.fondoIcono.withOpacity(0.5),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.calendar_today_outlined,
-                            size: 14, color: ColoresApp.primario),
-                        const SizedBox(width: 8),
-                        Text(
-                          fecha,
-                          style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: ColoresApp.textoTitulo),
-                        ),
-                        const Text('  |  ',
-                            style:
-                                TextStyle(color: ColoresApp.textoSecundario)),
-                        Text(
-                          hora,
-                          style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: ColoresApp.primario),
-                        ),
-                      ],
+                    const Icon(Icons.calendar_today_outlined, size: 14, color: ColoresApp.primario),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${turno.fecha.day}/${turno.fecha.month}/${turno.fecha.year}',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: ColoresApp.textoTitulo),
                     ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on_outlined,
-                            size: 14, color: ColoresApp.textoSecundario),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            consultorioSede,
-                            style: const TextStyle(
-                                fontSize: 12,
-                                color: ColoresApp.textoSecundario),
-                          ),
-                        ),
-                      ],
+                    const Text('  |  ', style: TextStyle(color: ColoresApp.textoSecundario)),
+                    Text(
+                      '${turno.hora} hs',
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: ColoresApp.primario),
                     ),
                   ],
                 ),

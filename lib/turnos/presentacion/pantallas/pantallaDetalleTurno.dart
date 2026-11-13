@@ -1,25 +1,83 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import 'package:mediturnos/componentes/turnos/dialogoCancelarTurno.dart';
-import 'package:mediturnos/componentes/turnos/tarjetaDatosPacienteTurno.dart';
-import 'package:mediturnos/componentes/turnos/tarjetaEstadoReserva.dart';
-import 'package:mediturnos/componentes/turnos/tarjetaIndicacionesPaciente.dart';
-import 'package:mediturnos/componentes/turnos/tarjetaMedicoSede.dart';
-import 'package:mediturnos/configuracion/coloresApp.dart';
-
+import '../../../componentes/comunes/botonPrincipal.dart';
+import '../../../componentes/turnos/tarjetaDatosPacienteTurno.dart';
+import '../../../componentes/turnos/tarjetaEstadoReserva.dart';
+import '../../../componentes/turnos/tarjetaIndicacionesPaciente.dart';
+import '../../../componentes/turnos/tarjetaMedicoSede.dart';
+import '../../../configuracion/coloresApp.dart';
+import '../../../configuracion/estilosTexto.dart';
+import '../../datos/modelos/estadoTurno.dart';
+import '../../datos/modelos/turnoDetalle.dart';
+import '../../datos/repositorios/repositorioGestionTurnos.dart';
+import '../viewmodels/detalleTurnoViewModel.dart';
 import 'pantallaModificarTurno.dart';
 
-/// Pantalla de detalle completo de un turno médico (08. Detalle del turno).
+/// Pantalla para ver el detalle completo de un turno médico (08. Detalle del turno).
 class PantallaDetalleTurno extends StatelessWidget {
+  final TurnoDetalle turno;
   final bool soloLectura;
 
   const PantallaDetalleTurno({
     super.key,
+    required this.turno,
     this.soloLectura = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (context) => DetalleTurnoViewModel(
+        context.read<RepositorioGestionTurnos>(),
+        turno,
+      ),
+      child: _VistaDetalleTurno(soloLectura: soloLectura),
+    );
+  }
+}
+
+class _VistaDetalleTurno extends StatelessWidget {
+  final bool soloLectura;
+
+  const _VistaDetalleTurno({required this.soloLectura});
+
+  Future<void> _confirmarCancelar(BuildContext context, DetalleTurnoViewModel vm) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('¿Cancelar turno?'),
+        content: const Text('¿Estás seguro de que deseas cancelar este turno?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Volver')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Sí, cancelar'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar == true && context.mounted) {
+      final exito = await vm.cancelar();
+      if (!context.mounted) return;
+      if (exito) {
+        Navigator.pop(context, true);
+      } else if (vm.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(vm.error!), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final vm = context.watch<DetalleTurnoViewModel>();
+    final t = vm.turno;
+    final bool ocultarAcciones = soloLectura || t.estado == EstadoTurno.cancelado || t.estado == EstadoTurno.atendido;
+
     return Scaffold(
       backgroundColor: ColoresApp.fondoPantalla,
       appBar: AppBar(
@@ -29,131 +87,57 @@ class PantallaDetalleTurno extends StatelessWidget {
           icon: const Icon(Icons.arrow_back, color: ColoresApp.textoTitulo),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Column(
-          children: const [
-            Text(
-              'Detalle del turno',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-                color: ColoresApp.textoTitulo,
-              ),
-            ),
-            SizedBox(height: 2),
-            Text(
-              'ID #TR-884920',
-              style: TextStyle(
-                fontSize: 12,
-                color: ColoresApp.textoSecundario,
-              ),
-            ),
-          ],
+        title: const Text(
+          'Detalle del Turno',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: ColoresApp.textoTitulo),
         ),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Tarjeta superior: Estado, Fecha y Reserva
-            const TarjetaEstadoReserva(),
-
+            TarjetaEstadoReserva(turno: t),
             const SizedBox(height: 16),
-
-            // 2. Tarjeta del Médico y Sede
-            const TarjetaMedicoSede(),
-
+            TarjetaMedicoSede(medico: t.medico),
             const SizedBox(height: 16),
-
-            // 3. Tarjeta de Datos del Paciente
-            const TarjetaDatosPacienteTurno(),
-
+            TarjetaDatosPacienteTurno(paciente: t.paciente),
             const SizedBox(height: 16),
-
-            // 4. Tarjeta de Indicaciones para el Paciente
             const TarjetaIndicacionesPaciente(),
-
-            // Acciones de modificación y cancelación (Ocultas en modo soloLectura / Historial)
-            if (!soloLectura) ...[
+            if (!ocultarAcciones) ...[
               const SizedBox(height: 24),
-
-              // Botón Modificar Turno
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const PantallaModificarTurno(),
-                      ),
-                    );
-                  },
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: ColoresApp.primario,
-                    side: const BorderSide(
-                        color: ColoresApp.primario, width: 1.5),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
+              BotonPrincipal(
+                texto: 'Modificar turno',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PantallaModificarTurno(turno: t),
                     ),
-                  ),
-                  icon: const Icon(Icons.edit_calendar_outlined, size: 20),
-                  label: const Text(
-                    'Modificar turno',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              // Botón Cancelar Turno
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: TextButton.icon(
-                  onPressed: () async {
-                    final bool? confirmoCancelacion =
-                        await mostrarDialogoCancelarTurno(
-                      context: context,
-                      doctor: 'Dra. Gabriela Pellegrini',
-                      especialidad: 'Cardiología',
-                      fechaHora: 'Jueves 24 Oct · 10:30 hs',
-                      consultorio: 'Consultorio 4',
-                    );
-
-                    if (confirmoCancelacion == true && context.mounted) {
-                      Navigator.pop(context);
+                  ).then((resultado) {
+                    if (resultado == true && context.mounted) {
+                      Navigator.pop(context, true);
                     }
-                  },
-                  style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFFDC2626),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                  ),
-                  icon: const Icon(Icons.cancel_outlined, size: 20),
-                  label: const Text(
-                    'Cancelar turno',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ),
+                  });
+                },
+                cargando: vm.procesando,
               ),
-
-              const SizedBox(height: 20),
-
-              const Center(
-                child: Text(
-                  'Modificaciones y cancelaciones permitidas hasta el Jueves 23 de Noviembre a las 10:30 hs.',
-                  style: TextStyle(
-                      fontSize: 11, color: ColoresApp.textoSecundario),
-                  textAlign: TextAlign.center,
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: vm.procesando ? null : () => _confirmarCancelar(context, vm),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(color: Colors.red),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                  ),
+                  child: const Text('Cancelar turno'),
                 ),
               ),
             ],
-
-            const SizedBox(height: 20),
           ],
         ),
       ),

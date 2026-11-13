@@ -1,6 +1,7 @@
 package com.mediturnos.controller;
 
 import com.mediturnos.dto.*;
+import com.mediturnos.service.DisponibilidadService;
 import com.mediturnos.service.HorarioAtencionService;
 import com.mediturnos.service.MedicoService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * Controlador REST para la administración de médicos y sus horarios de atención.
+ * Controlador REST para la administración de médicos, sus horarios de atención y disponibilidad.
  */
 @RestController
 @RequestMapping("/medicos")
@@ -23,7 +24,10 @@ public class MedicoController {
     @Autowired
     private HorarioAtencionService horarioAtencionService;
 
-    /*
+    @Autowired
+    private DisponibilidadService disponibilidadService;
+
+    /**
      * Endpoint GET /medicos
      * Mantiene compatibilidad actual (solo activos por defecto, filtra por especialidadId si se especifica)
      * y soporta el parámetro opcional incluirInactivos=true para incluir médicos inactivos.
@@ -35,7 +39,7 @@ public class MedicoController {
         return medicoService.listar(especialidadId, incluirInactivos);
     }
 
-    /*
+    /**
      * Endpoint GET /medicos/{id}
      * Retorna el detalle de un médico por su ID.
      */
@@ -44,7 +48,7 @@ public class MedicoController {
         return medicoService.obtenerPorId(id);
     }
 
-    /*
+    /**
      * Endpoint POST /medicos
      * Registra un nuevo médico (retorna 201 Created).
      */
@@ -54,7 +58,7 @@ public class MedicoController {
         return medicoService.crear(solicitud);
     }
 
-    /*
+    /**
      * Endpoint PUT /medicos/{id}
      * Modifica la información de un médico existente.
      */
@@ -88,5 +92,16 @@ public class MedicoController {
     @PutMapping("/{id}/horarios")
     public List<HorarioRespuesta> reemplazarAgenda(@PathVariable Integer id, @RequestBody AgendaSolicitud solicitud) {
         return horarioAtencionService.reemplazarAgenda(id, solicitud);
+    }
+
+    /**
+     * Endpoint GET /medicos/{id}/disponibilidad?fecha=YYYY-MM-DD
+     * Consulta los horarios libres y ocupados de un médico para una fecha dada.
+     */
+    @GetMapping("/{id}/disponibilidad")
+    public List<HorarioDisponibilidadRespuesta> obtenerDisponibilidad(
+            @PathVariable Integer id,
+            @RequestParam String fecha) {
+        return disponibilidadService.obtenerDisponibilidad(id, fecha);
     }
 }

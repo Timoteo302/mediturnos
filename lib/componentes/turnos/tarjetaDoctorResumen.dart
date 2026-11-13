@@ -1,21 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:mediturnos/configuracion/coloresApp.dart';
+import '../../configuracion/coloresApp.dart';
 
-/// Tarjeta de resumen de información del médico seleccionado para la reserva.
+/// Tarjeta que resume los datos del médico seleccionado para la reserva del turno.
 class TarjetaDoctorResumen extends StatelessWidget {
   final String nombre;
   final String especialidad;
-  final String sedeConsultorio;
-  final String matricula;
-  final String tipoConsulta;
+  final String? matricula;
 
   const TarjetaDoctorResumen({
     super.key,
-    this.nombre = 'Dr. Juan Manuel Gómez',
-    this.especialidad = 'Cardiología',
-    this.sedeConsultorio = 'Sede Central - Consultorio 4',
-    this.matricula = 'MN 114.820',
-    this.tipoConsulta = 'Consulta presencial (45 min) Particular y Obras Sociales',
+    required this.nombre,
+    required this.especialidad,
+    this.matricula,
   });
 
   @override
@@ -27,120 +23,54 @@ class TarjetaDoctorResumen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
-      child: Column(
+      child: Row(
         children: [
-          Row(
-            children: [
-              Stack(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFE8F3FF),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.person_outline,
-                      color: ColoresApp.primario,
-                      size: 26,
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(1),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.verified,
-                        color: ColoresApp.primario,
-                        size: 16,
-                      ),
-                    ),
-                  ),
-                ],
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: const Color(0xFFE8F3FF),
+            child: Text(
+              nombre.isNotEmpty ? nombre.substring(0, 2).toUpperCase() : 'DR',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: ColoresApp.primario,
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          nombre,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: ColoresApp.textoTitulo,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE8F3FF),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            especialidad,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: ColoresApp.primario,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        const Icon(Icons.location_on_outlined, size: 13, color: ColoresApp.textoSecundario),
-                        const SizedBox(width: 4),
-                        Text(
-                          sedeConsultorio,
-                          style: const TextStyle(fontSize: 12, color: ColoresApp.textoSecundario),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Row(
-                      children: [
-                        const Icon(Icons.badge_outlined, size: 13, color: ColoresApp.textoSecundario),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Matrícula Nacional: $matricula',
-                          style: const TextStyle(fontSize: 12, color: ColoresApp.textoSecundario),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
-          const SizedBox(height: 12),
-          const Divider(height: 1, color: Color(0xFFE2E8F0)),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              const Icon(Icons.medical_services_outlined, size: 15, color: ColoresApp.primario),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  tipoConsulta,
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  nombre,
                   style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
                     color: ColoresApp.textoTitulo,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 4),
+                Text(
+                  especialidad,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: ColoresApp.primario,
+                  ),
+                ),
+                if (matricula != null && matricula!.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    'Matrícula: $matricula',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: ColoresApp.textoSecundario,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ],
       ),

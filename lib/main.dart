@@ -17,6 +17,10 @@ import 'medicos/datos/repositorios/repositorioMedicos.dart';
 import 'medicos/datos/repositorios/repositorioMedicosApi.dart';
 import 'medicos/datos/fuentes/clienteMedicosApi.dart';
 
+import 'turnos/datos/repositorios/repositorioGestionTurnos.dart';
+import 'turnos/datos/repositorios/repositorioGestionTurnosApi.dart';
+import 'turnos/datos/fuentes/clienteTurnosApi.dart';
+
 import 'package:mediturnos/servicios/verificadorConexion.dart';
 
 import 'servicios/servicioMonitoreoSincronizacion.dart';
@@ -56,6 +60,11 @@ class MediTurnosApp extends StatelessWidget {
         Provider<RepositorioMedicos>(
           create: (_) => RepositorioMedicosApi(
             ClienteMedicosApi(http.Client()),
+          ),
+        ),
+        Provider<RepositorioGestionTurnos>(
+          create: (_) => RepositorioGestionTurnosApi(
+            ClienteTurnosApi(http.Client()),
           ),
         ),
 

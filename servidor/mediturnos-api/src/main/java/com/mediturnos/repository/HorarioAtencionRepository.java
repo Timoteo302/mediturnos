@@ -14,6 +14,9 @@ public interface HorarioAtencionRepository extends JpaRepository<HorarioAtencion
     // Busca los horarios activos de un médico ordenados por día y hora de inicio
     List<HorarioAtencion> findByMedicoIdAndActivoTrueOrderByDiaSemanaAscHoraInicioAsc(Integer medicoId);
 
+    // Busca los horarios de atención activos de un médico para un día de la semana específico
+    List<HorarioAtencion> findByMedicoIdAndDiaSemanaAndActivoTrueOrderByHoraInicioAsc(Integer medicoId, Integer diaSemana);
+
     // Elimina de forma masiva todos los horarios (activos e inactivos) pertenecientes a un médico
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("DELETE FROM HorarioAtencion h WHERE h.medico.id = :medicoId")

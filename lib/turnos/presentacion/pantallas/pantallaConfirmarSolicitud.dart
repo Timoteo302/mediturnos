@@ -1,207 +1,137 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
 
-import 'package:mediturnos/autenticacion/presentacion/viewmodels/autenticacionViewModel.dart';
-import 'package:mediturnos/componentes/turnos/avisoImportanteRevision.dart';
-import 'package:mediturnos/componentes/turnos/headerReservaTemporal.dart';
-import 'package:mediturnos/componentes/turnos/tarjetaResumenTurno.dart';
-import 'package:mediturnos/configuracion/coloresApp.dart';
-import 'package:mediturnos/configuracion/estilosTexto.dart';
-import 'package:mediturnos/servicios/servicioMonitoreoSincronizacion.dart';
-import 'package:mediturnos/turnos/datos/modelos/turno.dart';
-import 'package:mediturnos/turnos/datos/repositorios/repositorioTurnosImpl.dart';
-import 'package:mediturnos/turnos/logica/casosDeUsoTurnos.dart';
+import '../../../componentes/comunes/botonPrincipal.dart';
+import '../../../componentes/turnos/tarjetaDatosPacienteTurno.dart';
+import '../../../componentes/turnos/tarjetaIndicacionesPaciente.dart';
+import '../../../componentes/turnos/tarjetaMedicoSede.dart';
+import '../../../componentes/turnos/tarjetaResumenTurno.dart';
+import '../../../configuracion/coloresApp.dart';
+import '../../../configuracion/estilosTexto.dart';
+import '../../../autenticacion/presentacion/viewmodels/autenticacionViewModel.dart';
+import '../viewmodels/solicitudTurnoViewModel.dart';
+import 'pantallaMisTurnos.dart';
+import '../../datos/modelos/turnoDetalle.dart';
 
-/// Pantalla de confirmación y revisión final del turno (Paso 4).
+/// Pantalla para confirmar los datos de la solicitud de turno médico (07. Confirmar solicitud).
 class PantallaConfirmarSolicitud extends StatelessWidget {
-  final DateTime fecha;
-  final String hora;
-  final int medicoId;
+  const PantallaConfirmarSolicitud({super.key});
 
-  const PantallaConfirmarSolicitud({
-    super.key,
-    required this.fecha,
-    required this.hora,
-    required this.medicoId,
-  });
+  Future<void> _confirmarTurno(BuildContext context) async {
+    final authVm = context.read<AutenticacionViewModel>();
+    final pacienteId = authVm.usuarioActual?.paciente?.id;
+
+    if (pacienteId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No se encontró el perfil de paciente asociado.'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    final vm = context.read<SolicitudTurnoViewModel>();
+    final turno = await vm.confirmar(pacienteId);
+
+    if (!context.mounted) return;
+
+    if (turno != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Turno solicitado. Queda pendiente de confirmación.'), backgroundColor: Colors.green),
+      );
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const PantallaMisTurnos()),
+        (route) => false,
+      );
+    } else if (vm.huboConflictoDeHorario) {
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Horario no disponible'),
+          content: Text(vm.errorGeneral ?? 'Ese horario ya fue reservado. Elegí otro.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                vm.reiniciar();
+                Navigator.pop(context); // Volver a seleccionar turno
+              },
+              child: const Text('Aceptar'),
+            ),
+          ],
+        ),
+      );
+    } else if (vm.errorGeneral != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(vm.errorGeneral!), backgroundColor: Colors.red),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final vm = context.watch<SolicitudTurnoViewModel>();
+    final authVm = context.read<AutenticacionViewModel>();
+    final paciente = authVm.usuarioActual?.paciente;
+
     return Scaffold(
       backgroundColor: ColoresApp.fondoPantalla,
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back, color: ColoresApp.textoTitulo),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Confirmar solicitud'),
-        actions: [
-          IconButton(icon: const Icon(Icons.person_outline), onPressed: () {}),
-        ],
+        title: const Text(
+          'Confirmar Solicitud',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: ColoresApp.textoTitulo),
+        ),
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Header con temporizador de reserva
-            const HeaderReservaTemporal(),
-
+            const Text('Resumen de la cita', style: EstilosTexto.tituloGrande),
             const SizedBox(height: 16),
-
-            // 2. Tarjeta resumen del turno
             TarjetaResumenTurno(
-              hora: '$hora hs',
+              medico: MedicoDetalle.fromJson(vm.medico.toJson()),
+              fecha: vm.fechaSeleccionada,
+              hora: vm.horaSeleccionada ?? '00:00',
             ),
-
-            const SizedBox(height: 20),
-
-            // 3. Aviso importante de revisión
-            const AvisoImportanteRevision(),
-
-            const SizedBox(height: 24),
-
-            // 4. Botón Principal: Confirmar solicitud
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton.icon(
-                onPressed: () async {
-                  final usuario =
-                      context.read<AutenticacionViewModel>().usuarioActual;
-
-                  final pacienteId = usuario?.paciente?.id;
-
-                  if (pacienteId == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'No se encontró el paciente autenticado.',
-                        ),
-                      ),
-                    );
-                    return;
-                  }
-
-                  final turno = Turno(
-                    id: DateTime.now().microsecondsSinceEpoch,
-                    paciente: 'Sofía Martínez',
-                    medico: 'Dr. Juan Manuel Gómez',
-                    especialidad: 'Cardiología',
-                    fecha: fecha.toIso8601String().split('T').first,
-                    hora: hora,
-                    estado: 'PENDIENTE',
-                    sincronizado: false,
-                    pacienteId: pacienteId,
-                    medicoId: medicoId,
-                    claveSolicitud: const Uuid().v4(),
-                  );
-
-                  try {
-                    final casosDeUso = CasosDeUsoTurnos(
-                      RepositorioTurnosImpl(),
-                    );
-
-                    await casosDeUso.registrarTurno(turno);
-                    if (!context.mounted) return;
-
-                    context
-                        .read<ServicioMonitoreoSincronizacion>()
-                        .sincronizarAhora();
-
-                    if (!context.mounted) return;
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Solicitud guardada localmente. Pendiente de sincronización.',
-                        ),
-                      ),
-                    );
-
-                    Navigator.pop(context);
-                  } catch (e) {
-                    if (!context.mounted) return;
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Error al guardar la solicitud: $e'),
-                      ),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: ColoresApp.primarioBoton,
-                  foregroundColor: ColoresApp.textoBoton,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                ),
-                icon: const Icon(Icons.check_circle_outline, size: 20),
-                label: const Text(
-                  'Confirmar solicitud',
-                  style: EstilosTexto.textoBotonPrincipal,
-                ),
+            const SizedBox(height: 16),
+            TarjetaMedicoSede(medico: MedicoDetalle.fromJson(vm.medico.toJson())),
+            const SizedBox(height: 16),
+            TarjetaDatosPacienteTurno(
+              paciente: PacienteDetalle(
+                id: paciente?.id ?? 1,
+                nombre: authVm.usuarioActual?.nombre ?? 'Paciente',
+                apellido: authVm.usuarioActual?.apellido ?? '',
+                dni: paciente?.dni ?? '00000000',
+                telefono: paciente?.telefono,
               ),
             ),
-
+            const SizedBox(height: 16),
+            const TarjetaIndicacionesPaciente(),
+            const SizedBox(height: 24),
+            BotonPrincipal(
+              texto: 'Confirmar solicitud',
+              onPressed: () => _confirmarTurno(context),
+              cargando: vm.guardando,
+            ),
             const SizedBox(height: 12),
-
-            // 5. Botón Secundario: Volver a editar
             SizedBox(
               width: double.infinity,
-              height: 52,
-              child: OutlinedButton.icon(
+              child: OutlinedButton(
                 onPressed: () => Navigator.pop(context),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: ColoresApp.primario,
-                  side: const BorderSide(
-                    color: ColoresApp.primario,
-                    width: 1.5,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
-                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
                 ),
-                icon: const Icon(Icons.edit_calendar_outlined, size: 20),
-                label: const Text(
-                  'Volver a editar',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: ColoresApp.primario,
-                  ),
-                ),
+                child: const Text('Volver a editar'),
               ),
             ),
-
-            const SizedBox(height: 24),
-
-            // 6. Nota de seguridad inferior
-            Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(
-                    Icons.lock_outline,
-                    size: 14,
-                    color: ColoresApp.textoSecundario,
-                  ),
-                  SizedBox(width: 6),
-                  Text(
-                    'Tus datos médicos se procesan de forma confidencial y segura.',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: ColoresApp.textoSecundario,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
           ],
         ),
       ),
