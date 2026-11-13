@@ -8,6 +8,10 @@ abstract class RepositorioTurnos {
   Future<void> modificarTurno(Turno turno);
 
   Future<void> eliminarTurno(int id);
+
+  Future<void> reemplazarTurno(int idAnterior, Turno turno);
+
+  Future<void> marcarErrorSincronizacion(int id, String error);
 }
 
 

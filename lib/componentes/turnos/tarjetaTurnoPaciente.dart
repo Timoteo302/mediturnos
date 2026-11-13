@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../configuracion/coloresApp.dart';
 import '../../turnos/datos/modelos/turnoDetalle.dart';
 import '../../turnos/datos/modelos/estadoTurno.dart';
@@ -45,26 +46,49 @@ class TarjetaTurnoPaciente extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
-                  color: !turno.sincronizado ? Colors.orange.withOpacity(0.1) : turno.estado.fondo,
+                  color: turno.errorSincronizacion != null
+                      ? Colors.red.withOpacity(0.1)
+                      : !turno.sincronizado
+                      ? Colors.orange.withOpacity(0.1)
+                      : turno.estado.fondo,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      !turno.sincronizado ? Icons.sync : turno.estado.icono,
+                      turno.errorSincronizacion != null
+                          ? Icons.error_outline
+                          : !turno.sincronizado
+                          ? Icons.sync
+                          : turno.estado.icono,
                       size: 14,
-                      color: !turno.sincronizado ? Colors.orange : turno.estado.color,
+                      color: turno.errorSincronizacion != null
+                          ? Colors.red
+                          : !turno.sincronizado
+                          ? Colors.orange
+                          : turno.estado.color,
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      !turno.sincronizado ? 'Pendiente de sincronización' : turno.estado.etiqueta,
+                      turno.errorSincronizacion != null
+                          ? 'Error de sincronización'
+                          : !turno.sincronizado
+                          ? 'Pendiente de sincronización'
+                          : turno.estado.etiqueta,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: !turno.sincronizado ? Colors.orange[800] : turno.estado.color,
+                        color: turno.errorSincronizacion != null
+                            ? Colors.red
+                            : !turno.sincronizado
+                            ? Colors.orange[800]
+                            : turno.estado.color,
                       ),
                     ),
                   ],
@@ -75,16 +99,27 @@ class TarjetaTurnoPaciente extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             turno.medico.nombreCompleto,
-            style: const TextStyle(fontSize: 13, color: ColoresApp.textoSecundario),
+            style: const TextStyle(
+              fontSize: 13,
+              color: ColoresApp.textoSecundario,
+            ),
           ),
           const SizedBox(height: 12),
           Row(
             children: [
-              const Icon(Icons.calendar_today_outlined, size: 15, color: ColoresApp.primario),
+              const Icon(
+                Icons.calendar_today_outlined,
+                size: 15,
+                color: ColoresApp.primario,
+              ),
               const SizedBox(width: 6),
               Text(
                 '${turno.fecha.day}/${turno.fecha.month}/${turno.fecha.year} - ${turno.hora} hs',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: ColoresApp.textoTitulo),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: ColoresApp.textoTitulo,
+                ),
               ),
             ],
           ),
