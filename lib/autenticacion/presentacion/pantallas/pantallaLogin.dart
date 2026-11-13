@@ -57,9 +57,14 @@ class _PantallaLoginState extends State<PantallaLogin> {
           const SnackBar(
             content: Text('Ingresaste sin conexión. Se usan los datos guardados en este dispositivo.'),
             backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
           ),
         );
+        // Pequeña pausa para que el SnackBar llegue a visualizarse antes de navegar
+        await Future.delayed(const Duration(milliseconds: 800));
       }
+
+      if (!mounted) return;
 
       if (vm.esAdmin) {
         Navigator.pushReplacement(
