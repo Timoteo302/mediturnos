@@ -67,6 +67,10 @@ class _PantallaPerfilState extends State<PantallaPerfil> {
         child: Column(
           children: [
             TarjetaEncabezadoPerfil(
+              nombre: usuario != null ? '${usuario.nombre} ${usuario.apellido}' : 'Paciente',
+              iniciales: usuario != null && usuario.nombre.isNotEmpty && usuario.apellido.isNotEmpty
+                  ? '${usuario.nombre[0]}${usuario.apellido[0]}'.toUpperCase()
+                  : 'PA',
               onEditar: () {
                 Navigator.push(
                   context,
