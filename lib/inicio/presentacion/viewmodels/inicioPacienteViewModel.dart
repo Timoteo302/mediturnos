@@ -60,14 +60,17 @@ class InicioPacienteViewModel extends ChangeNotifier {
     } on ExcepcionTurnos catch (e) {
       _cargando = false;
       if (e.tipo == ErrorTurnos.sinConexion) {
-        _error = 'Necesitás conexión con el servidor para cargar tus turnos.';
+        // En modo offline sin caché local de turnos, tratamos la lista como vacía para no bloquear la UI
+        _turnos = [];
+        _error = null;
       } else {
         _error = e.mensajeServidor ?? 'No pudimos cargar tus turnos.';
       }
       notifyListeners();
     } catch (_) {
       _cargando = false;
-      _error = 'No pudimos cargar tus turnos.';
+      _turnos = [];
+      _error = null;
       notifyListeners();
     }
   }

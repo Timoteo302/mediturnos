@@ -61,11 +61,18 @@ class MisTurnosViewModel extends ChangeNotifier {
       notifyListeners();
     } on ExcepcionTurnos catch (e) {
       _cargando = false;
-      _error = e.mensajeServidor ?? 'No pudimos cargar tus turnos.';
+      if (e.tipo == ErrorTurnos.sinConexion) {
+        // En modo offline sin caché local, tratamos la lista como vacía para no bloquear la pantalla
+        _turnos = [];
+        _error = null;
+      } else {
+        _error = e.mensajeServidor ?? 'No pudimos cargar tus turnos.';
+      }
       notifyListeners();
     } catch (_) {
       _cargando = false;
-      _error = 'No pudimos cargar tus turnos.';
+      _turnos = [];
+      _error = null;
       notifyListeners();
     }
   }
