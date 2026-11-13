@@ -257,16 +257,6 @@ class _VistaTodosLosTurnosState extends State<_VistaTodosLosTurnos> {
                     ],
                   ),
                 ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
-        backgroundColor: ColoresApp.primarioBoton,
-        elevation: 2,
-        icon: const Icon(Icons.add, color: ColoresApp.textoBoton),
-        label: const Text(
-          'Nuevo turno',
-          style: TextStyle(fontWeight: FontWeight.bold, color: ColoresApp.textoBoton),
-        ),
-      ),
       bottomNavigationBar: const BarraNavegacionAdmin(indiceActual: 1),
     );
   }

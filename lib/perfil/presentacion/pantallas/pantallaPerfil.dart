@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:mediturnos/autenticacion/presentacion/viewmodels/autenticacionViewModel.dart';
 import 'package:mediturnos/autenticacion/presentacion/pantallas/pantallaLogin.dart';
 import 'package:mediturnos/componentes/comunes/barraNavegacion.dart';
 import 'package:mediturnos/componentes/perfil/tarjetaAvisosPerfil.dart';
@@ -28,6 +30,10 @@ class _PantallaPerfilState extends State<PantallaPerfil> {
 
   @override
   Widget build(BuildContext context) {
+    final authVm = context.watch<AutenticacionViewModel>();
+    final usuario = authVm.usuarioActual;
+    final paciente = usuario?.paciente;
+
     return Scaffold(
       backgroundColor: ColoresApp.fondoPantalla,
       appBar: AppBar(
@@ -69,11 +75,11 @@ class _PantallaPerfilState extends State<PantallaPerfil> {
               },
             ),
             const SizedBox(height: 16),
-            _construirSeccionDatosPersonales(),
+            _construirSeccionDatosPersonales(usuario, paciente),
             const SizedBox(height: 16),
             _construirSeccionAvisos(),
             const SizedBox(height: 24),
-            _construirBotonCerrarSesion(),
+            _construirBotonCerrarSesion(context),
             const SizedBox(height: 12),
             const Text(
               'Versión 2.4.1 (Android M3)',
@@ -114,12 +120,14 @@ class _PantallaPerfilState extends State<PantallaPerfil> {
     );
   }
 
-  Widget _construirBotonCerrarSesion() {
+  Widget _construirBotonCerrarSesion(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.pushReplacement(
+        context.read<AutenticacionViewModel>().cerrarSesion();
+        Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const PantallaLogin()),
+          (route) => false,
         );
       },
       child: Row(
@@ -136,7 +144,7 @@ class _PantallaPerfilState extends State<PantallaPerfil> {
     );
   }
 
-  Widget _construirSeccionDatosPersonales() {
+  Widget _construirSeccionDatosPersonales(usuario, paciente) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -155,13 +163,13 @@ class _PantallaPerfilState extends State<PantallaPerfil> {
             ],
           ),
           const SizedBox(height: 10),
-          const ItemDatoPerfil(icono: Icons.assignment_ind_outlined, etiqueta: 'Documento Nacional (DNI)', valor: '36.120.455'),
+          ItemDatoPerfil(icono: Icons.assignment_ind_outlined, etiqueta: 'Documento Nacional (DNI)', valor: paciente?.dni ?? 'No especificado'),
           const Divider(height: 1, color: Color(0xFFE2E8F0)),
-          const ItemDatoPerfil(icono: Icons.medical_services_outlined, etiqueta: 'Obra Social / Prepaga', valor: 'OSDE 210', subvalor: 'Credencial N° 2309-8472910-01'),
+          const ItemDatoPerfil(icono: Icons.medical_services_outlined, etiqueta: 'Cobertura médica', valor: 'Particular / General'),
           const Divider(height: 1, color: Color(0xFFE2E8F0)),
-          const ItemDatoPerfil(icono: Icons.email_outlined, etiqueta: 'Correo Electrónico', valor: 'sofia.martinez@email.com'),
+          ItemDatoPerfil(icono: Icons.email_outlined, etiqueta: 'Correo Electrónico', valor: usuario?.email ?? 'No especificado'),
           const Divider(height: 1, color: Color(0xFFE2E8F0)),
-          const ItemDatoPerfil(icono: Icons.phone_outlined, etiqueta: 'Teléfono de contacto', valor: '+54 11 4589-2311'),
+          ItemDatoPerfil(icono: Icons.phone_outlined, etiqueta: 'Teléfono de contacto', valor: paciente?.telefono ?? 'No especificado'),
         ],
       ),
     );
