@@ -14,6 +14,7 @@ import 'package:mediturnos/turnos/presentacion/pantallas/pantallaBuscarMedicos.d
 import 'package:mediturnos/turnos/presentacion/pantallas/pantallaMisTurnos.dart';
 import 'package:mediturnos/turnos/presentacion/pantallas/pantallaDetalleTurno.dart';
 import 'package:mediturnos/turnos/datos/repositorios/repositorioGestionTurnos.dart';
+import 'package:mediturnos/turnos/logica/formatoFechaEspanol.dart';
 import '../viewmodels/inicioPacienteViewModel.dart';
 
 /// Pantalla principal de inicio para el paciente (03A. Inicio).
