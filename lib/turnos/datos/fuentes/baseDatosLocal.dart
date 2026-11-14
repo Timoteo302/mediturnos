@@ -13,7 +13,7 @@ class BaseDatosLocal {
 
     _baseDatos = await openDatabase(
       ruta,
-      version: 3,
+      version: 5,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE turnos (
@@ -28,7 +28,31 @@ class BaseDatosLocal {
             pacienteId INTEGER,
             medicoId INTEGER,
             claveSolicitud TEXT,
-            errorSincronizacion TEXT
+            errorSincronizacion TEXT,
+            operacionPendiente TEXT
+          )
+        ''');
+
+        await db.execute('''
+          CREATE TABLE medicos (
+            id INTEGER PRIMARY KEY,
+            datos TEXT NOT NULL,
+            sincronizado INTEGER NOT NULL DEFAULT 1,
+            operacionPendiente TEXT
+          )
+        ''');
+
+        await db.execute('''
+          CREATE TABLE especialidades (
+            id INTEGER PRIMARY KEY,
+            datos TEXT NOT NULL
+          )
+        ''');
+
+        await db.execute('''
+          CREATE TABLE horarios_medico (
+            medicoId INTEGER PRIMARY KEY,
+            datos TEXT NOT NULL
           )
         ''');
       },
@@ -38,11 +62,41 @@ class BaseDatosLocal {
           await db.execute('ALTER TABLE turnos ADD COLUMN medicoId INTEGER');
           await db.execute('ALTER TABLE turnos ADD COLUMN claveSolicitud TEXT');
         }
-
         if (oldVersion < 3) {
           await db.execute(
             'ALTER TABLE turnos ADD COLUMN errorSincronizacion TEXT',
           );
+        }
+        if (oldVersion < 4) {
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS medicos (
+              id INTEGER PRIMARY KEY,
+              datos TEXT NOT NULL
+            )
+          ''');
+        }
+        if (oldVersion < 5) {
+          await db.execute(
+            'ALTER TABLE turnos ADD COLUMN operacionPendiente TEXT',
+          );
+          await db.execute(
+            'ALTER TABLE medicos ADD COLUMN sincronizado INTEGER NOT NULL DEFAULT 1',
+          );
+          await db.execute(
+            'ALTER TABLE medicos ADD COLUMN operacionPendiente TEXT',
+          );
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS especialidades (
+              id INTEGER PRIMARY KEY,
+              datos TEXT NOT NULL
+            )
+          ''');
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS horarios_medico (
+              medicoId INTEGER PRIMARY KEY,
+              datos TEXT NOT NULL
+            )
+          ''');
         }
       },
     );

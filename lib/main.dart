@@ -16,6 +16,8 @@ import 'autenticacion/presentacion/pantallas/pantallaLogin.dart';
 import 'autenticacion/presentacion/viewmodels/autenticacionViewModel.dart';
 import 'configuracion/temaApp.dart';
 
+import 'medicos/datos/repositorios/repositorioMedicosOfflineFirst.dart';
+import 'medicos/datos/fuentes/almacenMedicosLocal.dart';
 import 'medicos/datos/repositorios/repositorioMedicos.dart';
 import 'medicos/datos/repositorios/repositorioMedicosApi.dart';
 import 'medicos/datos/fuentes/clienteMedicosApi.dart';
@@ -60,8 +62,9 @@ class MediTurnosApp extends StatelessWidget {
               AutenticacionViewModel(context.read<RepositorioAutenticacion>()),
         ),
         Provider<RepositorioMedicos>(
-          create: (_) => RepositorioMedicosApi(
-            ClienteMedicosApi(http.Client()),
+          create: (_) => RepositorioMedicosOfflineFirst(
+            remoto: RepositorioMedicosApi(ClienteMedicosApi(http.Client())),
+            local: AlmacenMedicosLocal(),
           ),
         ),
         Provider<RepositorioGestionTurnos>(
