@@ -4,6 +4,8 @@ import 'package:path/path.dart';
 import 'package:mediturnos/autenticacion/datos/modelos/usuario.dart';
 import 'almacenSesionLocal.dart';
 
+// Esta clase maneja una base de datos SQLite independiente (mediturnos_sesion.db).
+// Guarda hashes de contraseña y credenciales del usuario, por lo que conviene aislarla de los datos de turnos y médicos.
 class AlmacenSesionLocalSqlite implements AlmacenSesionLocal {
   static Database? _database;
 

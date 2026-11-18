@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
-import 'package:mediturnos/turnos/datos/fuentes/baseDatosLocal.dart';
+import 'package:mediturnos/configuracion/baseDatosLocal.dart';
 
 import '../modelos/medico.dart';
 import '../modelos/especialidad.dart';

@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../configuracion/configuracionServidor.dart';
-import '../turnos/datos/fuentes/baseDatosLocal.dart';
+import '../configuracion/baseDatosLocal.dart';
 import '../turnos/datos/modelos/turno.dart';
 import '../turnos/datos/repositorios/repositorioTurnos.dart';
 

@@ -1,6 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 
-import '../baseDatosLocal.dart';
+import 'package:mediturnos/configuracion/baseDatosLocal.dart';
 import '../../modelos/turnoDetalle.dart';
 import '../../modelos/estadoTurno.dart';
 import '../../modelos/horarioDisponible.dart';
@@ -139,16 +139,6 @@ class AlmacenTurnosLocal {
   ) async {
     final db = await _db;
 
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS disponibilidades (
-        medicoId INTEGER NOT NULL,
-        fecha TEXT NOT NULL,
-        hora TEXT NOT NULL,
-        disponible INTEGER NOT NULL,
-        PRIMARY KEY (medicoId, fecha, hora)
-      )
-    ''');
-
     await db.delete(
       'disponibilidades',
       where: 'medicoId = ? AND fecha = ?',
@@ -170,16 +160,6 @@ class AlmacenTurnosLocal {
     DateTime fecha,
   ) async {
     final db = await _db;
-
-    await db.execute('''
-      CREATE TABLE IF NOT EXISTS disponibilidades (
-        medicoId INTEGER NOT NULL,
-        fecha TEXT NOT NULL,
-        hora TEXT NOT NULL,
-        disponible INTEGER NOT NULL,
-        PRIMARY KEY (medicoId, fecha, hora)
-      )
-    ''');
 
     final filas = await db.query(
       'disponibilidades',

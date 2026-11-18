@@ -1,6 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 
-import '../fuentes/baseDatosLocal.dart';
+import 'package:mediturnos/configuracion/baseDatosLocal.dart';
 import '../modelos/turno.dart';
 import 'repositorioTurnos.dart';
 

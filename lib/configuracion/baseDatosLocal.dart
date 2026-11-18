@@ -1,9 +1,11 @@
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
+// Esta clase maneja la base de datos SQLite del teléfono (mediturnos.db).
 class BaseDatosLocal {
   static Database? _baseDatos;
 
+  // Uso un singleton (_baseDatos) para reutilizar la conexión y no abrir la base varias veces a la vez.
   static Future<Database> obtenerBaseDatos() async {
     if (_baseDatos != null) {
       return _baseDatos!;
@@ -13,8 +15,13 @@ class BaseDatosLocal {
 
     _baseDatos = await openDatabase(
       ruta,
-      version: 5,
+      version: 6,
       onCreate: (db, version) async {
+        // Tabla para guardar los turnos localmente.
+        // sincronizado: 1 si ya se guardó en el servidor, 0 si se creó o modificó sin conexión.
+        // operacionPendiente: la acción a enviar al reconectarse ('CREAR', 'CANCELAR', 'REPROGRAMAR').
+        // claveSolicitud: clave única para evitar enviar dos veces la misma solicitud al servidor.
+        // errorSincronizacion: mensaje descriptivo si falló la sincronización con el servidor.
         await db.execute('''
           CREATE TABLE turnos (
             id INTEGER PRIMARY KEY,
@@ -33,6 +40,9 @@ class BaseDatosLocal {
           )
         ''');
 
+        // Tabla para cachear la nómina de médicos.
+        // Se guarda un objeto JSON en "datos" para simplificar la estructura y mapearlo directo a Dart.
+        // sincronizado indica si la info coincide con la API y operacionPendiente registra cambios locales.
         await db.execute('''
           CREATE TABLE medicos (
             id INTEGER PRIMARY KEY,
@@ -42,6 +52,8 @@ class BaseDatosLocal {
           )
         ''');
 
+        // Tabla para guardar las especialidades médicas.
+        // Se almacena la info en JSON dentro de "datos" para simplificar lecturas sin crear múltiples tablas relacionadas.
         await db.execute('''
           CREATE TABLE especialidades (
             id INTEGER PRIMARY KEY,
@@ -49,24 +61,40 @@ class BaseDatosLocal {
           )
         ''');
 
+        // Tabla para la configuración de atención y horarios de cada médico.
+        // Guarda en "datos" la estructura JSON completa de la agenda del médico.
         await db.execute('''
           CREATE TABLE horarios_medico (
             medicoId INTEGER PRIMARY KEY,
             datos TEXT NOT NULL
           )
         ''');
+
+        // Tabla centralizada para registrar las franjas horarias disponibles u ocupadas de los médicos.
+        await db.execute('''
+          CREATE TABLE disponibilidades (
+            medicoId INTEGER NOT NULL,
+            fecha TEXT NOT NULL,
+            hora TEXT NOT NULL,
+            disponible INTEGER NOT NULL,
+            PRIMARY KEY (medicoId, fecha, hora)
+          )
+        ''');
       },
       onUpgrade: (db, oldVersion, newVersion) async {
+        // Versión 2: agrega pacienteId, medicoId y claveSolicitud a los turnos para vincularlos con la API.
         if (oldVersion < 2) {
           await db.execute('ALTER TABLE turnos ADD COLUMN pacienteId INTEGER');
           await db.execute('ALTER TABLE turnos ADD COLUMN medicoId INTEGER');
           await db.execute('ALTER TABLE turnos ADD COLUMN claveSolicitud TEXT');
         }
+        // Versión 3: agrega la columna errorSincronizacion en turnos para registrar errores de red o servidor.
         if (oldVersion < 3) {
           await db.execute(
             'ALTER TABLE turnos ADD COLUMN errorSincronizacion TEXT',
           );
         }
+        // Versión 4: crea la tabla de médicos para guardar la nómina localmente.
         if (oldVersion < 4) {
           await db.execute('''
             CREATE TABLE IF NOT EXISTS medicos (
@@ -75,6 +103,7 @@ class BaseDatosLocal {
             )
           ''');
         }
+        // Versión 5: agrega operacionPendiente y sincronizado a medicos, y crea las tablas de especialidades y horarios_medico.
         if (oldVersion < 5) {
           await db.execute(
             'ALTER TABLE turnos ADD COLUMN operacionPendiente TEXT',
@@ -95,6 +124,18 @@ class BaseDatosLocal {
             CREATE TABLE IF NOT EXISTS horarios_medico (
               medicoId INTEGER PRIMARY KEY,
               datos TEXT NOT NULL
+            )
+          ''');
+        }
+        // Versión 6: crea la tabla disponibilidades dentro del esquema central para gestionar turnos libres u ocupados.
+        if (oldVersion < 6) {
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS disponibilidades (
+              medicoId INTEGER NOT NULL,
+              fecha TEXT NOT NULL,
+              hora TEXT NOT NULL,
+              disponible INTEGER NOT NULL,
+              PRIMARY KEY (medicoId, fecha, hora)
             )
           ''');
         }
