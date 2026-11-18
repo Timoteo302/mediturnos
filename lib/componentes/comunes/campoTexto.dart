@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../configuracion/coloresApp.dart';
 
-/// Componente de entrada de texto reutilizable.
+// Componente de entrada de texto reutilizable.
 class CampoTexto extends StatelessWidget {
   final TextEditingController controller;
   final String etiqueta;
@@ -12,6 +13,8 @@ class CampoTexto extends StatelessWidget {
   final TextInputType tipoTeclado;
   final String? mensajeError;
   final ValueChanged<String>? alCambiar;
+  // Permite aplicar formateadores y restricciones a la entrada de texto (por ejemplo limitar caracteres o formato de teléfono)
+  final List<TextInputFormatter>? formateadoresEntrada;
 
   const CampoTexto({
     super.key,
@@ -24,6 +27,7 @@ class CampoTexto extends StatelessWidget {
     this.tipoTeclado = TextInputType.text,
     this.mensajeError,
     this.alCambiar,
+    this.formateadoresEntrada,
   });
 
   @override
@@ -33,6 +37,7 @@ class CampoTexto extends StatelessWidget {
       obscureText: ocultarTexto,
       keyboardType: tipoTeclado,
       onChanged: alCambiar,
+      inputFormatters: formateadoresEntrada,
       decoration: InputDecoration(
         labelText: etiqueta,
         hintText: hintText,

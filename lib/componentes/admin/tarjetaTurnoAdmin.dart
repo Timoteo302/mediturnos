@@ -4,11 +4,12 @@ import '../../turnos/datos/modelos/turnoDetalle.dart';
 import '../../turnos/datos/modelos/estadoTurno.dart';
 import '../../turnos/presentacion/estadoTurnoUi.dart';
 
-/// Tarjeta de turno reutilizable para la grilla de administración.
+// Tarjeta de turno reutilizable para la grilla de administración.
 class TarjetaTurnoAdmin extends StatelessWidget {
   final TurnoDetalle turno;
   final VoidCallback? alConfirmar;
   final VoidCallback? alMarcarAtendido;
+  final VoidCallback? alRechazar;
   final VoidCallback alVerDetalle;
   final VoidCallback alLlamar;
   final bool procesando;
@@ -18,6 +19,7 @@ class TarjetaTurnoAdmin extends StatelessWidget {
     required this.turno,
     this.alConfirmar,
     this.alMarcarAtendido,
+    this.alRechazar,
     required this.alVerDetalle,
     required this.alLlamar,
     this.procesando = false,
@@ -171,9 +173,20 @@ class TarjetaTurnoAdmin extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          Row(
-            children: [
-              if (turno.estado == EstadoTurno.pendiente) ...[
+          if (procesando)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            )
+          else if (turno.estado == EstadoTurno.pendiente) ...[
+            Row(
+              children: [
                 OutlinedButton.icon(
                   onPressed: alLlamar,
                   style: OutlinedButton.styleFrom(
@@ -186,43 +199,121 @@ class TarjetaTurnoAdmin extends StatelessWidget {
                   label: const Text('Llamar', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                 ),
                 const SizedBox(width: 8),
-              ],
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: alVerDetalle,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: ColoresApp.textoTitulo,
-                    side: const BorderSide(color: ColoresApp.bordeCampo),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    padding: const EdgeInsets.symmetric(vertical: 8),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: alVerDetalle,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: ColoresApp.textoTitulo,
+                      side: const BorderSide(color: ColoresApp.bordeCampo),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    child: const Text('Ver detalle', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                   ),
-                  child: const Text('Ver detalle', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
                 ),
-              ),
-              if (turno.estado == EstadoTurno.pendiente || turno.estado == EstadoTurno.confirmado) ...[
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: alRechazar,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    icon: const Icon(Icons.close, size: 16),
+                    label: const Text('Rechazar', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  ),
+                ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: procesando
-                      ? const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
-                      : ElevatedButton.icon(
-                          onPressed: turno.estado == EstadoTurno.pendiente ? alConfirmar : alMarcarAtendido,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: ColoresApp.primarioBoton,
-                            foregroundColor: ColoresApp.textoBoton,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                          ),
-                          icon: const Icon(Icons.check, size: 16),
-                          label: Text(
-                            turno.estado == EstadoTurno.pendiente ? 'Confirmar' : 'Asistió',
-                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                          ),
-                        ),
+                  child: ElevatedButton.icon(
+                    onPressed: alConfirmar,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: ColoresApp.primarioBoton,
+                      foregroundColor: ColoresApp.textoBoton,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    icon: const Icon(Icons.check, size: 16),
+                    label: const Text('Confirmar', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  ),
                 ),
               ],
-            ],
-          ),
+            ),
+          ] else if (turno.estado == EstadoTurno.confirmado) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: alVerDetalle,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: ColoresApp.textoTitulo,
+                      side: const BorderSide(color: ColoresApp.bordeCampo),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    child: const Text('Ver detalle', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: alRechazar,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                      side: const BorderSide(color: Colors.red),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    icon: const Icon(Icons.close, size: 16),
+                    label: const Text('Cancelar', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: alMarcarAtendido,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: ColoresApp.primarioBoton,
+                      foregroundColor: ColoresApp.textoBoton,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    icon: const Icon(Icons.check, size: 16),
+                    label: const Text('Asistió', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ] else ...[
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: alVerDetalle,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: ColoresApp.textoTitulo,
+                      side: const BorderSide(color: ColoresApp.bordeCampo),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    child: const Text('Ver detalle', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

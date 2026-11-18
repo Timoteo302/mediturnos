@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../componentes/comunes/botonPrincipal.dart';
 import '../../../componentes/comunes/campoTexto.dart';
+import '../../../componentes/comunes/validadorTelefono.dart';
 import '../../../configuracion/coloresApp.dart';
 import '../../../configuracion/estilosTexto.dart';
 import '../../datos/repositorios/repositorioAutenticacion.dart';
@@ -31,6 +32,7 @@ class _VistaCrearCuentaState extends State<_VistaCrearCuenta> {
   final TextEditingController nombreController = TextEditingController();
   final TextEditingController apellidoController = TextEditingController();
   final TextEditingController dniController = TextEditingController();
+  final TextEditingController telefonoController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController contrasenaController = TextEditingController();
   final TextEditingController confirmarContrasenaController = TextEditingController();
@@ -43,6 +45,7 @@ class _VistaCrearCuentaState extends State<_VistaCrearCuenta> {
     nombreController.dispose();
     apellidoController.dispose();
     dniController.dispose();
+    telefonoController.dispose();
     emailController.dispose();
     contrasenaController.dispose();
     confirmarContrasenaController.dispose();
@@ -56,6 +59,7 @@ class _VistaCrearCuentaState extends State<_VistaCrearCuenta> {
       nombre: nombreController.text,
       apellido: apellidoController.text,
       dni: dniController.text,
+      telefono: telefonoController.text,
       email: emailController.text,
       contrasena: contrasenaController.text,
       confirmacion: confirmarContrasenaController.text,
@@ -189,6 +193,17 @@ class _VistaCrearCuentaState extends State<_VistaCrearCuenta> {
                   const Text(
                     'ℹ Ingresá tu DNI sin puntos ni espacios.',
                     style: TextStyle(fontSize: 12, color: ColoresApp.textoSecundario),
+                  ),
+                  const SizedBox(height: 16),
+                  CampoTexto(
+                    controller: telefonoController,
+                    etiqueta: 'Teléfono *',
+                    hintText: 'Ej: 3841 404667',
+                    tipoTeclado: TextInputType.phone,
+                    iconoPrefijo: Icons.phone_outlined,
+                    formateadoresEntrada: formateadoresTelefono,
+                    mensajeError: vm.errorTelefono,
+                    alCambiar: (_) => vm.limpiarError('telefono'),
                   ),
                 ],
               ),

@@ -5,6 +5,9 @@ import 'package:http/http.dart' as http;
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
+import 'turnos/datos/repositorios/repositorioGestionTurnosOfflineFirst.dart';
+import 'turnos/datos/fuentes/local/almacenTurnosLocal.dart';
+
 import 'autenticacion/datos/repositorios/repositorioAutenticacion.dart';
 import 'autenticacion/datos/repositorios/repositorioAutenticacionOfflineFirst.dart';
 import 'autenticacion/datos/fuentes/clienteAutenticacionApi.dart';
@@ -13,12 +16,13 @@ import 'autenticacion/presentacion/pantallas/pantallaLogin.dart';
 import 'autenticacion/presentacion/viewmodels/autenticacionViewModel.dart';
 import 'configuracion/temaApp.dart';
 
+import 'medicos/datos/repositorios/repositorioMedicosOfflineFirst.dart';
+import 'medicos/datos/fuentes/almacenMedicosLocal.dart';
 import 'medicos/datos/repositorios/repositorioMedicos.dart';
 import 'medicos/datos/repositorios/repositorioMedicosApi.dart';
 import 'medicos/datos/fuentes/clienteMedicosApi.dart';
 
 import 'turnos/datos/repositorios/repositorioGestionTurnos.dart';
-import 'turnos/datos/repositorios/repositorioGestionTurnosApi.dart';
 import 'turnos/datos/fuentes/clienteTurnosApi.dart';
 
 import 'package:mediturnos/servicios/verificadorConexion.dart';
@@ -58,13 +62,15 @@ class MediTurnosApp extends StatelessWidget {
               AutenticacionViewModel(context.read<RepositorioAutenticacion>()),
         ),
         Provider<RepositorioMedicos>(
-          create: (_) => RepositorioMedicosApi(
-            ClienteMedicosApi(http.Client()),
+          create: (_) => RepositorioMedicosOfflineFirst(
+            remoto: RepositorioMedicosApi(ClienteMedicosApi(http.Client())),
+            local: AlmacenMedicosLocal(),
           ),
         ),
         Provider<RepositorioGestionTurnos>(
-          create: (_) => RepositorioGestionTurnosApi(
+          create: (_) => RepositorioGestionTurnosOfflineFirst(
             ClienteTurnosApi(http.Client()),
+            AlmacenTurnosLocal(),
           ),
         ),
 

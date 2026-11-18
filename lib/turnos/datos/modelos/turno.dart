@@ -11,6 +11,7 @@ class Turno {
   final int? pacienteId;
   final int? medicoId;
   final String? claveSolicitud;
+  final String? errorSincronizacion;
 
   Turno({
     required this.id,
@@ -24,5 +25,6 @@ class Turno {
     this.pacienteId,
     this.medicoId,
     this.claveSolicitud,
+    this.errorSincronizacion,
   });
 }

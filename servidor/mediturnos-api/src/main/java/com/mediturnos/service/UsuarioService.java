@@ -64,8 +64,8 @@ public class UsuarioService {
         if (dni == null || !DNI_PATTERN.matcher(dni.trim()).matches()) {
             throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El DNI es obligatorio y debe tener 7 u 8 dígitos", "dni");
         }
-        if (telefono != null && !telefono.isBlank() && telefono.trim().length() > 30) {
-            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El teléfono no puede superar los 30 caracteres", "telefono");
+        if (telefono != null && !telefono.isBlank()) {
+            validarTelefono(telefono);
         }
 
         // Duplicados
@@ -142,5 +142,63 @@ public class UsuarioService {
                 usuario.getFechaCreacion(),
                 pacienteResumen
         );
+    }
+
+    /**
+     * Actualiza nombre, apellido y teléfono (si es paciente) del usuario.
+     */
+    @Transactional
+    public UsuarioRespuesta actualizarPerfil(Integer id, Map<String, String> body) {
+        if (body == null) {
+            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "Faltan datos obligatorios");
+        }
+
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ExcepcionApi(HttpStatus.NOT_FOUND, "USUARIO_NO_ENCONTRADO", "El usuario no existe"));
+
+        String nombre = body.get("nombre");
+        String apellido = body.get("apellido");
+        String telefono = body.get("telefono");
+
+        if (nombre == null || nombre.trim().length() < 2 || nombre.trim().length() > 100) {
+            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El nombre es obligatorio y debe tener entre 2 y 100 caracteres", "nombre");
+        }
+        if (apellido == null || apellido.trim().length() < 2 || apellido.trim().length() > 100) {
+            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El apellido es obligatorio y debe tener entre 2 y 100 caracteres", "apellido");
+        }
+
+        usuario.setNombre(nombre.trim());
+        usuario.setApellido(apellido.trim());
+
+        Paciente paciente = null;
+        if (usuario.getRol() == Usuario.Rol.PACIENTE) {
+            validarTelefono(telefono);
+            paciente = pacienteRepository.findByUsuarioId(usuario.getId()).orElse(null);
+            if (paciente != null) {
+                paciente.setTelefono(telefono.trim());
+                pacienteRepository.save(paciente);
+            }
+        }
+
+        usuarioRepository.save(usuario);
+
+        return mapToRespuesta(usuario, paciente);
+    }
+
+    /**
+     * Valida formato y longitud del teléfono.
+     */
+    private void validarTelefono(String telefono) {
+        if (telefono == null || telefono.isBlank()) {
+            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El teléfono debe tener entre 8 y 15 dígitos", "telefono");
+        }
+        String tel = telefono.trim();
+        if (!tel.matches("^\\+?[0-9\\s\\-()]{8,30}$")) {
+            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El teléfono debe tener entre 8 y 15 dígitos", "telefono");
+        }
+        long digitos = tel.chars().filter(Character::isDigit).count();
+        if (digitos < 8 || digitos > 15) {
+            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El teléfono debe tener entre 8 y 15 dígitos", "telefono");
+        }
     }
 }

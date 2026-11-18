@@ -30,4 +30,13 @@ public class UsuarioController {
         UsuarioRespuesta respuesta = usuarioService.login(email, contrasena);
         return ResponseEntity.ok(respuesta);
     }
+
+    /**
+     * Actualiza el perfil de un usuario.
+     */
+    @PutMapping("/usuarios/{id}/perfil")
+    public ResponseEntity<UsuarioRespuesta> actualizarPerfil(@PathVariable Integer id, @RequestBody Map<String, String> body) {
+        UsuarioRespuesta actualizado = usuarioService.actualizarPerfil(id, body);
+        return ResponseEntity.ok(actualizado);
+    }
 }

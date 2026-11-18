@@ -12,6 +12,7 @@ class TurnoDetalle {
   final bool sincronizado;
   final PacienteDetalle paciente;
   final MedicoDetalle medico;
+  final String? errorSincronizacion;
 
   TurnoDetalle({
     required this.id,
@@ -20,6 +21,7 @@ class TurnoDetalle {
     required this.hora,
     this.claveSolicitud,
     this.sincronizado = true,
+    this.errorSincronizacion,
     required this.paciente,
     required this.medico,
   });
@@ -65,6 +67,7 @@ class TurnoDetalle {
       medico: json['medico'] != null
           ? MedicoDetalle.fromJson(json['medico'])
           : MedicoDetalle(id: 0, nombre: 'Médico', apellido: '', especialidad: EspecialidadDetalle(id: 0, nombre: 'General')),
+      errorSincronizacion: json['errorSincronizacion']?.toString(),
     );
   }
 
@@ -78,6 +81,7 @@ class TurnoDetalle {
       'sincronizado': sincronizado,
       'paciente': paciente.toJson(),
       'medico': medico.toJson(),
+      'errorSincronizacion': errorSincronizacion,
     };
   }
 }

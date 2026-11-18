@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.time.LocalTime;
 import java.util.Map;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -466,5 +467,140 @@ class ApiIntegrationTest {
                 .andExpect(jsonPath("$[0].disponible").value(true))
                 .andExpect(jsonPath("$[1].hora").value("09:30"))
                 .andExpect(jsonPath("$[1].disponible").value(false));
+    }
+
+    @Test
+    void test11_actualizarPerfilPaciente() throws Exception {
+        Paciente paciente = pacienteRepository.findAll().get(0);
+        Integer usuarioId = paciente.getUsuario().getId();
+
+        Map<String, String> body = Map.of(
+                "nombre", "Matías Modificado",
+                "apellido", "Romero Mod",
+                "telefono", "+5491122334455",
+                "email", "otromail@test.com"
+        );
+
+        mockMvc.perform(put("/usuarios/" + usuarioId + "/perfil")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(body)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombre").value("Matías Modificado"))
+                .andExpect(jsonPath("$.apellido").value("Romero Mod"))
+                .andExpect(jsonPath("$.email").value("paciente@mediturnos.com"))
+                .andExpect(jsonPath("$.paciente.telefono").value("+5491122334455"));
+    }
+
+    @Test
+    void test12_actualizarPerfilTelefonosInvalidos() throws Exception {
+        Paciente paciente = pacienteRepository.findAll().get(0);
+        Integer usuarioId = paciente.getUsuario().getId();
+
+        Map<String, String> body1 = Map.of(
+                "nombre", "A", "apellido", "B",
+                "telefono", "38414,04667"
+        );
+        mockMvc.perform(put("/usuarios/" + usuarioId + "/perfil")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(body1)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.campo").value("nombre")); // Falla por nombre < 2 primero
+
+        Map<String, String> body1b = Map.of(
+                "nombre", "Valido", "apellido", "Valido",
+                "telefono", "38414,04667"
+        );
+        mockMvc.perform(put("/usuarios/" + usuarioId + "/perfil")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(body1b)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.campo").value("telefono"));
+
+        Map<String, String> body2 = Map.of(
+                "nombre", "Valido", "apellido", "Valido",
+                "telefono", "1234567"
+        );
+        mockMvc.perform(put("/usuarios/" + usuarioId + "/perfil")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(body2)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.campo").value("telefono"));
+
+        Map<String, String> body3 = Map.of(
+                "apellido", "Valido",
+                "telefono", "1122334455"
+        );
+        mockMvc.perform(put("/usuarios/" + usuarioId + "/perfil")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(body3)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.campo").value("nombre"));
+
+        mockMvc.perform(put("/usuarios/99999/perfil")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(body2)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.codigo").value("USUARIO_NO_ENCONTRADO"));
+    }
+
+    @Test
+    void test13_actualizarPerfilAdmin() throws Exception {
+        Usuario admin = usuarioRepository.findByEmail("admin@mediturnos.com").get();
+
+        Map<String, String> body = Map.of(
+                "nombre", "Admin Modificado",
+                "apellido", "Admin Apellido",
+                "telefono", "1122334455"
+        );
+
+        mockMvc.perform(put("/usuarios/" + admin.getId() + "/perfil")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(new ObjectMapper().writeValueAsString(body)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombre").value("Admin Modificado"))
+                .andExpect(jsonPath("$.paciente").doesNotExist());
+    }
+
+    @Test
+    void test14_transicionesTurno() throws Exception {
+        Especialidad esp = new Especialidad();
+        esp.setNombre("Oftalmología");
+        esp.setActivo(true);
+        esp = especialidadRepository.save(esp);
+
+        Medico medico = new Medico();
+        medico.setNombre("Ramiro");
+        medico.setApellido("Vaca");
+        medico.setMatricula("98712");
+        medico.setActivo(true);
+        medico.setEspecialidad(esp);
+        medico = medicoRepository.save(medico);
+        Paciente paciente = pacienteRepository.findAll().get(0);
+
+        LocalDate fechaHoy = LocalDate.now(ZoneId.of("America/Argentina/Buenos_Aires"));
+        Integer[] turnos = new Integer[3];
+        for (int i = 0; i < 3; i++) {
+            com.mediturnos.model.Turno t = new com.mediturnos.model.Turno();
+            t.setPaciente(paciente);
+            t.setMedico(medico);
+            t.setFecha(fechaHoy);
+            t.setHora(LocalTime.of(8 + i, 0));
+            t.setEstado("PENDIENTE");
+            t.setClaveSolicitud("uuid-hoy-" + i);
+            t = turnoRepository.save(t);
+            turnos[i] = t.getId();
+        }
+
+        mockMvc.perform(patch("/turnos/" + turnos[0] + "/estado").contentType(MediaType.APPLICATION_JSON).content("{\"estado\":\"CANCELADO\"}")).andExpect(status().isOk());
+        mockMvc.perform(patch("/turnos/" + turnos[0] + "/estado").contentType(MediaType.APPLICATION_JSON).content("{\"estado\":\"CONFIRMADO\"}"))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.codigo").value("TRANSICION_INVALIDA"));
+
+        mockMvc.perform(patch("/turnos/" + turnos[1] + "/estado").contentType(MediaType.APPLICATION_JSON).content("{\"estado\":\"CONFIRMADO\"}")).andExpect(status().isOk());
+        mockMvc.perform(patch("/turnos/" + turnos[1] + "/estado").contentType(MediaType.APPLICATION_JSON).content("{\"estado\":\"CANCELADO\"}")).andExpect(status().isOk());
+
+        mockMvc.perform(patch("/turnos/" + turnos[2] + "/estado").contentType(MediaType.APPLICATION_JSON).content("{\"estado\":\"CONFIRMADO\"}")).andExpect(status().isOk());
+        mockMvc.perform(patch("/turnos/" + turnos[2] + "/estado").contentType(MediaType.APPLICATION_JSON).content("{\"estado\":\"ATENDIDO\"}")).andExpect(status().isOk());
+        mockMvc.perform(patch("/turnos/" + turnos[2] + "/estado").contentType(MediaType.APPLICATION_JSON).content("{\"estado\":\"CANCELADO\"}"))
+                .andExpect(status().isConflict()).andExpect(jsonPath("$.codigo").value("TRANSICION_INVALIDA"));
     }
 }
