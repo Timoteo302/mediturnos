@@ -46,3 +46,9 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# API Spring Boot
+# Archivos que genera Maven al compilar
+servidor/mediturnos-api/target/
+# Contraseña de MySQL local de cada PC
+servidor/mediturnos-api/src/main/resources/application-local.properties
