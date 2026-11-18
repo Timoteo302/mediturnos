@@ -27,6 +27,19 @@ class AutenticacionViewModel extends ChangeNotifier {
   bool get esAdmin => _usuarioActual?.rol == RolUsuario.admin;
   bool get estaAutenticado => _usuarioActual != null;
 
+  // Actualiza los datos en memoria del usuario logueado e intenta refrescar la copia guardada en SQLite.
+  Future<void> actualizarUsuarioActual(Usuario u) async {
+    final offline = _usuarioActual?.sesionOffline ?? u.sesionOffline;
+    _usuarioActual = u.copiarConSesionOffline(offline);
+    notifyListeners();
+
+    try {
+      await _repositorio.actualizarCopiaLocal(u);
+    } catch (e) {
+      debugPrint('Error al actualizar copia local: $e');
+    }
+  }
+
   @override
   void dispose() {
     _descartado = true;

@@ -7,6 +7,7 @@ import 'package:mediturnos/componentes/admin/chipFiltroEstadoAdmin.dart';
 import 'package:mediturnos/componentes/admin/modalSelectorMedicosAdmin.dart';
 import 'package:mediturnos/componentes/admin/tarjetaTurnoAdmin.dart';
 import 'package:mediturnos/configuracion/coloresApp.dart';
+import 'package:mediturnos/inicio/presentacion/pantallas/pantallaInicioAdmin.dart';
 import 'package:mediturnos/navegacion/barraNavegacionAdmin.dart';
 import '../../datos/modelos/estadoTurno.dart';
 import '../../datos/modelos/turnoDetalle.dart';
@@ -15,7 +16,7 @@ import '../../../medicos/datos/repositorios/repositorioMedicos.dart';
 import '../viewmodels/turnosAdminViewModel.dart';
 import 'pantallaDetalleTurno.dart';
 
-/// Esta pantalla muestra al administrador la grilla completa de todos los turnos de la clínica.
+// Esta pantalla muestra al administrador la grilla completa de todos los turnos de la clínica.
 class PantallaTodosLosTurnos extends StatelessWidget {
   final EstadoTurno? filtroInicial;
 
@@ -111,6 +112,52 @@ class _VistaTodosLosTurnosState extends State<_VistaTodosLosTurnos> {
     }
   }
 
+  // Muestra un diálogo emergente pidiendo confirmación para rechazar o cancelar un turno.
+  Future<void> _rechazarTurno(TurnosAdminViewModel vm, TurnoDetalle turno) async {
+    if (vm.idProcesando == turno.id) return;
+
+    final esPendiente = turno.estado == EstadoTurno.pendiente;
+    final titulo = esPendiente ? '¿Rechazar turno?' : '¿Cancelar turno confirmado?';
+    final fechaTexto = '${turno.fecha.day}/${turno.fecha.month}/${turno.fecha.year}';
+    final mensaje = 'El turno de ${turno.paciente.nombreCompleto} del $fechaTexto a las ${turno.hora} va a quedar cancelado y el horario se libera.';
+    final textoBotonConfirmar = esPendiente ? 'Sí, rechazar' : 'Sí, cancelar';
+
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(titulo),
+        content: Text(mensaje),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Volver'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text(textoBotonConfirmar),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true || !mounted) return;
+
+    final exito = await vm.cancelarTurno(turno);
+    if (!mounted) return;
+
+    if (exito) {
+      final textoExito = esPendiente ? 'Turno rechazado.' : 'Turno cancelado.';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(textoExito), backgroundColor: Colors.green),
+      );
+    } else if (vm.errorAccion != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(vm.errorAccion!), backgroundColor: Colors.red),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<TurnosAdminViewModel>();
@@ -123,7 +170,16 @@ class _VistaTodosLosTurnosState extends State<_VistaTodosLosTurnos> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: ColoresApp.textoTitulo),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => const PantallaInicioAdmin()),
+              );
+            }
+          },
         ),
         title: Column(
           children: const [
@@ -241,6 +297,7 @@ class _VistaTodosLosTurnosState extends State<_VistaTodosLosTurnos> {
                               procesando: vm.idProcesando == turno.id,
                               alConfirmar: () => _confirmarTurno(vm, turno),
                               alMarcarAtendido: () => _marcarAtendido(vm, turno),
+                              alRechazar: () => _rechazarTurno(vm, turno),
                               alVerDetalle: () {
                                 Navigator.push(
                                   context,

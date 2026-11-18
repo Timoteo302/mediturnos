@@ -6,7 +6,7 @@ import '../../datos/repositorios/repositorioGestionTurnos.dart';
 import '../../../medicos/datos/modelos/medico.dart';
 import '../../../medicos/datos/repositorios/repositorioMedicos.dart';
 
-/// ViewModel para gestionar la grilla general de turnos desde el panel de administración.
+// ViewModel para gestionar la grilla general de turnos desde el panel de administración.
 class TurnosAdminViewModel extends ChangeNotifier {
   final RepositorioGestionTurnos _repositorioTurnos;
   final RepositorioMedicos _repositorioMedicos;
@@ -129,7 +129,7 @@ class TurnosAdminViewModel extends ChangeNotifier {
     }
   }
 
-  /// Confirma un turno en estado pendiente.
+  // Confirma un turno en estado pendiente.
   Future<bool> confirmar(TurnoDetalle turno) async {
     _idProcesando = turno.id;
     _errorAccion = null;
@@ -157,7 +157,7 @@ class TurnosAdminViewModel extends ChangeNotifier {
     }
   }
 
-  /// Marca un turno confirmado como atendido.
+  // Marca un turno confirmado como atendido.
   Future<bool> marcarAtendido(TurnoDetalle turno) async {
     _idProcesando = turno.id;
     _errorAccion = null;
@@ -180,6 +180,38 @@ class TurnosAdminViewModel extends ChangeNotifier {
     } catch (_) {
       _idProcesando = null;
       _errorAccion = 'No pudimos marcar el turno como atendido.';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Rechaza o cancela un turno pasando su estado a CANCELADO en la API.
+  Future<bool> cancelarTurno(TurnoDetalle turno) async {
+    _idProcesando = turno.id;
+    _errorAccion = null;
+    notifyListeners();
+
+    try {
+      await _repositorioTurnos.cambiarEstadoTurno(
+        turnoId: turno.id,
+        estado: EstadoTurno.cancelado,
+      );
+      await cargarTurnos();
+      _idProcesando = null;
+      notifyListeners();
+      return true;
+    } on ExcepcionTurnos catch (e) {
+      _idProcesando = null;
+      if (e.tipo == ErrorTurnos.sinConexion) {
+        _errorAccion = 'Necesitás conexión con el servidor para rechazar el turno.';
+      } else {
+        _errorAccion = e.mensajeServidor ?? 'No pudimos rechazar el turno.';
+      }
+      notifyListeners();
+      return false;
+    } catch (_) {
+      _idProcesando = null;
+      _errorAccion = 'No pudimos rechazar el turno.';
       notifyListeners();
       return false;
     }

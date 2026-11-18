@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:mediturnos/autenticacion/datos/fuentes/almacenSesionLocal.dart';
 import 'package:mediturnos/autenticacion/datos/fuentes/clienteAutenticacionApi.dart';
 import 'package:mediturnos/autenticacion/datos/fuentes/servicioContrasena.dart';
@@ -53,6 +54,8 @@ class FakeAlmacenSesionLocal implements AlmacenSesionLocal {
 }
 
 class FakeClienteAutenticacionApiSinConexion extends ClienteAutenticacionApi {
+  FakeClienteAutenticacionApiSinConexion() : super(http.Client());
+
   @override
   Future<Usuario> iniciarSesion(String email, String contrasena) async {
     throw ExcepcionAutenticacion(ErrorAutenticacion.sinConexion);

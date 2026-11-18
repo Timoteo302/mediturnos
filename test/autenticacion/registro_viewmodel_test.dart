@@ -44,6 +44,9 @@ class FakeRepositorioAutenticacion implements RepositorioAutenticacion {
   }) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<void> actualizarCopiaLocal(Usuario usuario) async {}
 }
 
 void main() {

@@ -56,6 +56,27 @@ class AlmacenSesionLocalSqlite implements AlmacenSesionLocal {
   }
 
   @override
+  Future<void> actualizarDatosUsuario(Usuario usuario) async {
+    final db = await database;
+    final jsonMap = usuario.toJson();
+    // Guardamos el JSON con sesionOffline en false para reflejar los datos actualizados desde el servidor
+    jsonMap['sesionOffline'] = false;
+    final usuarioJsonStr = json.encode(jsonMap);
+
+    // Actualizo solo los datos del usuario; la contraseña guardada no se toca.
+    // Si no existe la fila (0 afectadas), no hace nada porque no se puede crear una copia de sesión sin el hash de contraseña.
+    await db.update(
+      'sesiones_locales',
+      {
+        'usuario_json': usuarioJsonStr,
+        'ultimo_acceso': DateTime.now().toIso8601String(),
+      },
+      where: 'email = ?',
+      whereArgs: [usuario.email.trim().toLowerCase()],
+    );
+  }
+
+  @override
   Future<Map<String, dynamic>?> obtener(String email) async {
     final db = await database;
     final emailNorm = email.trim().toLowerCase();

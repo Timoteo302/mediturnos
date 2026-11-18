@@ -190,7 +190,7 @@ class RepositorioGestionTurnosOfflineFirst implements RepositorioGestionTurnos {
       final nombrePaciente = await _resolverNombrePaciente(pacienteId);
 
       final turnoLocal = TurnoDetalle(
-        id: -DateTime.now().microsecondsSinceEpoch,
+        id: -(DateTime.now().microsecondsSinceEpoch % 2000000000),
         estado: EstadoTurno.pendiente,
         fecha: fecha,
         hora: hora,

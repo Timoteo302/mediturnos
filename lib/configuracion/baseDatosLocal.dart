@@ -84,14 +84,17 @@ class BaseDatosLocal {
       onUpgrade: (db, oldVersion, newVersion) async {
         // Versión 2: agrega pacienteId, medicoId y claveSolicitud a los turnos para vincularlos con la API.
         if (oldVersion < 2) {
-          await db.execute('ALTER TABLE turnos ADD COLUMN pacienteId INTEGER');
-          await db.execute('ALTER TABLE turnos ADD COLUMN medicoId INTEGER');
-          await db.execute('ALTER TABLE turnos ADD COLUMN claveSolicitud TEXT');
+          await _agregarColumnaSiNoExiste(db, 'turnos', 'pacienteId', 'INTEGER');
+          await _agregarColumnaSiNoExiste(db, 'turnos', 'medicoId', 'INTEGER');
+          await _agregarColumnaSiNoExiste(db, 'turnos', 'claveSolicitud', 'TEXT');
         }
         // Versión 3: agrega la columna errorSincronizacion en turnos para registrar errores de red o servidor.
         if (oldVersion < 3) {
-          await db.execute(
-            'ALTER TABLE turnos ADD COLUMN errorSincronizacion TEXT',
+          await _agregarColumnaSiNoExiste(
+            db,
+            'turnos',
+            'errorSincronizacion',
+            'TEXT',
           );
         }
         // Versión 4: crea la tabla de médicos para guardar la nómina localmente.
@@ -105,14 +108,23 @@ class BaseDatosLocal {
         }
         // Versión 5: agrega operacionPendiente y sincronizado a medicos, y crea las tablas de especialidades y horarios_medico.
         if (oldVersion < 5) {
-          await db.execute(
-            'ALTER TABLE turnos ADD COLUMN operacionPendiente TEXT',
+          await _agregarColumnaSiNoExiste(
+            db,
+            'turnos',
+            'operacionPendiente',
+            'TEXT',
           );
-          await db.execute(
-            'ALTER TABLE medicos ADD COLUMN sincronizado INTEGER NOT NULL DEFAULT 1',
+          await _agregarColumnaSiNoExiste(
+            db,
+            'medicos',
+            'sincronizado',
+            'INTEGER NOT NULL DEFAULT 1',
           );
-          await db.execute(
-            'ALTER TABLE medicos ADD COLUMN operacionPendiente TEXT',
+          await _agregarColumnaSiNoExiste(
+            db,
+            'medicos',
+            'operacionPendiente',
+            'TEXT',
           );
           await db.execute('''
             CREATE TABLE IF NOT EXISTS especialidades (
@@ -143,5 +155,20 @@ class BaseDatosLocal {
     );
 
     return _baseDatos!;
+  }
+
+  /// Verifica la estructura de la tabla mediante `PRAGMA table_info` antes de intentar hacer un `ALTER TABLE`.
+  /// Esto previene excepciones por columnas duplicadas durante actualizaciones parciales de versión.
+  static Future<void> _agregarColumnaSiNoExiste(
+    Database db,
+    String tabla,
+    String columna,
+    String tipo,
+  ) async {
+    final columnas = await db.rawQuery('PRAGMA table_info($tabla)');
+    final existe = columnas.any((c) => c['name'] == columna);
+    if (!existe) {
+      await db.execute('ALTER TABLE $tabla ADD COLUMN $columna $tipo');
+    }
   }
 }

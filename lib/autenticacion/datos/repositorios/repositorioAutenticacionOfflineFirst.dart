@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import '../modelos/usuario.dart';
 import '../modelos/solicitudRecuperacion.dart';
 import '../modelos/excepcionAutenticacion.dart';
@@ -59,6 +60,7 @@ class RepositorioAutenticacionOfflineFirst implements RepositorioAutenticacion {
     required String nombre,
     required String apellido,
     required String dni,
+    required String telefono,
     required String email,
     required String contrasena,
   }) async {
@@ -67,6 +69,7 @@ class RepositorioAutenticacionOfflineFirst implements RepositorioAutenticacion {
       nombre: nombre,
       apellido: apellido,
       dni: dni,
+      telefono: telefono,
       email: emailNorm,
       contrasena: contrasena,
     );
@@ -94,5 +97,15 @@ class RepositorioAutenticacionOfflineFirst implements RepositorioAutenticacion {
       codigo: codigo,
       nuevaContrasena: nuevaContrasena,
     );
+  }
+
+  // Intenta actualizar la copia de datos del usuario en la base local sin interrumpir al usuario si falla.
+  @override
+  Future<void> actualizarCopiaLocal(Usuario usuario) async {
+    try {
+      await local.actualizarDatosUsuario(usuario);
+    } catch (e) {
+      debugPrint('Error al actualizar copia local de la sesión: $e');
+    }
   }
 }

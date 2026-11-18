@@ -97,6 +97,7 @@ class ClienteAutenticacionApi {
     required String nombre,
     required String apellido,
     required String dni,
+    required String telefono,
     required String email,
     required String contrasena,
   }) async {
@@ -110,6 +111,7 @@ class ClienteAutenticacionApi {
           'email': email,
           'contrasena': contrasena,
           'dni': dni,
+          'telefono': telefono.trim(),
         }),
       ).timeout(ConfiguracionServidor.tiempoEspera);
 

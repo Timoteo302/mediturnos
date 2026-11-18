@@ -8,6 +8,7 @@ import '../viewmodels/medicosViewModel.dart';
 import '../../../componentes/medicos/barraAccionesGestionMedicos.dart';
 import '../../../componentes/medicos/tarjetaMedicoGestion.dart';
 import '../../../componentes/medicos/chipFiltroMedicos.dart';
+import '../../../navegacion/barraNavegacionAdmin.dart';
 import 'pantallaAgregarMedico.dart';
 import 'pantallaGestionEspecialidades.dart';
 
@@ -211,6 +212,7 @@ class _VistaGestionMedicosState extends State<_VistaGestionMedicos> {
           ],
         ),
       ),
+      bottomNavigationBar: const BarraNavegacionAdmin(indiceActual: 2),
     );
   }
 }

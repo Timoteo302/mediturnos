@@ -6,6 +6,7 @@ import 'package:mediturnos/turnos/datos/modelos/turnoDetalle.dart';
 import 'package:mediturnos/turnos/datos/repositorios/repositorioGestionTurnos.dart';
 import 'package:mediturnos/medicos/datos/modelos/medico.dart';
 import 'package:mediturnos/medicos/datos/modelos/especialidad.dart';
+import 'package:mediturnos/medicos/datos/modelos/horarioAtencion.dart';
 import 'package:mediturnos/medicos/datos/repositorios/repositorioMedicos.dart';
 import 'package:mediturnos/turnos/presentacion/viewmodels/turnosAdminViewModel.dart';
 
@@ -48,11 +49,11 @@ class FakeRepositorioGestionTurnos implements RepositorioGestionTurnos {
   @override
   Future<TurnoDetalle> cambiarEstadoTurno({required int turnoId, required EstadoTurno estado}) async {
     if (simularSinConexion) {
-      throw ExcepcionTurnos(tipo: ErrorTurnos.sinConexion);
+      throw ExcepcionTurnos(ErrorTurnos.sinConexion);
     }
     if (simularError409) {
       throw ExcepcionTurnos(
-        tipo: ErrorTurnos.errorServidor,
+        ErrorTurnos.errorServidor,
         mensajeServidor: 'Transición de estado inválida.',
       );
     }
@@ -66,34 +67,43 @@ class FakeRepositorioMedicos implements RepositorioMedicos {
   Future<List<Medico>> obtenerMedicos({bool incluirInactivos = false}) async => [];
 
   @override
-  Future<Medico> obtenerMedicoPorId(int id) {
+  Future<Medico> crearMedico({required String nombre, required String apellido, required int especialidadId, required String matricula, required bool activo}) {
     throw UnimplementedError();
   }
 
   @override
-  Future<List<Especialidad>> obtenerEspecialidades({bool incluirInactivas = false}) {
+  Future<Medico> actualizarMedico(int id, {required String nombre, required String apellido, required int especialidadId, required String matricula, required bool activo}) {
     throw UnimplementedError();
   }
 
   @override
-  Future<Medico> crearMedico(Medico medico) {
+  Future<Medico> cambiarEstadoMedico(int id, bool activo) {
     throw UnimplementedError();
   }
 
   @override
-  Future<Medico> actualizarMedico(Medico medico) {
+  Future<List<Especialidad>> obtenerEspecialidades({bool incluirInactivas = false}) async => [];
+
+  @override
+  Future<Especialidad> crearEspecialidad({required String nombre, String? descripcion}) {
     throw UnimplementedError();
   }
 
   @override
-  Future<Especialidad> crearEspecialidad(Especialidad especialidad) {
+  Future<Especialidad> actualizarEspecialidad(int id, {required String nombre, String? descripcion}) {
     throw UnimplementedError();
   }
 
   @override
-  Future<Especialidad> actualizarEspecialidad(Especialidad especialidad) {
+  Future<Especialidad> cambiarEstadoEspecialidad(int id, bool activo) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<List<HorarioAtencion>> obtenerHorarios(int medicoId) async => [];
+
+  @override
+  Future<List<HorarioAtencion>> guardarHorarios(int medicoId, List<HorarioAtencion> horarios) async => [];
 }
 
 void main() {

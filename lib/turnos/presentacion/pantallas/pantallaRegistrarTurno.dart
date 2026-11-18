@@ -140,7 +140,7 @@ class _PantallaRegistrarTurnoState extends State<PantallaRegistrarTurno> {
             ElevatedButton(
               onPressed: () async {
                 final turno = Turno(
-                  id: DateTime.now().millisecondsSinceEpoch,
+                  id: DateTime.now().millisecondsSinceEpoch % 1000000000,
                   paciente: 'Timoteo Wierna',
                   medico: medicoSeleccionado ?? '',
                   especialidad: especialidadSeleccionada ?? '',

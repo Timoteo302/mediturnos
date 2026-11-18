@@ -1,8 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:mediturnos/autenticacion/datos/modelos/excepcionAutenticacion.dart';
 import 'package:mediturnos/autenticacion/datos/repositorios/repositorioAutenticacion.dart';
+import 'package:mediturnos/componentes/comunes/validadorTelefono.dart';
+import 'package:mediturnos/componentes/comunes/validadoresPersona.dart';
 import 'package:mediturnos/configuracion/configuracionServidor.dart';
 
+// ViewModel para gestionar la lógica del formulario de registro de nuevos pacientes.
 class RegistroViewModel extends ChangeNotifier {
   final RepositorioAutenticacion _repositorio;
 
@@ -14,6 +17,7 @@ class RegistroViewModel extends ChangeNotifier {
   String? _errorNombre;
   String? _errorApellido;
   String? _errorDni;
+  String? _errorTelefono;
   String? _errorEmail;
   String? _errorContrasena;
   String? _errorConfirmacion;
@@ -23,6 +27,7 @@ class RegistroViewModel extends ChangeNotifier {
   String? get errorNombre => _errorNombre;
   String? get errorApellido => _errorApellido;
   String? get errorDni => _errorDni;
+  String? get errorTelefono => _errorTelefono;
   String? get errorEmail => _errorEmail;
   String? get errorContrasena => _errorContrasena;
   String? get errorConfirmacion => _errorConfirmacion;
@@ -41,6 +46,7 @@ class RegistroViewModel extends ChangeNotifier {
     }
   }
 
+  // Limpia el mensaje de error de un campo cuando el usuario vuelve a escribir en él.
   void limpiarError(String campo) {
     switch (campo) {
       case 'nombre':
@@ -51,6 +57,9 @@ class RegistroViewModel extends ChangeNotifier {
         break;
       case 'dni':
         _errorDni = null;
+        break;
+      case 'telefono':
+        _errorTelefono = null;
         break;
       case 'email':
         _errorEmail = null;
@@ -64,24 +73,6 @@ class RegistroViewModel extends ChangeNotifier {
     }
     _errorGeneral = null;
     notifyListeners();
-  }
-
-  String? validarNombre(String? v) {
-    if (v == null || v.trim().isEmpty) return 'El nombre es obligatorio.';
-    final val = v.trim();
-    if (val.length < 2 || val.length > 100) return 'El nombre debe tener entre 2 y 100 caracteres.';
-    final regex = RegExp(r"^[\p{L}\s'\-]+$", unicode: true);
-    if (!regex.hasMatch(val)) return 'El nombre contiene caracteres inválidos.';
-    return null;
-  }
-
-  String? validarApellido(String? v) {
-    if (v == null || v.trim().isEmpty) return 'El apellido es obligatorio.';
-    final val = v.trim();
-    if (val.length < 2 || val.length > 100) return 'El apellido debe tener entre 2 y 100 caracteres.';
-    final regex = RegExp(r"^[\p{L}\s'\-]+$", unicode: true);
-    if (!regex.hasMatch(val)) return 'El apellido contiene caracteres inválidos.';
-    return null;
   }
 
   String? validarDni(String? v) {
@@ -112,10 +103,12 @@ class RegistroViewModel extends ChangeNotifier {
     return null;
   }
 
+  // Valida los datos e intenta registrar al nuevo paciente llamando al repositorio.
   Future<bool> registrar({
     required String nombre,
     required String apellido,
     required String dni,
+    required String telefono,
     required String email,
     required String contrasena,
     required String confirmacion,
@@ -123,6 +116,7 @@ class RegistroViewModel extends ChangeNotifier {
     _errorNombre = validarNombre(nombre);
     _errorApellido = validarApellido(apellido);
     _errorDni = validarDni(dni);
+    _errorTelefono = validarTelefono(telefono);
     _errorEmail = validarEmail(email);
     _errorContrasena = validarContrasena(contrasena);
     _errorConfirmacion = validarConfirmacion(confirmacion, contrasena);
@@ -131,6 +125,7 @@ class RegistroViewModel extends ChangeNotifier {
     if (_errorNombre != null ||
         _errorApellido != null ||
         _errorDni != null ||
+        _errorTelefono != null ||
         _errorEmail != null ||
         _errorContrasena != null ||
         _errorConfirmacion != null) {
@@ -146,6 +141,7 @@ class RegistroViewModel extends ChangeNotifier {
         nombre: nombre.trim(),
         apellido: apellido.trim(),
         dni: dni.trim(),
+        telefono: telefono.trim(),
         email: email.trim(),
         contrasena: contrasena,
       );
@@ -171,6 +167,9 @@ class RegistroViewModel extends ChangeNotifier {
             break;
           case 'dni':
             _errorDni = errorMsg;
+            break;
+          case 'telefono':
+            _errorTelefono = errorMsg;
             break;
           case 'email':
             _errorEmail = errorMsg;
