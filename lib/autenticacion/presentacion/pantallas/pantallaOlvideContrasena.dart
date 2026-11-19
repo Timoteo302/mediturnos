@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../componentes/comunes/botonPrincipal.dart';
 import '../../../componentes/comunes/campoTexto.dart';
 import '../../../componentes/comunes/iconoEncabezado.dart';
+import '../../../componentes/comunes/indicadorConexion.dart';
 import '../../../configuracion/coloresApp.dart';
 import '../../../configuracion/estilosTexto.dart';
 import '../../datos/repositorios/repositorioAutenticacion.dart';
@@ -116,6 +117,9 @@ class _VistaOlvideContrasenaState extends State<_VistaOlvideContrasena> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: const [
+          IndicadorConexion(),
+        ],
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: const [

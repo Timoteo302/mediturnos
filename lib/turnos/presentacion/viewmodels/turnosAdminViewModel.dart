@@ -7,12 +7,22 @@ import '../../../medicos/datos/modelos/medico.dart';
 import '../../../medicos/datos/repositorios/repositorioMedicos.dart';
 
 // ViewModel para gestionar la grilla general de turnos desde el panel de administración.
+// Mapea errores de confirmación anticipada y permite establecer la fecha inicial desde notificaciones.
 class TurnosAdminViewModel extends ChangeNotifier {
   final RepositorioGestionTurnos _repositorioTurnos;
   final RepositorioMedicos _repositorioMedicos;
   final EstadoTurno? filtroInicial;
+  final DateTime? fechaInicial;
 
-  TurnosAdminViewModel(this._repositorioTurnos, this._repositorioMedicos, {this.filtroInicial}) {
+  TurnosAdminViewModel(
+    this._repositorioTurnos,
+    this._repositorioMedicos, {
+    this.filtroInicial,
+    this.fechaInicial,
+  }) {
+    if (fechaInicial != null) {
+      _fechaSeleccionada = DateTime(fechaInicial!.year, fechaInicial!.month, fechaInicial!.day);
+    }
     if (filtroInicial != null) {
       if (filtroInicial == EstadoTurno.pendiente) _filtroEstado = 'pendientes';
       if (filtroInicial == EstadoTurno.confirmado) _filtroEstado = 'confirmados';
@@ -129,7 +139,7 @@ class TurnosAdminViewModel extends ChangeNotifier {
     }
   }
 
-  // Confirma un turno en estado pendiente.
+  // Confirma un turno en estado pendiente atrapando el error de confirmación anticipada (más de 24h).
   Future<bool> confirmar(TurnoDetalle turno) async {
     _idProcesando = turno.id;
     _errorAccion = null;
@@ -146,7 +156,11 @@ class TurnosAdminViewModel extends ChangeNotifier {
       return true;
     } on ExcepcionTurnos catch (e) {
       _idProcesando = null;
-      _errorAccion = e.mensajeServidor ?? 'No pudimos confirmar el turno.';
+      if (e.tipo == ErrorTurnos.confirmacionAnticipada) {
+        _errorAccion = 'Solo podés confirmar turnos que empiezan en las próximas 24 horas.';
+      } else {
+        _errorAccion = e.mensajeServidor ?? 'No pudimos confirmar el turno.';
+      }
       notifyListeners();
       return false;
     } catch (_) {
@@ -185,7 +199,7 @@ class TurnosAdminViewModel extends ChangeNotifier {
     }
   }
 
-  // Rechaza o cancela un turno pasando su estado a CANCELADO en la API.
+  // Rechaza o cancela un turno enviando "origen": "CENTRO" a la API.
   Future<bool> cancelarTurno(TurnoDetalle turno) async {
     _idProcesando = turno.id;
     _errorAccion = null;
@@ -195,6 +209,7 @@ class TurnosAdminViewModel extends ChangeNotifier {
       await _repositorioTurnos.cambiarEstadoTurno(
         turnoId: turno.id,
         estado: EstadoTurno.cancelado,
+        origen: 'CENTRO',
       );
       await cargarTurnos();
       _idProcesando = null;

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../componentes/comunes/botonPrincipal.dart';
+import '../../../componentes/comunes/indicadorConexion.dart';
+import '../../../componentes/turnos/bannerSinConexionTurno.dart';
 import '../../../componentes/turnos/tarjetaDatosPacienteTurno.dart';
 import '../../../componentes/turnos/tarjetaIndicacionesPaciente.dart';
 import '../../../componentes/turnos/tarjetaMedicoSede.dart';
@@ -87,53 +89,63 @@ class PantallaConfirmarSolicitud extends StatelessWidget {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: ColoresApp.textoTitulo),
         ),
         centerTitle: true,
+        actions: const [IndicadorConexion()],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Resumen de la cita', style: EstilosTexto.tituloGrande),
-            const SizedBox(height: 16),
-            TarjetaResumenTurno(
-              medico: MedicoDetalle.fromJson(vm.medico.toJson()),
-              fecha: vm.fechaSeleccionada,
-              hora: vm.horaSeleccionada ?? '00:00',
-            ),
-            const SizedBox(height: 16),
-            TarjetaMedicoSede(medico: MedicoDetalle.fromJson(vm.medico.toJson())),
-            const SizedBox(height: 16),
-            TarjetaDatosPacienteTurno(
-              paciente: PacienteDetalle(
-                id: paciente?.id ?? 1,
-                nombre: authVm.usuarioActual?.nombre ?? 'Paciente',
-                apellido: authVm.usuarioActual?.apellido ?? '',
-                dni: paciente?.dni ?? '00000000',
-                telefono: paciente?.telefono,
+      body: Column(
+        children: [
+          const BannerSinConexionTurno(),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Resumen de la cita', style: EstilosTexto.tituloGrande),
+                  const SizedBox(height: 16),
+                  TarjetaResumenTurno(
+                    medico: MedicoDetalle.fromJson(vm.medico.toJson()),
+                    fecha: vm.fechaSeleccionada,
+                    hora: vm.horaSeleccionada ?? '00:00',
+                  ),
+                  const SizedBox(height: 16),
+                  TarjetaMedicoSede(medico: MedicoDetalle.fromJson(vm.medico.toJson())),
+                  const SizedBox(height: 16),
+                  if (context.watch<AutenticacionViewModel>().esAdmin) ...[
+                    TarjetaDatosPacienteTurno(
+                      paciente: PacienteDetalle(
+                        id: paciente?.id ?? 1,
+                        nombre: authVm.usuarioActual?.nombre ?? 'Paciente',
+                        apellido: authVm.usuarioActual?.apellido ?? '',
+                        dni: paciente?.dni ?? '00000000',
+                        telefono: paciente?.telefono,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  const TarjetaIndicacionesPaciente(),
+                  const SizedBox(height: 24),
+                  BotonPrincipal(
+                    texto: 'Confirmar solicitud',
+                    onPressed: () => _confirmarTurno(context),
+                    cargando: vm.guardando,
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                      ),
+                      child: const Text('Volver a editar'),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            const TarjetaIndicacionesPaciente(),
-            const SizedBox(height: 24),
-            BotonPrincipal(
-              texto: 'Confirmar solicitud',
-              onPressed: () => _confirmarTurno(context),
-              cargando: vm.guardando,
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton(
-                onPressed: () => Navigator.pop(context),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-                ),
-                child: const Text('Volver a editar'),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../componentes/comunes/indicadorConexion.dart';
 import '../../../configuracion/coloresApp.dart';
 import '../../../configuracion/estilosTexto.dart';
 import '../../datos/repositorios/repositorioMedicos.dart';
@@ -104,6 +105,7 @@ class _VistaGestionMedicosState extends State<_VistaGestionMedicos> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Gestión de médicos'),
+        actions: const [IndicadorConexion()],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),

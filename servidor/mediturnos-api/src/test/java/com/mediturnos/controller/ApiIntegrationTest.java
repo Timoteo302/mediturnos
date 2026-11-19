@@ -21,6 +21,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
+import com.mediturnos.service.RecordatorioTurnosService;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -56,6 +57,9 @@ class ApiIntegrationTest {
 
     @Autowired
     private TurnoRepository turnoRepository;
+
+    @Autowired(required = false)
+    private RecordatorioTurnosService recordatorioTurnosService;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -602,5 +606,110 @@ class ApiIntegrationTest {
         mockMvc.perform(patch("/turnos/" + turnos[2] + "/estado").contentType(MediaType.APPLICATION_JSON).content("{\"estado\":\"ATENDIDO\"}")).andExpect(status().isOk());
         mockMvc.perform(patch("/turnos/" + turnos[2] + "/estado").contentType(MediaType.APPLICATION_JSON).content("{\"estado\":\"CANCELADO\"}"))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.codigo").value("TRANSICION_INVALIDA"));
+    }
+
+    @Test
+    void test15_reprogramacionYCancelacionCentro() throws Exception {
+        Especialidad esp = new Especialidad();
+        esp.setNombre("Pediatría");
+        esp.setActivo(true);
+        esp = especialidadRepository.save(esp);
+
+        Medico medico = new Medico();
+        medico.setNombre("Ana");
+        medico.setApellido("Paz");
+        medico.setMatricula("77777");
+        medico.setActivo(true);
+        medico.setEspecialidad(esp);
+        medico = medicoRepository.save(medico);
+        Paciente paciente = pacienteRepository.findAll().get(0);
+        
+        LocalDate fechaHoy = LocalDate.now(ZoneId.of("America/Argentina/Buenos_Aires"));
+        
+        com.mediturnos.model.Turno t = new com.mediturnos.model.Turno();
+        t.setPaciente(paciente);
+        t.setMedico(medico);
+        t.setFecha(fechaHoy);
+        t.setHora(LocalTime.of(15, 0));
+        t.setEstado("CONFIRMADO");
+        t.setClaveSolicitud("uuid-reprogramacion");
+        t = turnoRepository.save(t);
+        
+        Map<String, Object> req = Map.of("fecha", fechaHoy.plusDays(1).toString(), "hora", "16:00");
+        mockMvc.perform(put("/medicos/" + medico.getId() + "/horarios")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(Map.of("horarios", List.of(
+                        Map.of("diaSemana", fechaHoy.plusDays(1).getDayOfWeek().getValue(), "horaInicio", "15:00", "horaFin", "17:00", "duracionTurno", 30)
+                )))));
+                
+        mockMvc.perform(put("/turnos/" + t.getId())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estado").value("PENDIENTE"));
+                
+        mockMvc.perform(patch("/turnos/" + t.getId() + "/estado")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"estado\":\"CANCELADO\", \"origen\":\"CENTRO\"}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void test16_asistenciaYRecordatorio() throws Exception {
+        Especialidad esp = new Especialidad();
+        esp.setNombre("Clínica");
+        esp.setActivo(true);
+        esp = especialidadRepository.save(esp);
+
+        Medico medico = new Medico();
+        medico.setNombre("Carlos");
+        medico.setApellido("Sanz");
+        medico.setMatricula("11111");
+        medico.setActivo(true);
+        medico.setEspecialidad(esp);
+        medico = medicoRepository.save(medico);
+        Paciente paciente = pacienteRepository.findAll().get(0);
+        
+        LocalDate fechaHoy = LocalDate.now(ZoneId.of("America/Argentina/Buenos_Aires"));
+        LocalTime horaTurno = LocalTime.now(ZoneId.of("America/Argentina/Buenos_Aires")).plusHours(2);
+        
+        com.mediturnos.model.Turno t = new com.mediturnos.model.Turno();
+        t.setPaciente(paciente);
+        t.setMedico(medico);
+        t.setFecha(fechaHoy);
+        t.setHora(horaTurno);
+        t.setEstado("PENDIENTE");
+        t.setClaveSolicitud("uuid-recordatorio");
+        t = turnoRepository.save(t);
+        
+        recordatorioTurnosService.procesarAhora();
+        
+        mockMvc.perform(post("/turnos/" + t.getId() + "/asistencia")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"asistira\": true}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.respuestaPaciente").value("ASISTIRA"));
+                
+        mockMvc.perform(get("/notificaciones?usuarioId=" + paciente.getUsuario().getId()))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void test17_saludYRutasInexistentes() throws Exception {
+        // Comprueba que GET /salud devuelve 200 con el estado ok.
+        mockMvc.perform(get("/salud"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.estado").value("ok"));
+
+        // Comprueba que un endpoint inexistente devuelve 404 y RUTA_NO_ENCONTRADA en lugar de 500.
+        mockMvc.perform(get("/ruta-que-no-existe"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.codigo").value("RUTA_NO_ENCONTRADA"))
+                .andExpect(jsonPath("$.error").value("La ruta solicitada no existe"));
+
+        // Comprueba que GET / devuelve 404 y RUTA_NO_ENCONTRADA (en vez de 500 ERROR_INTERNO).
+        mockMvc.perform(get("/"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.codigo").value("RUTA_NO_ENCONTRADA"));
     }
 }

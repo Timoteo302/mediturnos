@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../componentes/comunes/botonPrincipal.dart';
 import '../../../componentes/comunes/campoTexto.dart';
 import '../../../componentes/comunes/validadorTelefono.dart';
+import '../../../componentes/comunes/indicadorConexion.dart';
 import '../../../configuracion/coloresApp.dart';
 import '../../../configuracion/estilosTexto.dart';
 import '../../datos/repositorios/repositorioAutenticacion.dart';
@@ -96,6 +97,9 @@ class _VistaCrearCuentaState extends State<_VistaCrearCuenta> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text('Crear cuenta'),
+        actions: const [
+          IndicadorConexion(),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

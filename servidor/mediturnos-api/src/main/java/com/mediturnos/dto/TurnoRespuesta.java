@@ -17,6 +17,8 @@ public class TurnoRespuesta {
     private String hora;
     private String claveSolicitud;
     private String fechaCreacion;
+    private String respuestaPaciente;
+    private boolean puedeConfirmarse;
     private PacienteResumen paciente;
     private MedicoResumen medico;
 }

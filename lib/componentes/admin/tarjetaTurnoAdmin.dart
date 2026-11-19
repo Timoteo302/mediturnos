@@ -5,6 +5,7 @@ import '../../turnos/datos/modelos/estadoTurno.dart';
 import '../../turnos/presentacion/estadoTurnoUi.dart';
 
 // Tarjeta de turno reutilizable para la grilla de administración.
+// Muestra reglas de confirmación anticipada y estado de respuesta del paciente.
 class TarjetaTurnoAdmin extends StatelessWidget {
   final TurnoDetalle turno;
   final VoidCallback? alConfirmar;
@@ -25,8 +26,73 @@ class TarjetaTurnoAdmin extends StatelessWidget {
     this.procesando = false,
   });
 
+  // Muestra un chip verde si el paciente confirmó asistencia, o gris si está dentro de las 24 hs sin respuesta.
+  Widget? _construirChipRespuestaPaciente(DateTime desde24h) {
+    final dentroDe24h = DateTime.now().isAfter(desde24h);
+
+    if (turno.respuestaPaciente == 'ASISTIRA') {
+      return Container(
+        margin: const EdgeInsets.only(top: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFFDCFCE7),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFF86EFAC)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.check_circle_outline, size: 14, color: Color(0xFF166534)),
+            SizedBox(width: 4),
+            Text(
+              'Paciente confirmó asistencia',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF166534),
+              ),
+            ),
+          ],
+        ),
+      );
+    } else if (turno.respuestaPaciente == 'SIN_RESPUESTA' && dentroDe24h) {
+      return Container(
+        margin: const EdgeInsets.only(top: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFCBD5E1)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.help_outline, size: 14, color: Color(0xFF475569)),
+            SizedBox(width: 4),
+            Text(
+              'Sin respuesta del paciente',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF475569),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final desde24h = turno.fechaHora.subtract(const Duration(hours: 24));
+    final diaStr = desde24h.day.toString().padLeft(2, '0');
+    final mesStr = desde24h.month.toString().padLeft(2, '0');
+    final horaStr = desde24h.hour.toString().padLeft(2, '0');
+    final minStr = desde24h.minute.toString().padLeft(2, '0');
+    final chipRespuesta = _construirChipRespuestaPaciente(desde24h);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -35,7 +101,7 @@ class TarjetaTurnoAdmin extends StatelessWidget {
         border: Border.all(color: ColoresApp.bordeCampo),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -121,9 +187,9 @@ class TarjetaTurnoAdmin extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: ColoresApp.fondoIcono.withOpacity(0.5),
+              color: ColoresApp.fondoIcono.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: ColoresApp.bordeCampo.withOpacity(0.4)),
+              border: Border.all(color: ColoresApp.bordeCampo.withValues(alpha: 0.4)),
             ),
             child: Row(
               children: [
@@ -172,6 +238,7 @@ class TarjetaTurnoAdmin extends StatelessWidget {
               ],
             ),
           ),
+          if (chipRespuesta != null) chipRespuesta,
           const SizedBox(height: 14),
           if (procesando)
             const Padding(
@@ -232,10 +299,10 @@ class TarjetaTurnoAdmin extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: alConfirmar,
+                    onPressed: turno.puedeConfirmarse ? alConfirmar : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: ColoresApp.primarioBoton,
-                      foregroundColor: ColoresApp.textoBoton,
+                      backgroundColor: turno.puedeConfirmarse ? ColoresApp.primarioBoton : Colors.grey[300],
+                      foregroundColor: turno.puedeConfirmarse ? ColoresApp.textoBoton : Colors.grey[600],
                       elevation: 0,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -246,6 +313,13 @@ class TarjetaTurnoAdmin extends StatelessWidget {
                 ),
               ],
             ),
+            if (!turno.puedeConfirmarse) ...[
+              const SizedBox(height: 6),
+              Text(
+                'Se puede confirmar desde el $diaStr/$mesStr a las $horaStr:$minStr',
+                style: const TextStyle(fontSize: 11, color: ColoresApp.textoSecundario),
+              ),
+            ],
           ] else if (turno.estado == EstadoTurno.confirmado) ...[
             Row(
               children: [

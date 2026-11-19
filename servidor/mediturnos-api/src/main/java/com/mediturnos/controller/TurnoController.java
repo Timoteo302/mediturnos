@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 import java.util.List;
 
@@ -82,5 +83,11 @@ public class TurnoController {
     public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
         turnoService.eliminar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/asistencia")
+    public ResponseEntity<TurnoRespuesta> responderAsistencia(@PathVariable Integer id, @RequestBody Map<String, Boolean> body) {
+        TurnoRespuesta respuesta = turnoService.responderAsistencia(id, body != null ? body.get("asistira") : null);
+        return ResponseEntity.ok(respuesta);
     }
 }

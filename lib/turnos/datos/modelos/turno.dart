@@ -1,3 +1,4 @@
+// Modelo de datos simplificado para el repositorio legacy de turnos y sincronización local.
 class Turno {
   final int id;
   final String paciente;
@@ -12,6 +13,7 @@ class Turno {
   final int? medicoId;
   final String? claveSolicitud;
   final String? errorSincronizacion;
+  final String respuestaPaciente;
 
   Turno({
     required this.id,
@@ -26,5 +28,6 @@ class Turno {
     this.medicoId,
     this.claveSolicitud,
     this.errorSincronizacion,
+    this.respuestaPaciente = 'SIN_RESPUESTA',
   });
 }

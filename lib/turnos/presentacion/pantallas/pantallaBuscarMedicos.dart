@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:mediturnos/componentes/comunes/indicadorConexion.dart';
 import 'package:mediturnos/componentes/medicos/tarjetaMedico.dart';
 import 'package:mediturnos/configuracion/coloresApp.dart';
 import 'package:mediturnos/configuracion/estilosTexto.dart';
@@ -59,6 +60,7 @@ class _VistaBuscarMedicosState extends State<_VistaBuscarMedicos> {
         ),
         centerTitle: true,
         automaticallyImplyLeading: false,
+        actions: const [IndicadorConexion()],
       ),
       body: SafeArea(
         child: Column(

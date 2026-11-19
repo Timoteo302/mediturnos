@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../componentes/comunes/botonPrincipal.dart';
 import '../../../componentes/comunes/campoTexto.dart';
+import '../../../componentes/comunes/indicadorConexion.dart';
 import '../../../componentes/medicos/selectorDesplegableCampo.dart';
 import '../../../componentes/medicos/tarjetaConfiguracionAgenda.dart';
 import '../../../componentes/medicos/tarjetaSwitchEstadoMedico.dart';
@@ -87,6 +88,7 @@ class _VistaAgregarMedicoState extends State<_VistaAgregarMedico> {
     return Scaffold(
       appBar: AppBar(
         title: Text(vm.esEdicion ? 'Modificar médico' : 'Agregar médico'),
+        actions: const [IndicadorConexion()],
       ),
       body: vm.cargando
           ? const Center(child: CircularProgressIndicator())

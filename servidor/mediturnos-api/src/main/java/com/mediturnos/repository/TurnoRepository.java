@@ -45,4 +45,10 @@ public interface TurnoRepository extends JpaRepository<Turno, Integer> {
 
     // Verifica si existe un turno no cancelado para un médico en una fecha y hora excluyendo un turno por ID
     boolean existsByMedicoIdAndFechaAndHoraAndEstadoNotAndIdNot(Integer medicoId, LocalDate fecha, LocalTime hora, String estadoExcluido, Integer idExcluir);
+
+    @Query("SELECT t FROM Turno t WHERE (t.estado = 'PENDIENTE' OR t.estado = 'CONFIRMADO') " +
+           "AND t.recordatorioEnviado = false " +
+           "AND ((t.fecha = :fechaHoy AND t.hora > :horaHoy) OR " +
+           "(t.fecha = :fechaManana AND t.hora <= :horaHoy))")
+    List<Turno> findTurnosParaRecordatorio(@Param("fechaHoy") LocalDate fechaHoy, @Param("horaHoy") LocalTime horaHoy, @Param("fechaManana") LocalDate fechaManana);
 }

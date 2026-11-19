@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mediturnos/autenticacion/presentacion/pantallas/pantallaLogin.dart';
 import 'package:mediturnos/autenticacion/presentacion/viewmodels/autenticacionViewModel.dart';
+import 'package:mediturnos/componentes/comunes/indicadorConexion.dart';
 import 'package:mediturnos/componentes/perfil/tarjetaDatosPersonales.dart';
 import 'package:mediturnos/configuracion/coloresApp.dart';
 import 'package:mediturnos/configuracion/datosInstitucion.dart';
@@ -35,6 +36,7 @@ class PantallaPerfilAdmin extends StatelessWidget {
           ),
         ),
         centerTitle: true,
+        actions: const [IndicadorConexion()],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),

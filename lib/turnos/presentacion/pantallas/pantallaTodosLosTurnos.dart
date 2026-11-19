@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 
 import 'package:mediturnos/componentes/admin/barraSelectoresAdmin.dart';
+import 'package:mediturnos/componentes/comunes/iconoCampanita.dart';
+import 'package:mediturnos/componentes/comunes/indicadorConexion.dart';
 import 'package:mediturnos/componentes/admin/chipFiltroEstadoAdmin.dart';
 import 'package:mediturnos/componentes/admin/modalSelectorMedicosAdmin.dart';
 import 'package:mediturnos/componentes/admin/tarjetaTurnoAdmin.dart';
@@ -17,10 +19,12 @@ import '../viewmodels/turnosAdminViewModel.dart';
 import 'pantallaDetalleTurno.dart';
 
 // Esta pantalla muestra al administrador la grilla completa de todos los turnos de la clínica.
+// Permite abrir directamente en una fecha o con un filtro inicial recibido por constructor.
 class PantallaTodosLosTurnos extends StatelessWidget {
   final EstadoTurno? filtroInicial;
+  final DateTime? fechaInicial;
 
-  const PantallaTodosLosTurnos({super.key, this.filtroInicial});
+  const PantallaTodosLosTurnos({super.key, this.filtroInicial, this.fechaInicial});
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +33,7 @@ class PantallaTodosLosTurnos extends StatelessWidget {
         context.read<RepositorioGestionTurnos>(),
         context.read<RepositorioMedicos>(),
         filtroInicial: filtroInicial,
+        fechaInicial: fechaInicial,
       ),
       child: const _VistaTodosLosTurnos(),
     );
@@ -204,6 +209,7 @@ class _VistaTodosLosTurnosState extends State<_VistaTodosLosTurnos> {
           ],
         ),
         centerTitle: true,
+        actions: const [IconoCampanita(), IndicadorConexion()],
       ),
       body: vm.cargando
           ? const Center(child: CircularProgressIndicator())

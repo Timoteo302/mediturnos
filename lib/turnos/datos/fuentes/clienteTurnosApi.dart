@@ -63,6 +63,8 @@ class ClienteTurnosApi {
           throw ExcepcionTurnos(ErrorTurnos.medicoInactivo, mensajeServidor: mensaje);
         case 'PACIENTE_NO_ENCONTRADO':
           throw ExcepcionTurnos(ErrorTurnos.pacienteNoEncontrado, mensajeServidor: mensaje);
+        case 'CONFIRMACION_ANTICIPADA':
+          throw ExcepcionTurnos(ErrorTurnos.confirmacionAnticipada, mensajeServidor: mensaje);
         default:
           throw ExcepcionTurnos(ErrorTurnos.desconocido, mensajeServidor: mensaje);
       }
@@ -173,17 +175,42 @@ class ClienteTurnosApi {
     return TurnoDetalle.fromJson(res);
   }
 
+  // Cambia el estado de un turno y opcionalmente envía el origen del cambio ('PACIENTE' o 'CENTRO').
   Future<TurnoDetalle> cambiarEstadoTurno({
     required int turnoId,
     required EstadoTurno estado,
+    String? origen,
   }) async {
+    final Map<String, dynamic> bodyMap = {
+      'estado': estado.aTextoApi(),
+    };
+    if (origen != null) {
+      bodyMap['origen'] = origen;
+    }
+
     final res = await _ejecutarLlamada(
       'cambiarEstadoTurno',
       () => client.patch(
         _uri('/turnos/$turnoId/estado'),
         headers: {'Content-Type': 'application/json; charset=utf-8'},
+        body: json.encode(bodyMap),
+      ),
+    );
+    return TurnoDetalle.fromJson(res);
+  }
+
+  // Responde a un aviso de asistencia de turno enviando {"asistira": true|false}.
+  Future<TurnoDetalle> responderAsistencia({
+    required int turnoId,
+    required bool asistira,
+  }) async {
+    final res = await _ejecutarLlamada(
+      'responderAsistencia',
+      () => client.post(
+        _uri('/turnos/$turnoId/asistencia'),
+        headers: {'Content-Type': 'application/json; charset=utf-8'},
         body: json.encode({
-          'estado': estado.aTextoApi(),
+          'asistira': asistira,
         }),
       ),
     );

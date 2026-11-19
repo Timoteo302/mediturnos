@@ -4,11 +4,17 @@ import 'package:mediturnos/autenticacion/datos/modelos/rolUsuario.dart';
 import 'package:mediturnos/autenticacion/datos/modelos/excepcionAutenticacion.dart';
 import 'package:mediturnos/autenticacion/datos/repositorios/repositorioAutenticacion.dart';
 import 'package:mediturnos/configuracion/configuracionServidor.dart';
+import 'package:mediturnos/servicios/servicioLimpiezaLocal.dart';
 
+// ViewModel para gestionar el estado de sesión y autenticación del usuario.
 class AutenticacionViewModel extends ChangeNotifier {
   final RepositorioAutenticacion _repositorio;
+  final Future<void> Function() _limpiezaLocal;
 
-  AutenticacionViewModel(this._repositorio);
+  AutenticacionViewModel(
+    this._repositorio, {
+    Future<void> Function()? limpiezaLocal,
+  }) : _limpiezaLocal = limpiezaLocal ?? limpiarDatosAlCerrarSesion;
 
   bool _descartado = false;
   bool _cargando = false;
@@ -129,9 +135,17 @@ class AutenticacionViewModel extends ChangeNotifier {
     }
   }
 
+  // Cierra la sesión activa del usuario y ejecuta la limpieza de datos personales sincronizados en SQLite.
   Future<void> cerrarSesion() async {
     _cargando = true;
     notifyListeners();
+
+    try {
+      await _limpiezaLocal();
+    } catch (e) {
+      debugPrint('Error al limpiar datos locales al cerrar sesión: $e');
+    }
+
     _usuarioActual = null;
     _cargando = false;
     notifyListeners();

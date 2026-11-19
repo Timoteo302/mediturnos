@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:mediturnos/componentes/comunes/iconoCampanita.dart';
+import 'package:mediturnos/componentes/comunes/indicadorConexion.dart';
 import 'package:mediturnos/navegacion/barraNavegacionPaciente.dart';
 import 'package:mediturnos/componentes/turnos/bannerNuevaConsulta.dart';
 import 'package:mediturnos/componentes/turnos/estadoSinTurnos.dart';
@@ -92,6 +94,7 @@ class _VistaMisTurnosState extends State<_VistaMisTurnos> {
         ),
         centerTitle: true,
         automaticallyImplyLeading: false,
+        actions: const [IconoCampanita(), IndicadorConexion()],
       ),
       body: SafeArea(
         child: Column(

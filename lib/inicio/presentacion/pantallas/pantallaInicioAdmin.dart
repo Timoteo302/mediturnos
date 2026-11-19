@@ -8,6 +8,8 @@ import 'package:mediturnos/componentes/admin/tarjetaTurnoPendiente.dart';
 import 'package:mediturnos/configuracion/coloresApp.dart';
 import 'package:mediturnos/configuracion/datosInstitucion.dart';
 import 'package:mediturnos/configuracion/estilosTexto.dart';
+import 'package:mediturnos/componentes/comunes/iconoCampanita.dart';
+import 'package:mediturnos/componentes/comunes/indicadorConexion.dart';
 
 import 'package:mediturnos/navegacion/barraNavegacionAdmin.dart';
 import '../../../autenticacion/presentacion/viewmodels/autenticacionViewModel.dart';
@@ -163,20 +165,27 @@ class _VistaInicioAdminState extends State<_VistaInicioAdmin> {
             ),
           ],
         ),
-        IconButton(
-          icon: const Icon(
-            Icons.logout_rounded,
-            color: ColoresApp.primario,
-            size: 26,
-          ),
-          onPressed: () {
-            context.read<AutenticacionViewModel>().cerrarSesion();
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const PantallaLogin()),
-              (route) => false,
-            );
-          },
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const IconoCampanita(),
+            const IndicadorConexion(),
+            IconButton(
+              icon: const Icon(
+                Icons.logout_rounded,
+                color: ColoresApp.primario,
+                size: 26,
+              ),
+              onPressed: () {
+                context.read<AutenticacionViewModel>().cerrarSesion();
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PantallaLogin()),
+                  (route) => false,
+                );
+              },
+            ),
+          ],
         ),
       ],
     );

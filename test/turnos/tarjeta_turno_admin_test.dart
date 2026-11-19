@@ -4,6 +4,7 @@ import 'package:mediturnos/componentes/admin/tarjetaTurnoAdmin.dart';
 import 'package:mediturnos/turnos/datos/modelos/estadoTurno.dart';
 import 'package:mediturnos/turnos/datos/modelos/turnoDetalle.dart';
 
+// Pruebas para verificar las reglas de negocio de la tarjeta de turnos en el panel de administración.
 void main() {
   TurnoDetalle crearTurnoConEstado(EstadoTurno estado) {
     return TurnoDetalle(
@@ -18,6 +19,7 @@ void main() {
         apellido: '',
         especialidad: EspecialidadDetalle(id: 3, nombre: 'Cardiología'),
       ),
+      puedeConfirmarse: true,
     );
   }
 
@@ -66,5 +68,32 @@ void main() {
 
     expect(find.text('Rechazar'), findsNothing);
     expect(find.text('Cancelar'), findsNothing);
+  });
+
+  testWidgets('Botón "Confirmar" deshabilitado cuando puedeConfirmarse es false y muestra mensaje aclaratorio', (tester) async {
+    final turno = TurnoDetalle(
+      id: 1,
+      estado: EstadoTurno.pendiente,
+      fecha: DateTime(2026, 12, 1),
+      hora: '10:00',
+      paciente: PacienteDetalle(id: 1, nombre: 'Lucas', apellido: 'González', dni: '38450123'),
+      medico: MedicoDetalle(
+        id: 2,
+        nombre: 'Dr. Perez',
+        apellido: '',
+        especialidad: EspecialidadDetalle(id: 3, nombre: 'Cardiología'),
+      ),
+      puedeConfirmarse: false,
+    );
+
+    await tester.pumpWidget(crearWidgetPrueba(turno));
+
+    final botonConfirmarFinder = find.widgetWithText(ElevatedButton, 'Confirmar');
+    expect(botonConfirmarFinder, findsOneWidget);
+
+    final ElevatedButton botonConfirmar = tester.widget(botonConfirmarFinder);
+    expect(botonConfirmar.onPressed, isNull); // Deshabilitado
+
+    expect(find.textContaining('Se puede confirmar desde el'), findsOneWidget);
   });
 }

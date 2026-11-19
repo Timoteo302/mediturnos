@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../componentes/comunes/botonPrincipal.dart';
+import '../../../componentes/comunes/indicadorConexion.dart';
 import '../../../componentes/medicos/selectorDiasSemanaAgenda.dart';
 import '../../../componentes/medicos/tarjetaFranjaHoraria.dart';
 import '../../../componentes/medicos/tarjetaParametrosAtencion.dart';
@@ -177,6 +178,7 @@ class _VistaGestionHorariosState extends State<_VistaGestionHorarios> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Gestión de horarios'),
+        actions: const [IndicadorConexion()],
       ),
       body: vm.cargando
           ? const Center(child: CircularProgressIndicator())

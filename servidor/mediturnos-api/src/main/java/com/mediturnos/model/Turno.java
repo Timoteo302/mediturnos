@@ -40,4 +40,10 @@ public class Turno {
 
     @Column(name = "horario_reservado", insertable = false, updatable = false)
     private String horarioReservado;
+
+    @Column(name = "recordatorio_enviado", nullable = false)
+    private Boolean recordatorioEnviado = false;
+
+    @Column(name = "respuesta_paciente", nullable = false)
+    private String respuestaPaciente = "SIN_RESPUESTA";
 }

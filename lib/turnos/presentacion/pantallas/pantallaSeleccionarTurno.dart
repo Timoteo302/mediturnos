@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../componentes/comunes/botonPrincipal.dart';
+import '../../../componentes/comunes/indicadorConexion.dart';
+import '../../../componentes/comunes/notificacionApp.dart';
+import '../../../componentes/turnos/bannerSinConexionTurno.dart';
 import '../../../componentes/turnos/tarjetaDoctorResumen.dart';
 import '../../../componentes/turnos/carruselCalendario.dart';
 import '../../../componentes/turnos/grillaHorariosTurno.dart';
@@ -80,16 +83,21 @@ class _VistaSeleccionarTurno extends StatelessWidget {
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: ColoresApp.textoTitulo),
           ),
           centerTitle: true,
+          actions: const [IndicadorConexion()],
         ),
-        body: vm.cargandoAgenda
-            ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TarjetaDoctorResumen(
-                      nombre: medico.nombreCompleto,
+        body: Column(
+          children: [
+            const BannerSinConexionTurno(),
+            Expanded(
+              child: vm.cargandoAgenda
+                  ? const Center(child: CircularProgressIndicator())
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TarjetaDoctorResumen(
+                            nombre: medico.nombreCompleto,
                       especialidad: medico.especialidad.nombre,
                       matricula: medico.matricula,
                     ),
@@ -121,7 +129,14 @@ class _VistaSeleccionarTurno extends StatelessWidget {
                     BotonPrincipal(
                       texto: 'Continuar',
                       onPressed: vm.horaSeleccionada == null
-                          ? () {}
+                          ? () {
+                              mostrarNotificacionApp(
+                                context,
+                                tipo: TipoNotificacionApp.error,
+                                titulo: 'Elegí un horario',
+                                mensaje: 'Seleccioná un horario disponible para continuar.',
+                              );
+                            }
                           : () {
                               Navigator.push(
                                 context,
@@ -137,6 +152,9 @@ class _VistaSeleccionarTurno extends StatelessWidget {
                   ],
                 ),
               ),
+            ),
+          ],
+        ),
       ),
     );
   }
