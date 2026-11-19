@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../componentes/comunes/botonPrincipal.dart';
+import '../../../componentes/comunes/indicadorConexion.dart';
+import '../../../componentes/comunes/notificacionApp.dart';
 import '../../../componentes/turnos/carruselCalendario.dart';
 import '../../../componentes/turnos/grillaHorariosTurno.dart';
 import '../../../componentes/turnos/tarjetaTurnoActualAsignado.dart';
@@ -10,6 +12,7 @@ import '../../../configuracion/estilosTexto.dart';
 import '../../../medicos/datos/modelos/medico.dart';
 import '../../../medicos/datos/modelos/especialidad.dart';
 import '../../../medicos/datos/repositorios/repositorioMedicos.dart';
+import '../../datos/modelos/estadoTurno.dart';
 import '../../datos/modelos/turnoDetalle.dart';
 import '../../datos/repositorios/repositorioGestionTurnos.dart';
 import '../viewmodels/modificarTurnoViewModel.dart';
@@ -46,18 +49,48 @@ class _VistaModificarTurno extends StatelessWidget {
 
   const _VistaModificarTurno({required this.turno});
 
+  // Guarda la modificación del turno. Si estaba confirmado, muestra un aviso previo antes de enviar.
   Future<void> _guardar(BuildContext context, ModificarTurnoViewModel vm) async {
+    if (turno.estado == EstadoTurno.confirmado) {
+      final confirmar = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('¿Cambiar un turno confirmado?'),
+          content: const Text(
+            'Si lo cambiás, el turno vuelve a quedar pendiente hasta que el centro lo confirme de nuevo y el horario actual queda libre.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Volver'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Sí, cambiar'),
+            ),
+          ],
+        ),
+      );
+      if (confirmar != true) return;
+    }
+
     final exito = await vm.guardar();
     if (!context.mounted) return;
 
     if (exito) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Turno reprogramado.'), backgroundColor: Colors.green),
+      mostrarNotificacionApp(
+        context,
+        tipo: TipoNotificacionApp.exito,
+        titulo: 'Turno reprogramado',
+        mensaje: 'Queda pendiente hasta que el centro lo confirme.',
       );
       Navigator.pop(context, true);
     } else if (vm.errorGeneral != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(vm.errorGeneral!), backgroundColor: Colors.red),
+      mostrarNotificacionApp(
+        context,
+        tipo: TipoNotificacionApp.error,
+        titulo: 'Error',
+        mensaje: vm.errorGeneral!,
       );
     }
   }
@@ -110,6 +143,7 @@ class _VistaModificarTurno extends StatelessWidget {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: ColoresApp.textoTitulo),
         ),
         centerTitle: true,
+        actions: const [IndicadorConexion()],
       ),
       body: vm.cargandoAgenda
           ? const Center(child: CircularProgressIndicator())
@@ -146,7 +180,18 @@ class _VistaModificarTurno extends StatelessWidget {
                   const SizedBox(height: 32),
                   BotonPrincipal(
                     texto: 'Guardar cambios',
-                    onPressed: vm.puedeGuardar ? () => _guardar(context, vm) : () {},
+                    onPressed: vm.puedeGuardar
+                        ? () => _guardar(context, vm)
+                        : () {
+                            if (vm.horaSeleccionada == null) {
+                              mostrarNotificacionApp(
+                                context,
+                                tipo: TipoNotificacionApp.error,
+                                titulo: 'Elegí un horario',
+                                mensaje: 'Seleccioná un horario disponible para continuar.',
+                              );
+                            }
+                          },
                     cargando: vm.guardando,
                   ),
                   const SizedBox(height: 12),

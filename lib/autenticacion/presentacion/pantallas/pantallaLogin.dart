@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../../componentes/comunes/botonPrincipal.dart';
 import '../../../componentes/comunes/campoTexto.dart';
 import '../../../componentes/comunes/iconoEncabezado.dart';
+import '../../../componentes/comunes/indicadorConexion.dart';
 import '../../../configuracion/coloresApp.dart';
 import '../../../configuracion/estilosTexto.dart';
 
@@ -118,6 +119,10 @@ class _PantallaLoginState extends State<PantallaLogin> {
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
             child: Column(
               children: [
+                const Align(
+                  alignment: Alignment.topRight,
+                  child: IndicadorConexion(),
+                ),
                 const SizedBox(height: 20),
                 const IconoEncabezado(),
                 const SizedBox(height: 24),

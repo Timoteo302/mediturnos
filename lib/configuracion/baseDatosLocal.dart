@@ -4,6 +4,16 @@ import 'package:sqflite/sqflite.dart';
 // Esta clase maneja la base de datos SQLite del teléfono (mediturnos.db).
 class BaseDatosLocal {
   static Database? _baseDatos;
+  static String? _rutaPersonalizadaTest;
+
+  // Método exclusivo para pruebas unitarias: permite reiniciar la instancia o definir una ruta específica (por ejemplo inMemoryDatabasePath).
+  static Future<void> reiniciarParaTests({String? ruta}) async {
+    if (_baseDatos != null && _baseDatos!.isOpen) {
+      await _baseDatos!.close();
+    }
+    _baseDatos = null;
+    _rutaPersonalizadaTest = ruta;
+  }
 
   // Uso un singleton (_baseDatos) para reutilizar la conexión y no abrir la base varias veces a la vez.
   static Future<Database> obtenerBaseDatos() async {
@@ -11,17 +21,19 @@ class BaseDatosLocal {
       return _baseDatos!;
     }
 
-    final ruta = join(await getDatabasesPath(), 'mediturnos.db');
+    final ruta = _rutaPersonalizadaTest ?? join(await getDatabasesPath(), 'mediturnos.db');
 
     _baseDatos = await openDatabase(
       ruta,
-      version: 6,
+      version: 7,
       onCreate: (db, version) async {
         // Tabla para guardar los turnos localmente.
         // sincronizado: 1 si ya se guardó en el servidor, 0 si se creó o modificó sin conexión.
         // operacionPendiente: la acción a enviar al reconectarse ('CREAR', 'CANCELAR', 'REPROGRAMAR').
         // claveSolicitud: clave única para evitar enviar dos veces la misma solicitud al servidor.
         // errorSincronizacion: mensaje descriptivo si falló la sincronización con el servidor.
+        // respuestaPaciente: guarda si el paciente confirmó asistencia o no ('SIN_RESPUESTA', 'ASISTIRA', 'NO_ASISTIRA').
+        // origenPendiente: registra quién originó un cambio de estado pendiente de envío ('PACIENTE' o 'CENTRO').
         await db.execute('''
           CREATE TABLE turnos (
             id INTEGER PRIMARY KEY,
@@ -36,7 +48,9 @@ class BaseDatosLocal {
             medicoId INTEGER,
             claveSolicitud TEXT,
             errorSincronizacion TEXT,
-            operacionPendiente TEXT
+            operacionPendiente TEXT,
+            respuestaPaciente TEXT NOT NULL DEFAULT 'SIN_RESPUESTA',
+            origenPendiente TEXT
           )
         ''');
 
@@ -150,6 +164,21 @@ class BaseDatosLocal {
               PRIMARY KEY (medicoId, fecha, hora)
             )
           ''');
+        }
+        // Versión 7: agrega respuestaPaciente y origenPendiente en turnos para persistir confirmación de asistencia y origen.
+        if (oldVersion < 7) {
+          await _agregarColumnaSiNoExiste(
+            db,
+            'turnos',
+            'respuestaPaciente',
+            "TEXT NOT NULL DEFAULT 'SIN_RESPUESTA'",
+          );
+          await _agregarColumnaSiNoExiste(
+            db,
+            'turnos',
+            'origenPendiente',
+            'TEXT',
+          );
         }
       },
     );

@@ -219,6 +219,9 @@ class RepositorioGestionTurnosOfflineFirst implements RepositorioGestionTurnos {
         turnoLocal,
       ], operacionPendiente: 'CREAR');
 
+      // Marca la disponibilidad del horario reservado como ocupado sin conexión.
+      await _almacenLocal.marcarHorarioLocal(medicoId, fecha, hora, disponible: false);
+
       return turnoLocal;
     }
   }
@@ -240,42 +243,102 @@ class RepositorioGestionTurnosOfflineFirst implements RepositorioGestionTurnos {
     } on ExcepcionTurnos catch (e) {
       if (e.tipo != ErrorTurnos.sinConexion) rethrow;
 
+      // Leemos el turno previo para conocer la fecha y hora anteriores.
+      final turnoAnterior = await _almacenLocal.obtenerTurnoPorId(turnoId);
+
       final actualizadoLocal = await _almacenLocal.actualizarTurnoOffline(
         turnoId: turnoId,
         nuevaFecha: fecha,
         nuevaHora: hora,
         operacionPendiente: 'REPROGRAMAR',
       );
-      if (actualizadoLocal != null) return actualizadoLocal;
+
+      if (actualizadoLocal != null) {
+        if (turnoAnterior != null) {
+          // Libera el horario viejo para que vuelva a figurar libre en SQLite.
+          await _almacenLocal.marcarHorarioLocal(
+            turnoAnterior.medico.id,
+            turnoAnterior.fecha,
+            turnoAnterior.hora,
+            disponible: true,
+          );
+          // Ocupa el nuevo horario seleccionado en la base local.
+          await _almacenLocal.marcarHorarioLocal(
+            turnoAnterior.medico.id,
+            fecha,
+            hora,
+            disponible: false,
+          );
+        }
+        return actualizadoLocal;
+      }
       rethrow;
     }
   }
 
+  // Cambia el estado de un turno offline-first y reenvía el origen del cambio si hay conexión.
   @override
   Future<TurnoDetalle> cambiarEstadoTurno({
     required int turnoId,
     required EstadoTurno estado,
+    String? origen,
   }) async {
     try {
       final actualizado = await _clienteApi.cambiarEstadoTurno(
         turnoId: turnoId,
         estado: estado,
+        origen: origen,
       );
       await _almacenLocal.guardarTurnos([actualizado]);
       return actualizado;
     } on ExcepcionTurnos catch (e) {
       if (e.tipo != ErrorTurnos.sinConexion) rethrow;
 
+      final turnoAnterior = await _almacenLocal.obtenerTurnoPorId(turnoId);
+
       final actualizadoLocal = await _almacenLocal.actualizarTurnoOffline(
         turnoId: turnoId,
         nuevoEstado: estado,
+        origen: origen,
         operacionPendiente: 'CAMBIAR_ESTADO',
       );
-      if (actualizadoLocal != null) return actualizadoLocal;
+
+      if (actualizadoLocal != null) {
+        if (estado == EstadoTurno.cancelado && turnoAnterior != null) {
+          // Al cancelar sin conexión, libera el horario en la base local para que quede disponible.
+          await _almacenLocal.marcarHorarioLocal(
+            turnoAnterior.medico.id,
+            turnoAnterior.fecha,
+            turnoAnterior.hora,
+            disponible: true,
+          );
+        }
+        return actualizadoLocal;
+      }
       rethrow;
     }
   }
 
+  // Responde a la asistencia del turno vía la API remota.
+  @override
+  Future<TurnoDetalle> responderAsistencia({
+    required int turnoId,
+    required bool asistira,
+  }) async {
+    try {
+      final actualizado = await _clienteApi.responderAsistencia(
+        turnoId: turnoId,
+        asistira: asistira,
+      );
+      await _almacenLocal.guardarTurnos([actualizado]);
+      return actualizado;
+    } on ExcepcionTurnos catch (e) {
+      if (e.tipo != ErrorTurnos.sinConexion) rethrow;
+      rethrow;
+    }
+  }
+
+  // Obtiene el nombre del paciente buscando el ID de paciente dentro de la sesión guardada sin usar el ID de usuario.
   Future<String> _resolverNombrePaciente(int pacienteId) async {
     try {
       final dbSesion = await _almacenSesion.database;
@@ -286,7 +349,7 @@ class RepositorioGestionTurnosOfflineFirst implements RepositorioGestionTurnos {
       for (final fila in filas) {
         final jsonMap =
             jsonDecode(fila['usuario_json'] as String) as Map<String, dynamic>;
-        final pId = jsonMap['pacienteId'] ?? jsonMap['id'];
+        final pId = (jsonMap['paciente'] as Map<String, dynamic>?)?['id'];
         if (pId == pacienteId) {
           final nombre = (jsonMap['nombre'] ?? '').toString();
           final apellido = (jsonMap['apellido'] ?? '').toString();

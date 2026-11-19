@@ -13,7 +13,9 @@ import 'package:mediturnos/turnos/presentacion/viewmodels/turnosAdminViewModel.d
 class FakeRepositorioGestionTurnos implements RepositorioGestionTurnos {
   bool simularSinConexion = false;
   bool simularError409 = false;
+  bool simularConfirmacionAnticipada = false;
   EstadoTurno? estadoCambiado;
+  String? origenCambiado;
 
   final TurnoDetalle turnoPrueba = TurnoDetalle(
     id: 101,
@@ -47,9 +49,15 @@ class FakeRepositorioGestionTurnos implements RepositorioGestionTurnos {
   Future<TurnoDetalle> reprogramarTurno({required int turnoId, required DateTime fecha, required String hora}) async => turnoPrueba;
 
   @override
-  Future<TurnoDetalle> cambiarEstadoTurno({required int turnoId, required EstadoTurno estado}) async {
+  Future<TurnoDetalle> responderAsistencia({required int turnoId, required bool asistira}) async => turnoPrueba;
+
+  @override
+  Future<TurnoDetalle> cambiarEstadoTurno({required int turnoId, required EstadoTurno estado, String? origen}) async {
     if (simularSinConexion) {
       throw ExcepcionTurnos(ErrorTurnos.sinConexion);
+    }
+    if (simularConfirmacionAnticipada) {
+      throw ExcepcionTurnos(ErrorTurnos.confirmacionAnticipada);
     }
     if (simularError409) {
       throw ExcepcionTurnos(
@@ -58,6 +66,7 @@ class FakeRepositorioGestionTurnos implements RepositorioGestionTurnos {
       );
     }
     estadoCambiado = estado;
+    origenCambiado = origen;
     return turnoPrueba;
   }
 }
@@ -107,7 +116,7 @@ class FakeRepositorioMedicos implements RepositorioMedicos {
 }
 
 void main() {
-  group('TurnosAdminViewModel.cancelarTurno Tests', () {
+  group('TurnosAdminViewModel Tests', () {
     late FakeRepositorioGestionTurnos repoTurnos;
     late FakeRepositorioMedicos repoMedicos;
     late TurnosAdminViewModel vm;
@@ -118,11 +127,12 @@ void main() {
       vm = TurnosAdminViewModel(repoTurnos, repoMedicos);
     });
 
-    test('Éxito al cancelarTurno llama cambiarEstadoTurno con CANCELADO y recarga', () async {
+    test('Éxito al cancelarTurno llama cambiarEstadoTurno con CANCELADO y origen CENTRO', () async {
       final res = await vm.cancelarTurno(repoTurnos.turnoPrueba);
 
       expect(res, isTrue);
       expect(repoTurnos.estadoCambiado, equals(EstadoTurno.cancelado));
+      expect(repoTurnos.origenCambiado, equals('CENTRO'));
       expect(vm.errorAccion, isNull);
     });
 
@@ -142,6 +152,24 @@ void main() {
 
       expect(res, isFalse);
       expect(vm.errorAccion, equals('Necesitás conexión con el servidor para rechazar el turno.'));
+    });
+
+    test('Confirmar con error CONFIRMACION_ANTICIPADA mapea mensaje en errorAccion', () async {
+      repoTurnos.simularConfirmacionAnticipada = true;
+
+      final res = await vm.confirmar(repoTurnos.turnoPrueba);
+
+      expect(res, isFalse);
+      expect(vm.errorAccion, equals('Solo podés confirmar turnos que empiezan en las próximas 24 horas.'));
+    });
+
+    test('fechaInicial inicializa la fecha seleccionada en ViewModel', () {
+      final fechaPrueba = DateTime(2026, 5, 20);
+      final vmConFecha = TurnosAdminViewModel(repoTurnos, repoMedicos, fechaInicial: fechaPrueba);
+
+      expect(vmConFecha.fechaSeleccionada.year, equals(2026));
+      expect(vmConFecha.fechaSeleccionada.month, equals(5));
+      expect(vmConFecha.fechaSeleccionada.day, equals(20));
     });
   });
 }

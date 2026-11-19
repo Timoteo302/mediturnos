@@ -4,6 +4,7 @@ import 'package:mediturnos/configuracion/baseDatosLocal.dart';
 import '../modelos/turno.dart';
 import 'repositorioTurnos.dart';
 
+// Implementación concreta del repositorio legacy de turnos sobre SQLite.
 class RepositorioTurnosImpl implements RepositorioTurnos {
   @override
   Future<List<Turno>> obtenerTurnos() async {
@@ -24,6 +25,7 @@ class RepositorioTurnosImpl implements RepositorioTurnos {
         medicoId: dato['medicoId'] as int?,
         claveSolicitud: dato['claveSolicitud'] as String?,
         errorSincronizacion: dato['errorSincronizacion'] as String?,
+        respuestaPaciente: dato['respuestaPaciente']?.toString() ?? 'SIN_RESPUESTA',
       );
     }).toList();
   }
@@ -45,6 +47,7 @@ class RepositorioTurnosImpl implements RepositorioTurnos {
       'medicoId': turno.medicoId,
       'claveSolicitud': turno.claveSolicitud,
       'errorSincronizacion': turno.errorSincronizacion,
+      'respuestaPaciente': turno.respuestaPaciente,
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
@@ -66,6 +69,7 @@ class RepositorioTurnosImpl implements RepositorioTurnos {
         'medicoId': turno.medicoId,
         'claveSolicitud': turno.claveSolicitud,
         'errorSincronizacion': turno.errorSincronizacion,
+        'respuestaPaciente': turno.respuestaPaciente,
       },
       where: 'id = ?',
       whereArgs: [turno.id],
@@ -99,6 +103,7 @@ class RepositorioTurnosImpl implements RepositorioTurnos {
         'medicoId': turno.medicoId,
         'claveSolicitud': turno.claveSolicitud,
         'errorSincronizacion': null,
+        'respuestaPaciente': turno.respuestaPaciente,
       });
     });
   }

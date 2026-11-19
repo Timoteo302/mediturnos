@@ -4,7 +4,7 @@ import '../modelos/estadoTurno.dart';
 import '../fuentes/clienteTurnosApi.dart';
 import 'repositorioGestionTurnos.dart';
 
-/// Implementación de RepositorioGestionTurnos que se comunica directamente con la API remota.
+// Implementación directa que delega las operaciones al cliente HTTP de la API de turnos.
 class RepositorioGestionTurnosApi implements RepositorioGestionTurnos {
   final ClienteTurnosApi clienteApi;
 
@@ -36,7 +36,12 @@ class RepositorioGestionTurnosApi implements RepositorioGestionTurnos {
   }
 
   @override
-  Future<TurnoDetalle> cambiarEstadoTurno({required int turnoId, required EstadoTurno estado}) {
-    return clienteApi.cambiarEstadoTurno(turnoId: turnoId, estado: estado);
+  Future<TurnoDetalle> cambiarEstadoTurno({required int turnoId, required EstadoTurno estado, String? origen}) {
+    return clienteApi.cambiarEstadoTurno(turnoId: turnoId, estado: estado, origen: origen);
+  }
+
+  @override
+  Future<TurnoDetalle> responderAsistencia({required int turnoId, required bool asistira}) {
+    return clienteApi.responderAsistencia(turnoId: turnoId, asistira: asistira);
   }
 }

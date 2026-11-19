@@ -41,6 +41,12 @@ public class TurnoService {
     @Autowired
     private HorarioAtencionRepository horarioAtencionRepository;
 
+    @Autowired
+    private NotificacionService notificacionService;
+
+    @Autowired(required = false)
+    private RecordatorioTurnosService recordatorioTurnosService;
+
     private static final ZoneId ZONA_BUENOS_AIRES = ZoneId.of("America/Argentina/Buenos_Aires");
     private static final DateTimeFormatter FORMATO_HORA = DateTimeFormatter.ofPattern("HH:mm");
     private static final List<String> ESTADOS_VALIDOS = List.of("PENDIENTE", "CONFIRMADO", "CANCELADO", "ATENDIDO");
@@ -162,6 +168,10 @@ public class TurnoService {
 
         try {
             Turno guardado = turnoRepository.save(turno);
+            
+            if (recordatorioTurnosService != null) {
+                recordatorioTurnosService.procesarAhora();
+            }
             return new ResultadoCreacion(convertirADto(guardado), false);
         } catch (DataIntegrityViolationException ex) {
             throw new ExcepcionApi(HttpStatus.CONFLICT, "HORARIO_OCUPADO", "El médico ya tiene un turno reservado en ese horario.");
@@ -201,12 +211,23 @@ public class TurnoService {
             throw new ExcepcionApi(HttpStatus.CONFLICT, "HORARIO_OCUPADO", "El médico ya tiene un turno reservado en ese horario.");
         }
 
+        if ("CONFIRMADO".equals(turno.getEstado())) {
+            turno.setEstado("PENDIENTE");
+        }
         turno.setFecha(nuevaFecha);
         turno.setHora(nuevaHora);
-        // El estado NO cambia según la especificación
+        turno.setRecordatorioEnviado(false);
+        turno.setRespuestaPaciente("SIN_RESPUESTA");
 
         try {
             Turno guardado = turnoRepository.save(turno);
+            
+            String msg = String.format("%s %s cambió su turno con Dr/a. %s al %02d/%02d a las %s. Queda pendiente de confirmación.", 
+                guardado.getPaciente().getUsuario().getNombre(), guardado.getPaciente().getUsuario().getApellido(),
+                guardado.getMedico().getApellido(), guardado.getFecha().getDayOfMonth(), guardado.getFecha().getMonthValue(),
+                guardado.getHora().format(FORMATO_HORA));
+            notificacionService.crearParaAdmins(guardado, "TURNO_REPROGRAMADO", "Turno reprogramado", msg);
+            
             return convertirADto(guardado);
         } catch (DataIntegrityViolationException ex) {
             throw new ExcepcionApi(HttpStatus.CONFLICT, "HORARIO_OCUPADO", "El médico ya tiene un turno reservado en ese horario.");
@@ -257,8 +278,30 @@ public class TurnoService {
             }
         }
 
+        if ("CONFIRMADO".equals(nuevoEstado)) {
+            LocalDateTime inicio = LocalDateTime.of(turno.getFecha(), turno.getHora());
+            LocalDateTime ahora = LocalDateTime.now(ZONA_BUENOS_AIRES);
+            if (inicio.minusHours(24).isAfter(ahora)) {
+                throw new ExcepcionApi(HttpStatus.CONFLICT, "CONFIRMACION_ANTICIPADA", "Solo se pueden confirmar turnos que empiezan en las próximas 24 horas.");
+            }
+        }
+
         turno.setEstado(nuevoEstado);
         Turno guardado = turnoRepository.save(turno);
+
+        if ("CONFIRMADO".equals(nuevoEstado)) {
+            String msg = String.format("Te esperamos el %02d/%02d a las %s con %s.", guardado.getFecha().getDayOfMonth(), guardado.getFecha().getMonthValue(), guardado.getHora().format(FORMATO_HORA), guardado.getMedico().getNombre() + " " + guardado.getMedico().getApellido());
+            notificacionService.crearParaPaciente(guardado, "TURNO_CONFIRMADO", "Tu turno fue confirmado", msg);
+        }
+        
+        if ("CANCELADO".equals(nuevoEstado)) {
+            String origen = solicitud.getOrigen() != null ? solicitud.getOrigen() : "PACIENTE";
+            if ("CENTRO".equals(origen)) {
+                String msg = String.format("El centro canceló tu turno del %02d/%02d a las %s. Podés pedir uno nuevo desde la app.", guardado.getFecha().getDayOfMonth(), guardado.getFecha().getMonthValue(), guardado.getHora().format(FORMATO_HORA));
+                notificacionService.crearParaPaciente(guardado, "TURNO_CANCELADO_CENTRO", "Tu turno fue cancelado", msg);
+            }
+        }
+
         return convertirADto(guardado);
     }
 
@@ -374,6 +417,12 @@ public class TurnoService {
         String horaStr = turno.getHora() != null ? turno.getHora().format(FORMATO_HORA) : null;
         String fechaCreacionStr = turno.getFechaCreacion() != null ? turno.getFechaCreacion().toString() : null;
 
+        boolean puedeConfirmarse = false;
+        if ("PENDIENTE".equals(turno.getEstado()) && turno.getFecha() != null && turno.getHora() != null) {
+            LocalDateTime inicio = LocalDateTime.of(turno.getFecha(), turno.getHora());
+            puedeConfirmarse = !inicio.minusHours(24).isAfter(LocalDateTime.now(ZONA_BUENOS_AIRES));
+        }
+
         return new TurnoRespuesta(
                 turno.getId(),
                 turno.getEstado(),
@@ -381,8 +430,45 @@ public class TurnoService {
                 horaStr,
                 turno.getClaveSolicitud(),
                 fechaCreacionStr,
+                turno.getRespuestaPaciente(),
+                puedeConfirmarse,
                 pacienteDto,
                 medicoDto
         );
+    }
+
+    /**
+     * Procesa la respuesta del paciente sobre si asistirá o no al turno.
+     */
+    @Transactional
+    public TurnoRespuesta responderAsistencia(Integer id, Boolean asistira) {
+        Turno turno = turnoRepository.findById(id)
+                .orElseThrow(() -> new ExcepcionApi(HttpStatus.NOT_FOUND, "TURNO_NO_ENCONTRADO", "Turno no encontrado."));
+
+        if (!"PENDIENTE".equals(turno.getEstado()) && !"CONFIRMADO".equals(turno.getEstado())) {
+            throw new ExcepcionApi(HttpStatus.CONFLICT, "TURNO_NO_MODIFICABLE", "Solo se puede responder asistencia para turnos PENDIENTES o CONFIRMADOS.");
+        }
+
+        String tituloNotif;
+        String msgNotif;
+        if (Boolean.TRUE.equals(asistira)) {
+            turno.setRespuestaPaciente("ASISTIRA");
+            tituloNotif = "Confirmó asistencia";
+            msgNotif = String.format("%s %s confirmó que asiste el %02d/%02d a las %s. Ya podés confirmar el turno.", turno.getPaciente().getUsuario().getNombre(), turno.getPaciente().getUsuario().getApellido(), turno.getFecha().getDayOfMonth(), turno.getFecha().getMonthValue(), turno.getHora().format(FORMATO_HORA));
+            notificacionService.crearParaAdmins(turno, "PACIENTE_ASISTIRA", tituloNotif, msgNotif);
+        } else {
+            turno.setRespuestaPaciente("NO_ASISTIRA");
+            turno.setEstado("CANCELADO");
+            tituloNotif = "Canceló su turno";
+            msgNotif = String.format("%s %s avisó que no asiste el %02d/%02d a las %s. El horario quedó libre.", turno.getPaciente().getUsuario().getNombre(), turno.getPaciente().getUsuario().getApellido(), turno.getFecha().getDayOfMonth(), turno.getFecha().getMonthValue(), turno.getHora().format(FORMATO_HORA));
+            notificacionService.crearParaAdmins(turno, "PACIENTE_NO_ASISTIRA", tituloNotif, msgNotif);
+        }
+        
+        Turno guardado = turnoRepository.save(turno);
+        
+        // Marcar como leída la notificación RECORDATORIO_ASISTENCIA de este turno
+        notificacionService.marcarRecordatorioLeido(id);
+        
+        return convertirADto(guardado);
     }
 }

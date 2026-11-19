@@ -4,6 +4,8 @@ import 'package:mediturnos/autenticacion/presentacion/viewmodels/autenticacionVi
 import 'package:mediturnos/autenticacion/presentacion/pantallas/pantallaLogin.dart';
 import 'package:mediturnos/componentes/inicio/bannerUrgencia.dart';
 import 'package:mediturnos/componentes/comunes/botonPrincipal.dart';
+import 'package:mediturnos/componentes/comunes/iconoCampanita.dart';
+import 'package:mediturnos/componentes/comunes/indicadorConexion.dart';
 import 'package:mediturnos/componentes/inicio/tarjetaAccesoRapido.dart';
 import 'package:mediturnos/componentes/inicio/tarjetaProximoTurno.dart';
 import 'package:mediturnos/configuracion/coloresApp.dart';
@@ -143,20 +145,27 @@ class _VistaInicioPaciente extends StatelessWidget {
             ),
           ],
         ),
-        IconButton(
-          icon: const Icon(
-            Icons.logout_rounded,
-            color: ColoresApp.primario,
-            size: 26,
-          ),
-          onPressed: () {
-            context.read<AutenticacionViewModel>().cerrarSesion();
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (context) => const PantallaLogin()),
-              (route) => false,
-            );
-          },
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const IconoCampanita(),
+            const IndicadorConexion(),
+            IconButton(
+              icon: const Icon(
+                Icons.logout_rounded,
+                color: ColoresApp.primario,
+                size: 26,
+              ),
+              onPressed: () {
+                context.read<AutenticacionViewModel>().cerrarSesion();
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const PantallaLogin()),
+                  (route) => false,
+                );
+              },
+            ),
+          ],
         ),
       ],
     );

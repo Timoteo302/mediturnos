@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../componentes/comunes/botonPrincipal.dart';
+import '../../../componentes/comunes/indicadorConexion.dart';
+import '../../../componentes/turnos/dialogoAsistenciaTurno.dart';
 import '../../../componentes/turnos/tarjetaDatosPacienteTurno.dart';
 import '../../../componentes/turnos/tarjetaEstadoReserva.dart';
 import '../../../componentes/turnos/tarjetaIndicacionesPaciente.dart';
 import '../../../componentes/turnos/tarjetaMedicoSede.dart';
 import '../../../configuracion/coloresApp.dart';
 import '../../../configuracion/estilosTexto.dart';
+import '../../../autenticacion/presentacion/viewmodels/autenticacionViewModel.dart';
 import '../../datos/modelos/estadoTurno.dart';
 import '../../datos/modelos/turnoDetalle.dart';
 import '../../datos/repositorios/repositorioGestionTurnos.dart';
@@ -92,6 +95,7 @@ class _VistaDetalleTurno extends StatelessWidget {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: ColoresApp.textoTitulo),
         ),
         centerTitle: true,
+        actions: const [IndicadorConexion()],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -102,11 +106,43 @@ class _VistaDetalleTurno extends StatelessWidget {
             const SizedBox(height: 16),
             TarjetaMedicoSede(medico: t.medico),
             const SizedBox(height: 16),
-            TarjetaDatosPacienteTurno(paciente: t.paciente),
-            const SizedBox(height: 16),
+            if (context.watch<AutenticacionViewModel>().esAdmin) ...[
+              TarjetaDatosPacienteTurno(paciente: t.paciente),
+              const SizedBox(height: 16),
+            ],
             const TarjetaIndicacionesPaciente(),
             if (!ocultarAcciones) ...[
               const SizedBox(height: 24),
+              if (DateTime.now().isAfter(t.fechaHora.subtract(const Duration(hours: 24))) &&
+                  DateTime.now().isBefore(t.fechaHora) &&
+                  t.respuestaPaciente == 'SIN_RESPUESTA') ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      final fechaTexto = '${t.fecha.day}/${t.fecha.month}/${t.fecha.year}';
+                      showDialog(
+                        context: context,
+                        builder: (context) => DialogoAsistenciaTurno(
+                          turnoId: t.id,
+                          medicoNombre: t.medico.nombreCompleto,
+                          fechaTexto: fechaTexto,
+                          hora: t.hora,
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                    ),
+                    icon: const Icon(Icons.check_circle_outline),
+                    label: const Text('Confirmar asistencia', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+              ],
               BotonPrincipal(
                 texto: 'Modificar turno',
                 onPressed: () {

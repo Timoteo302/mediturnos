@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../componentes/comunes/indicadorConexion.dart';
 import '../../../componentes/medicos/chipFiltroMedicos.dart';
 import '../../../configuracion/coloresApp.dart';
 import '../../../configuracion/estilosTexto.dart';
@@ -75,6 +76,7 @@ class _VistaGestionEspecialidadesState extends State<_VistaGestionEspecialidades
     return Scaffold(
       appBar: AppBar(
         title: const Text('Especialidades médicas'),
+        actions: const [IndicadorConexion()],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),

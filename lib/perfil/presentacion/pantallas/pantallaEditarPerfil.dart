@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'package:mediturnos/autenticacion/presentacion/viewmodels/autenticacionViewModel.dart';
 import 'package:mediturnos/componentes/comunes/botonPrincipal.dart';
+import 'package:mediturnos/componentes/comunes/indicadorConexion.dart';
 import 'package:mediturnos/componentes/comunes/campoTexto.dart';
 import 'package:mediturnos/componentes/comunes/notificacionCambiosGuardados.dart';
 import 'package:mediturnos/componentes/comunes/validadorTelefono.dart';
@@ -127,6 +128,7 @@ class _VistaEditarPerfilState extends State<_VistaEditarPerfil> {
           ),
         ),
         centerTitle: true,
+        actions: const [IndicadorConexion()],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),

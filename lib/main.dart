@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
+import 'configuracion/clavesGlobales.dart';
+
 import 'turnos/datos/repositorios/repositorioGestionTurnosOfflineFirst.dart';
 import 'turnos/datos/fuentes/local/almacenTurnosLocal.dart';
 
@@ -25,9 +27,13 @@ import 'medicos/datos/fuentes/clienteMedicosApi.dart';
 import 'turnos/datos/repositorios/repositorioGestionTurnos.dart';
 import 'turnos/datos/fuentes/clienteTurnosApi.dart';
 
-import 'package:mediturnos/servicios/verificadorConexion.dart';
+import 'notificaciones/datos/repositorios/repositorioNotificaciones.dart';
+import 'notificaciones/datos/repositorios/repositorioNotificacionesApi.dart';
+import 'notificaciones/datos/fuentes/clienteNotificacionesApi.dart';
+import 'notificaciones/presentacion/viewmodels/notificacionesViewModel.dart';
 
 import 'servicios/servicioMonitoreoSincronizacion.dart';
+import 'servicios/estadoConexionViewModel.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,10 +42,6 @@ Future<void> main() async {
   if (kIsWeb) {
     databaseFactory = databaseFactoryFfiWebNoWebWorker;
   }
-
-  // Por ahora no iniciamos el monitoreo global para evitar
-  // interrupciones en la navegación.
-  // VerificadorConexion.iniciarMonitoreoGlobal();
 
   runApp(const MediTurnosApp());
 }
@@ -73,15 +75,36 @@ class MediTurnosApp extends StatelessWidget {
             AlmacenTurnosLocal(),
           ),
         ),
+        Provider<RepositorioNotificaciones>(
+          create: (_) => RepositorioNotificacionesApi(
+            ClienteNotificacionesApi(http.Client()),
+          ),
+        ),
 
         Provider<ServicioMonitoreoSincronizacion>(
           lazy: false,
           create: (_) => ServicioMonitoreoSincronizacion()..iniciar(),
           dispose: (_, servicio) => servicio.detener(),
         ),
+        ChangeNotifierProvider<EstadoConexionViewModel>(
+          lazy: false,
+          create: (context) => EstadoConexionViewModel(
+            context.read<ServicioMonitoreoSincronizacion>(),
+          ),
+        ),
+        ChangeNotifierProvider<NotificacionesViewModel>(
+          lazy: false,
+          create: (context) => NotificacionesViewModel(
+            repositorioNotificaciones: context.read<RepositorioNotificaciones>(),
+            repositorioTurnos: context.read<RepositorioGestionTurnos>(),
+            authVm: context.read<AutenticacionViewModel>(),
+            conexionVm: context.read<EstadoConexionViewModel>(),
+          ),
+        ),
       ],
       child: MaterialApp(
         navigatorKey: claveNavegacionGlobal,
+        scaffoldMessengerKey: scaffoldMessengerKey,
         debugShowCheckedModeBanner: false,
         title: 'MediTurnos',
         theme: TemaApp.tema,
