@@ -26,10 +26,10 @@ public class UsuarioService {
     @Autowired
     private PacienteRepository pacienteRepository;
 
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    @Autowired
+    private ValidadorDatosPersona validador;
 
-    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
-    private static final Pattern DNI_PATTERN = Pattern.compile("^\\d{7,8}$");
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Transactional
     public UsuarioRespuesta registrarUsuario(Map<String, String> body) {
@@ -45,30 +45,19 @@ public class UsuarioService {
         String telefono = body.get("telefono");
 
         // Validaciones
-        if (nombre == null || nombre.trim().length() < 2 || nombre.trim().length() > 100) {
-            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El nombre es obligatorio y debe tener entre 2 y 100 caracteres", "nombre");
-        }
-        if (apellido == null || apellido.trim().length() < 2 || apellido.trim().length() > 100) {
-            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El apellido es obligatorio y debe tener entre 2 y 100 caracteres", "apellido");
-        }
-        if (email == null || email.length() > 150) {
-            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El email es obligatorio y no puede superar los 150 caracteres", "email");
-        }
-        String emailNorm = email.trim().toLowerCase();
-        if (!EMAIL_PATTERN.matcher(emailNorm).matches()) {
-            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "Formato de email inválido", "email");
-        }
+        validador.validarNombre(nombre);
+        validador.validarApellido(apellido);
+        validador.validarEmail(email);
         if (contrasena == null || contrasena.length() < 8 || contrasena.length() > 72) {
             throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "La contraseña debe tener entre 8 y 72 caracteres", "contrasena");
         }
-        if (dni == null || !DNI_PATTERN.matcher(dni.trim()).matches()) {
-            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El DNI es obligatorio y debe tener 7 u 8 dígitos", "dni");
-        }
+        validador.validarDni(dni);
         if (telefono != null && !telefono.isBlank()) {
-            validarTelefono(telefono);
+            validador.validarTelefono(telefono);
         }
 
         // Duplicados
+        String emailNorm = email.trim().toLowerCase();
         if (usuarioRepository.existsByEmail(emailNorm)) {
             throw new ExcepcionApi(HttpStatus.CONFLICT, "EMAIL_DUPLICADO", "El email ya está registrado", "email");
         }
@@ -104,11 +93,19 @@ public class UsuarioService {
         String emailNorm = email.trim().toLowerCase();
         Optional<Usuario> usuarioOpt = usuarioRepository.findByEmail(emailNorm);
 
+        if (usuarioOpt.isPresent()) {
+            Usuario usuario = usuarioOpt.get();
+            if (Boolean.TRUE.equals(usuario.getContrasenaPendiente())) {
+                throw new ExcepcionApi(HttpStatus.FORBIDDEN, "ACTIVACION_PENDIENTE", "Tu cuenta todavía no tiene contraseña. Revisá tu correo o pedí un código nuevo.");
+            }
+        }
+
         if (usuarioOpt.isEmpty() || !passwordEncoder.matches(contrasena, usuarioOpt.get().getContrasena())) {
             throw new ExcepcionApi(HttpStatus.UNAUTHORIZED, "CREDENCIALES_INVALIDAS", "Credenciales inválidas");
         }
 
         Usuario usuario = usuarioOpt.get();
+
         if (Boolean.FALSE.equals(usuario.getActivo())) {
             throw new ExcepcionApi(HttpStatus.FORBIDDEN, "CUENTA_INACTIVA", "Cuenta inactiva");
         }
@@ -160,19 +157,15 @@ public class UsuarioService {
         String apellido = body.get("apellido");
         String telefono = body.get("telefono");
 
-        if (nombre == null || nombre.trim().length() < 2 || nombre.trim().length() > 100) {
-            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El nombre es obligatorio y debe tener entre 2 y 100 caracteres", "nombre");
-        }
-        if (apellido == null || apellido.trim().length() < 2 || apellido.trim().length() > 100) {
-            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El apellido es obligatorio y debe tener entre 2 y 100 caracteres", "apellido");
-        }
+        validador.validarNombre(nombre);
+        validador.validarApellido(apellido);
 
         usuario.setNombre(nombre.trim());
         usuario.setApellido(apellido.trim());
 
         Paciente paciente = null;
         if (usuario.getRol() == Usuario.Rol.PACIENTE) {
-            validarTelefono(telefono);
+            validador.validarTelefono(telefono);
             paciente = pacienteRepository.findByUsuarioId(usuario.getId()).orElse(null);
             if (paciente != null) {
                 paciente.setTelefono(telefono.trim());
@@ -183,22 +176,5 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
 
         return mapToRespuesta(usuario, paciente);
-    }
-
-    /**
-     * Valida formato y longitud del teléfono.
-     */
-    private void validarTelefono(String telefono) {
-        if (telefono == null || telefono.isBlank()) {
-            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El teléfono debe tener entre 8 y 15 dígitos", "telefono");
-        }
-        String tel = telefono.trim();
-        if (!tel.matches("^\\+?[0-9\\s\\-()]{8,30}$")) {
-            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El teléfono debe tener entre 8 y 15 dígitos", "telefono");
-        }
-        long digitos = tel.chars().filter(Character::isDigit).count();
-        if (digitos < 8 || digitos > 15) {
-            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El teléfono debe tener entre 8 y 15 dígitos", "telefono");
-        }
     }
 }

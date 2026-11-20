@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.mediturnos.service.correo.ServicioCorreo;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -23,6 +24,9 @@ public class RecuperacionService {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private ServicioCorreo servicioCorreo;
 
     @Autowired
     private PacienteRepository pacienteRepository;
@@ -94,6 +98,8 @@ public class RecuperacionService {
         SolicitudRecuperacion solicitud = new SolicitudRecuperacion(idRecuperacion, usuario.getId(), codigo, vencimiento, 0);
         solicitudes.put(idRecuperacion, solicitud);
 
+        servicioCorreo.enviarCodigoRecuperacion(usuario.getEmail(), usuario.getNombre(), codigo);
+
         Map<String, Object> resultado = new HashMap<>();
         resultado.put("idRecuperacion", idRecuperacion);
         resultado.put("venceEnMinutos", 10);
@@ -154,6 +160,7 @@ public class RecuperacionService {
                 .orElseThrow(() -> new ExcepcionApi(HttpStatus.NOT_FOUND, "CUENTA_NO_ENCONTRADA", "Cuenta no encontrada"));
 
         usuario.setContrasena(passwordEncoder.encode(nuevaContrasena));
+        usuario.setContrasenaPendiente(false);
         usuarioRepository.save(usuario);
 
         solicitudes.remove(idRecuperacion);

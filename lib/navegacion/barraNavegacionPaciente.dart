@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../autenticacion/presentacion/viewmodels/autenticacionViewModel.dart';
 import '../componentes/comunes/barraNavegacion.dart';
+import '../componentes/comunes/dialogoRequiereCuenta.dart';
 import '../turnos/presentacion/pantallas/pantallaBuscarMedicos.dart';
 import '../turnos/presentacion/pantallas/pantallaMisTurnos.dart';
 import '../perfil/presentacion/pantallas/pantallaPerfil.dart';
@@ -16,10 +19,18 @@ class BarraNavegacionPaciente extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final authVm = context.watch<AutenticacionViewModel>();
+
     return BarraNavegacionApp(
       indiceSeleccionado: indiceActual,
       alSeleccionar: (index) {
         if (index == indiceActual) return;
+
+        // Si el usuario está en modo invitado e intenta acceder a Mis Turnos o Mi Perfil, desplegamos el diálogo emergente.
+        if (authVm.esInvitado && (index == 2 || index == 3)) {
+          DialogoRequiereCuenta.mostrar(context);
+          return;
+        }
 
         Widget pantallaDestino;
         switch (index) {

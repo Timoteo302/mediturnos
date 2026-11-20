@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.mediturnos.service.ReservaInvitadoService;
 import java.util.Map;
 
 import java.util.List;
@@ -20,6 +21,9 @@ public class TurnoController {
 
     @Autowired
     private TurnoService turnoService;
+
+    @Autowired
+    private ReservaInvitadoService reservaInvitadoService;
 
     /**
      * Endpoint GET /turnos

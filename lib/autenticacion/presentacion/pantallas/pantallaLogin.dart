@@ -11,11 +11,18 @@ import '../../../configuracion/estilosTexto.dart';
 // Importamos pantallas de destino segun rol
 import '../../../inicio/presentacion/pantallas/pantallaInicioPaciente.dart';
 import '../../../inicio/presentacion/pantallas/pantallaInicioAdmin.dart';
+import '../../../invitado/presentacion/pantallas/pantallaActivarCuenta.dart';
+import '../../../medicos/datos/modelos/especialidad.dart';
+import '../../../medicos/datos/modelos/medico.dart';
+import '../../../medicos/datos/repositorios/repositorioMedicos.dart';
+import '../../../turnos/datos/repositorios/repositorioGestionTurnos.dart';
+import '../../../turnos/presentacion/pantallas/pantallaConfirmarSolicitud.dart';
+import '../../../turnos/presentacion/viewmodels/solicitudTurnoViewModel.dart';
+import '../../datos/modelos/excepcionAutenticacion.dart';
 import 'pantallaCrearCuenta.dart';
 import 'pantallaOlvideContrasena.dart';
 
 import '../viewmodels/autenticacionViewModel.dart';
-import '../../datos/modelos/usuario.dart';
 
 class PantallaLogin extends StatefulWidget {
   final String? emailPrellenado;
@@ -67,7 +74,40 @@ class _PantallaLoginState extends State<PantallaLogin> {
 
       if (!mounted) return;
 
-      if (vm.esAdmin) {
+      if (!vm.esAdmin && vm.reservaPendiente != null) {
+        final pendiente = vm.reservaPendiente!;
+        vm.limpiarReservaPendiente();
+
+        final medicoModel = Medico(
+          id: pendiente.medicoId,
+          nombre: pendiente.medicoNombre,
+          apellido: '',
+          matricula: '',
+          activo: true,
+          especialidad: Especialidad(id: 0, nombre: pendiente.especialidadNombre, activo: true),
+        );
+
+        final solicitudVm = SolicitudTurnoViewModel(
+          context.read<RepositorioGestionTurnos>(),
+          context.read<RepositorioMedicos>(),
+          medicoModel,
+        );
+
+        await solicitudVm.cargarDisponibilidad(pendiente.fecha);
+        solicitudVm.seleccionarHora(pendiente.hora);
+
+        if (!mounted) return;
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChangeNotifierProvider<SolicitudTurnoViewModel>.value(
+              value: solicitudVm,
+              child: const PantallaConfirmarSolicitud(),
+            ),
+          ),
+        );
+      } else if (vm.esAdmin) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const PantallaInicioAdmin()),
@@ -79,12 +119,49 @@ class _PantallaLoginState extends State<PantallaLogin> {
         );
       }
     } else if (vm.errorGeneral != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(vm.errorGeneral!),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (vm.ultimoError == ErrorAutenticacion.activacionPendiente) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text('Cuenta pendiente de activación', style: TextStyle(fontWeight: FontWeight.bold, color: ColoresApp.textoTitulo)),
+            content: Text(vm.errorGeneral!),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Volver', style: TextStyle(color: ColoresApp.textoSecundario)),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PantallaActivarCuenta(
+                        email: emailController.text.trim(),
+                        venceEnDias: 3,
+                        vieneDeLogin: true,
+                      ),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ColoresApp.primario,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text('Activar mi cuenta', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(vm.errorGeneral!),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -180,6 +257,34 @@ class _PantallaLoginState extends State<PantallaLogin> {
                   texto: 'Iniciar sesión',
                   onPressed: _iniciarSesion,
                   cargando: vm.cargando,
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: OutlinedButton(
+                    onPressed: vm.cargando ? null : () {
+                      vm.entrarComoInvitado();
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => const PantallaInicioPaciente()),
+                      );
+                    },
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: ColoresApp.primario, width: 1.5),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Entrar como invitado',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: ColoresApp.primario,
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 36),
                 Row(

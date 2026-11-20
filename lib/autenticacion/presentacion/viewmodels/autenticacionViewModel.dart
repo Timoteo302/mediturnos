@@ -6,7 +6,24 @@ import 'package:mediturnos/autenticacion/datos/repositorios/repositorioAutentica
 import 'package:mediturnos/configuracion/configuracionServidor.dart';
 import 'package:mediturnos/servicios/servicioLimpiezaLocal.dart';
 
-// ViewModel para gestionar el estado de sesión y autenticación del usuario.
+// Estructura en memoria para almacenar una reserva seleccionada por un invitado antes de iniciar sesión.
+class ReservaPendienteInvitado {
+  final int medicoId;
+  final DateTime fecha;
+  final String hora;
+  final String medicoNombre;
+  final String especialidadNombre;
+
+  ReservaPendienteInvitado({
+    required this.medicoId,
+    required this.fecha,
+    required this.hora,
+    required this.medicoNombre,
+    required this.especialidadNombre,
+  });
+}
+
+// ViewModel para gestionar el estado de sesión, autenticación y modo invitado del usuario.
 class AutenticacionViewModel extends ChangeNotifier {
   final RepositorioAutenticacion _repositorio;
   final Future<void> Function() _limpiezaLocal;
@@ -18,20 +35,63 @@ class AutenticacionViewModel extends ChangeNotifier {
 
   bool _descartado = false;
   bool _cargando = false;
+  bool _esInvitado = false;
   Usuario? _usuarioActual;
+  ReservaPendienteInvitado? _reservaPendiente;
   String? _errorEmail;
   String? _errorContrasena;
   String? _errorGeneral;
+  ErrorAutenticacion? _ultimoError;
 
   bool get cargando => _cargando;
+  bool get esInvitado => _esInvitado;
   Usuario? get usuarioActual => _usuarioActual;
+  ReservaPendienteInvitado? get reservaPendiente => _reservaPendiente;
   String? get errorEmail => _errorEmail;
   String? get errorContrasena => _errorContrasena;
   String? get errorGeneral => _errorGeneral;
+  ErrorAutenticacion? get ultimoError => _ultimoError;
   
   bool get modoSinConexion => _usuarioActual?.sesionOffline == true;
   bool get esAdmin => _usuarioActual?.rol == RolUsuario.admin;
   bool get estaAutenticado => _usuarioActual != null;
+
+  // Activa el modo invitado en memoria sin usuario logueado.
+  void entrarComoInvitado() {
+    _esInvitado = true;
+    _usuarioActual = null;
+    notifyListeners();
+  }
+
+  // Sale del modo invitado para permitir iniciar sesión o crear cuenta.
+  void salirDeInvitado() {
+    _esInvitado = false;
+    notifyListeners();
+  }
+
+  // Guarda los datos de la reserva pendiente que seleccionó el invitado.
+  void guardarReservaPendiente({
+    required int medicoId,
+    required DateTime fecha,
+    required String hora,
+    required String medicoNombre,
+    required String especialidadNombre,
+  }) {
+    _reservaPendiente = ReservaPendienteInvitado(
+      medicoId: medicoId,
+      fecha: fecha,
+      hora: hora,
+      medicoNombre: medicoNombre,
+      especialidadNombre: especialidadNombre,
+    );
+    notifyListeners();
+  }
+
+  // Limpia los datos de la reserva pendiente.
+  void limpiarReservaPendiente() {
+    _reservaPendiente = null;
+    notifyListeners();
+  }
 
   // Actualiza los datos en memoria del usuario logueado e intenta refrescar la copia guardada en SQLite.
   Future<void> actualizarUsuarioActual(Usuario u) async {
@@ -63,6 +123,7 @@ class AutenticacionViewModel extends ChangeNotifier {
     _errorEmail = null;
     _errorContrasena = null;
     _errorGeneral = null;
+    _ultimoError = null;
     notifyListeners();
   }
 
@@ -103,17 +164,22 @@ class AutenticacionViewModel extends ChangeNotifier {
 
     try {
       _usuarioActual = await _repositorio.iniciarSesion(email, contrasena);
+      _esInvitado = false;
       _cargando = false;
       notifyListeners();
       return true;
     } on ExcepcionAutenticacion catch (e) {
       _cargando = false;
+      _ultimoError = e.tipo;
       switch (e.tipo) {
         case ErrorAutenticacion.credencialesInvalidas:
           _errorGeneral = 'Correo o contraseña incorrectos.';
           break;
         case ErrorAutenticacion.cuentaInactiva:
           _errorGeneral = 'Tu cuenta está desactivada. Contactá a la clínica.';
+          break;
+        case ErrorAutenticacion.activacionPendiente:
+          _errorGeneral = e.mensaje ?? 'Tu cuenta requiere ser activada. Verificá tu correo.';
           break;
         case ErrorAutenticacion.sinConexion:
           _errorGeneral = 'Necesitás conexión la primera vez que iniciás sesión en este dispositivo.';
@@ -135,7 +201,7 @@ class AutenticacionViewModel extends ChangeNotifier {
     }
   }
 
-  // Cierra la sesión activa del usuario y ejecuta la limpieza de datos personales sincronizados en SQLite.
+  // Cierra la sesión activa del usuario, resetea el estado invitado y ejecuta la limpieza local.
   Future<void> cerrarSesion() async {
     _cargando = true;
     notifyListeners();
@@ -146,6 +212,7 @@ class AutenticacionViewModel extends ChangeNotifier {
       debugPrint('Error al limpiar datos locales al cerrar sesión: $e');
     }
 
+    _esInvitado = false;
     _usuarioActual = null;
     _cargando = false;
     notifyListeners();

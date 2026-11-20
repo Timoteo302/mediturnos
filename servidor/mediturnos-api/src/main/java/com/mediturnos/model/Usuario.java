@@ -37,6 +37,9 @@ public class Usuario {
     @Column(name = "fecha_creacion", insertable = false, updatable = false)
     private LocalDateTime fechaCreacion;
 
+    @Column(name = "contrasena_pendiente", nullable = false)
+    private Boolean contrasenaPendiente = false;
+
     public enum Rol {
         PACIENTE, ADMIN
     }
