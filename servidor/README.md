@@ -35,6 +35,8 @@ API REST construida con Spring Boot para el sistema de gestión de turnos médic
 
 ## Cómo ejecutar la API localmente
 
+En local se usa `mediturnos.correo.proveedor=demostracion` (el código aparece en el log y en la app).
+
 Ejecutar el comando en la carpeta `servidor/mediturnos-api`:
 ```bash
 mvn spring-boot:run
@@ -69,4 +71,7 @@ En entornos de producción (Azure App Service), la configuración se inyecta med
 | `SPRING_JPA_SHOW_SQL` | Desactiva el logeo de consultas SQL en producción | `false` |
 | `MEDITURNOS_RECUPERACION_MODODEMOSTRACION` | Desactiva o activa el código demo de recuperación | `false` |
 | `MEDITURNOS_CORREO_PROVEEDOR` | Proveedor de envío de correo | `azure` (o `demostracion`) |
+| `MEDITURNOS_CORREO_AZURE_CADENACONEXION` | Cadena de conexión para Azure Communication Services | `cadena_de_conexion_a_azure` |
+| `MEDITURNOS_CORREO_REMITENTE` | Dirección de correo del remitente configurada en Azure | `DoNotReply@midominio.com` |
+| `MEDITURNOS_URLPUBLICA` | URL pública de la aplicación para enlaces de correos | `https://mediturnos.azurewebsites.net` |
 | `MEDITURNOS_RECORDATORIOS_HABILITADOS` | Habilita la tarea programada de recordatorios | `true` |

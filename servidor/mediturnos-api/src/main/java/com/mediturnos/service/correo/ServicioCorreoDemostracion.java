@@ -1,5 +1,6 @@
 package com.mediturnos.service.correo;
 
+import com.mediturnos.dto.DatosTurnoCorreo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -7,7 +8,7 @@ import org.springframework.stereotype.Service;
 
 /**
  * Implementación falsa (mock) del envío de correos para entornos de desarrollo.
- * Solo imprime en el log el destino, asunto y código.
+ * Solo imprime en el log el destino, asunto y detalles.
  */
 @Service
 @ConditionalOnProperty(name = "mediturnos.correo.proveedor", havingValue = "demostracion", matchIfMissing = true)
@@ -27,5 +28,26 @@ public class ServicioCorreoDemostracion implements ServicioCorreo {
         log.info("Simulando envío de correo a: {}", email);
         log.info("Asunto: Recuperación de contraseña - MediTurnos");
         log.info("Hola {}, tu código de recuperación es: {}", nombre, codigo);
+    }
+
+    @Override
+    public void enviarRecordatorioAsistencia(String email, String nombre, DatosTurnoCorreo turno, String urlSi, String urlNo) {
+        log.info("Simulando envío de correo a: {}", email);
+        log.info("Asunto: ¿Vas a asistir a tu turno?");
+        log.info("Hola {}, tenés turno con {} ({}). URL Sí: {}, URL No: {}", nombre, turno != null ? turno.medico() : "", turno != null ? turno.fecha() : "", urlSi, urlNo);
+    }
+
+    @Override
+    public void enviarTurnoConfirmado(String email, String nombre, DatosTurnoCorreo turno) {
+        log.info("Simulando envío de correo a: {}", email);
+        log.info("Asunto: Tu turno está confirmado");
+        log.info("Hola {}, tu turno con {} el {} a las {} está confirmado.", nombre, turno != null ? turno.medico() : "", turno != null ? turno.fecha() : "", turno != null ? turno.hora() : "");
+    }
+
+    @Override
+    public void enviarTurnoCanceladoCentro(String email, String nombre, DatosTurnoCorreo turno) {
+        log.info("Simulando envío de correo a: {}", email);
+        log.info("Asunto: Tu turno fue cancelado");
+        log.info("Hola {}, tu turno con {} el {} a las {} fue cancelado.", nombre, turno != null ? turno.medico() : "", turno != null ? turno.fecha() : "", turno != null ? turno.hora() : "");
     }
 }

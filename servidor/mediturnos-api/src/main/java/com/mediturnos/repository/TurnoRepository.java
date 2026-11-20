@@ -51,4 +51,6 @@ public interface TurnoRepository extends JpaRepository<Turno, Integer> {
            "AND ((t.fecha = :fechaHoy AND t.hora > :horaHoy) OR " +
            "(t.fecha = :fechaManana AND t.hora <= :horaHoy))")
     List<Turno> findTurnosParaRecordatorio(@Param("fechaHoy") LocalDate fechaHoy, @Param("horaHoy") LocalTime horaHoy, @Param("fechaManana") LocalDate fechaManana);
+
+    Optional<Turno> findByTokenRespuesta(String tokenRespuesta);
 }

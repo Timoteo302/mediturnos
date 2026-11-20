@@ -218,6 +218,7 @@ public class TurnoService {
         turno.setHora(nuevaHora);
         turno.setRecordatorioEnviado(false);
         turno.setRespuestaPaciente("SIN_RESPUESTA");
+        turno.setTokenRespuesta(null);
 
         try {
             Turno guardado = turnoRepository.save(turno);

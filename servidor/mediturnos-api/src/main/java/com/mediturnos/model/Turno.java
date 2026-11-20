@@ -46,4 +46,7 @@ public class Turno {
 
     @Column(name = "respuesta_paciente", nullable = false)
     private String respuestaPaciente = "SIN_RESPUESTA";
+
+    @Column(name = "token_respuesta", unique = true, length = 64)
+    private String tokenRespuesta;
 }

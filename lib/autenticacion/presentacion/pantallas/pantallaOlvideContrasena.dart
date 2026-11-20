@@ -92,6 +92,7 @@ class _VistaOlvideContrasenaState extends State<_VistaOlvideContrasena> {
           backgroundColor: Colors.green,
         ),
       );
+      // Este es el único lugar donde cerramos la pantalla para volver al login tras cambiar la clave con éxito.
       Navigator.pop(context);
     } else if (vm.errorGeneral != null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -103,13 +104,6 @@ class _VistaOlvideContrasenaState extends State<_VistaOlvideContrasena> {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<RecuperacionViewModel>();
-
-    if (vm.paso == PasoRecuperacion.listo) {
-      // Por seguridad, si ya se completo, cerramos
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) Navigator.pop(context);
-      });
-    }
 
     return Scaffold(
       appBar: AppBar(
