@@ -5,10 +5,12 @@ import '../../turnos/datos/modelos/turnoDetalle.dart';
 /// Tarjeta que muestra los datos del paciente asociado al turno.
 class TarjetaDatosPacienteTurno extends StatelessWidget {
   final PacienteDetalle paciente;
+  final bool pacienteCuentaPendiente;
 
   const TarjetaDatosPacienteTurno({
     super.key,
     required this.paciente,
+    this.pacienteCuentaPendiente = false,
   });
 
   @override
@@ -21,7 +23,7 @@ class TarjetaDatosPacienteTurno extends StatelessWidget {
         border: Border.all(color: ColoresApp.bordeCampo),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -58,9 +60,9 @@ class TarjetaDatosPacienteTurno extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: ColoresApp.fondoIcono.withOpacity(0.4),
+                    color: ColoresApp.fondoIcono.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: ColoresApp.bordeCampo.withOpacity(0.5)),
+                    border: Border.all(color: ColoresApp.bordeCampo.withValues(alpha: 0.5)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,9 +80,9 @@ class TarjetaDatosPacienteTurno extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: ColoresApp.fondoIcono.withOpacity(0.4),
+                    color: ColoresApp.fondoIcono.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: ColoresApp.bordeCampo.withOpacity(0.5)),
+                    border: Border.all(color: ColoresApp.bordeCampo.withValues(alpha: 0.5)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,6 +97,31 @@ class TarjetaDatosPacienteTurno extends StatelessWidget {
               ),
             ],
           ),
+          if (pacienteCuentaPendiente) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.person_outline, size: 14, color: Color(0xFF64748B)),
+                  SizedBox(width: 4),
+                  Text(
+                    'Cuenta sin activar',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );

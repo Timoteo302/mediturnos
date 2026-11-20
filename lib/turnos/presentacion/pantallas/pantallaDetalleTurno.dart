@@ -107,7 +107,10 @@ class _VistaDetalleTurno extends StatelessWidget {
             TarjetaMedicoSede(medico: t.medico),
             const SizedBox(height: 16),
             if (context.watch<AutenticacionViewModel>().esAdmin) ...[
-              TarjetaDatosPacienteTurno(paciente: t.paciente),
+              TarjetaDatosPacienteTurno(
+                paciente: t.paciente,
+                pacienteCuentaPendiente: t.pacienteCuentaPendiente,
+              ),
               const SizedBox(height: 16),
             ],
             const TarjetaIndicacionesPaciente(),

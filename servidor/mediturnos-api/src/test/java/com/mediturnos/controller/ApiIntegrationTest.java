@@ -695,6 +695,63 @@ class ApiIntegrationTest {
     }
 
     @Test
+    void test17_reservaInvitado() throws Exception {
+        Especialidad esp = new Especialidad();
+        esp.setNombre("Neurología");
+        esp.setActivo(true);
+        esp = especialidadRepository.save(esp);
+
+        Medico medico = new Medico();
+        medico.setNombre("Jose");
+        medico.setApellido("Paz");
+        medico.setMatricula("55555");
+        medico.setActivo(true);
+        medico.setEspecialidad(esp);
+        medico = medicoRepository.save(medico);
+        
+        LocalDate fechaHoy = LocalDate.now(ZoneId.of("America/Argentina/Buenos_Aires"));
+        
+        mockMvc.perform(put("/medicos/" + medico.getId() + "/horarios")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(Map.of("horarios", List.of(
+                        Map.of("diaSemana", fechaHoy.plusDays(1).getDayOfWeek().getValue(), "horaInicio", "10:00", "horaFin", "11:00", "duracionTurno", 30)
+                )))));
+                
+        Map<String, String> body = Map.of(
+                "nombre", "Invitado",
+                "apellido", "Prueba",
+                "dni", "12345678",
+                "email", "invitado@test.com",
+                "telefono", "1122334455",
+                "medicoId", medico.getId().toString(),
+                "fecha", fechaHoy.plusDays(1).toString(),
+                "hora", "10:00",
+                "claveSolicitud", "uuid-invitado-1"
+        );
+        
+        // Reserva nueva exitosa
+        MvcResult result = mockMvc.perform(post("/reservas/invitado")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(body)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.turno.estado").value("PENDIENTE"))
+                .andExpect(jsonPath("$.turno.pacienteCuentaPendiente").value(true))
+                .andReturn();
+                
+        String codigo = (String) new ObjectMapper().readValue(result.getResponse().getContentAsString(), Map.class).get("codigoDemostracion");
+        
+        // Login de cuenta pendiente -> 403
+        mockMvc.perform(post("/login").contentType(MediaType.APPLICATION_JSON).content("{\"email\":\"invitado@test.com\",\"contrasena\":\"12345678\"}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.codigo").value("ACTIVACION_PENDIENTE"));
+                
+        // Activación de cuenta
+        mockMvc.perform(post("/activacion/confirmar").contentType(MediaType.APPLICATION_JSON).content("{\"email\":\"invitado@test.com\",\"codigo\":\"" + codigo + "\",\"contrasena\":\"NuevaClave123\"}"))
+                .andExpect(status().isOk());
+                
+    }
+
+    @Test
     void test17_saludYRutasInexistentes() throws Exception {
         // Comprueba que GET /salud devuelve 200 con el estado ok.
         mockMvc.perform(get("/salud"))

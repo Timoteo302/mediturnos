@@ -1,6 +1,7 @@
 enum ErrorAutenticacion {
   credencialesInvalidas,
   cuentaInactiva,
+  activacionPendiente,
   emailDuplicado,
   dniDuplicado,
   cuentaNoEncontrada,
@@ -14,6 +15,7 @@ enum ErrorAutenticacion {
   desconocido,
 }
 
+// Excepción personalizada para los errores del módulo de autenticación.
 class ExcepcionAutenticacion implements Exception {
   final ErrorAutenticacion tipo;
   final String? campo;

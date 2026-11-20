@@ -432,6 +432,7 @@ public class TurnoService {
                 fechaCreacionStr,
                 turno.getRespuestaPaciente(),
                 puedeConfirmarse,
+                Boolean.TRUE.equals(turno.getPaciente().getUsuario().getContrasenaPendiente()),
                 pacienteDto,
                 medicoDto
         );

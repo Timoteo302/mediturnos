@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 import '../../configuracion/coloresApp.dart';
 import '../../configuracion/estilosTexto.dart';
 
-/// Botón principal reutilizable de tipo "pill" azul con soporte de carga.
+/// Botón principal reutilizable de tipo "pill" azul con soporte de carga y estado deshabilitado.
 class BotonPrincipal extends StatelessWidget {
   final String texto;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final double altura;
   final bool cargando;
 
   const BotonPrincipal({
     super.key,
     required this.texto,
-    required this.onPressed,
+    this.onPressed,
     this.altura = 52.0,
     this.cargando = false,
   });

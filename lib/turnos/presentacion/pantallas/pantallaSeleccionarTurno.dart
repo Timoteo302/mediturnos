@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../autenticacion/presentacion/viewmodels/autenticacionViewModel.dart';
 import '../../../componentes/comunes/botonPrincipal.dart';
 import '../../../componentes/comunes/indicadorConexion.dart';
 import '../../../componentes/comunes/notificacionApp.dart';
@@ -10,6 +11,7 @@ import '../../../componentes/turnos/carruselCalendario.dart';
 import '../../../componentes/turnos/grillaHorariosTurno.dart';
 import '../../../configuracion/coloresApp.dart';
 import '../../../configuracion/estilosTexto.dart';
+import '../../../invitado/presentacion/pantallas/pantallaDatosInvitado.dart';
 import '../../../medicos/datos/modelos/medico.dart';
 import '../../../medicos/datos/repositorios/repositorioMedicos.dart';
 import '../../datos/repositorios/repositorioGestionTurnos.dart';
@@ -98,60 +100,74 @@ class _VistaSeleccionarTurno extends StatelessWidget {
                         children: [
                           TarjetaDoctorResumen(
                             nombre: medico.nombreCompleto,
-                      especialidad: medico.especialidad.nombre,
-                      matricula: medico.matricula,
+                            especialidad: medico.especialidad.nombre,
+                            matricula: medico.matricula,
+                          ),
+                          const SizedBox(height: 24),
+                          const Text('Seleccioná el día', style: EstilosTexto.tituloGrande),
+                          const SizedBox(height: 12),
+                          CarruselCalendario(
+                            fechaSeleccionada: vm.fechaSeleccionada,
+                            diasHabilitados: vm.diasConAtencion,
+                            alSeleccionarFecha: (nuevaFecha) => vm.cargarDisponibilidad(nuevaFecha),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            'Horarios para el ${vm.fechaSeleccionada.day}/${vm.fechaSeleccionada.month}/${vm.fechaSeleccionada.year}',
+                            style: EstilosTexto.tituloGrande,
+                          ),
+                          const SizedBox(height: 12),
+                          GrillaHorariosTurno(
+                            horarios: vm.horariosDisponibles,
+                            horaSeleccionada: vm.horaSeleccionada,
+                            cargando: vm.cargandoHorarios,
+                            alSeleccionarHora: (hora) => vm.seleccionarHora(hora),
+                          ),
+                          if (vm.errorGeneral != null) ...[
+                            const SizedBox(height: 16),
+                            Text(vm.errorGeneral!, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
+                          ],
+                          const SizedBox(height: 32),
+                          BotonPrincipal(
+                            texto: 'Continuar',
+                            onPressed: vm.horaSeleccionada == null
+                                ? () {
+                                    mostrarNotificacionApp(
+                                      context,
+                                      tipo: TipoNotificacionApp.error,
+                                      titulo: 'Elegí un horario',
+                                      mensaje: 'Seleccioná un horario disponible para continuar.',
+                                    );
+                                  }
+                                : () {
+                                    final authVm = context.read<AutenticacionViewModel>();
+                                    if (authVm.esInvitado) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => PantallaDatosInvitado(
+                                            medico: medico,
+                                            fecha: vm.fechaSeleccionada,
+                                            hora: vm.horaSeleccionada!,
+                                          ),
+                                        ),
+                                      );
+                                    } else {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => ChangeNotifierProvider<SolicitudTurnoViewModel>.value(
+                                            value: vm,
+                                            child: const PantallaConfirmarSolicitud(),
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  },
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 24),
-                    const Text('Seleccioná el día', style: EstilosTexto.tituloGrande),
-                    const SizedBox(height: 12),
-                    CarruselCalendario(
-                      fechaSeleccionada: vm.fechaSeleccionada,
-                      diasHabilitados: vm.diasConAtencion,
-                      alSeleccionarFecha: (nuevaFecha) => vm.cargarDisponibilidad(nuevaFecha),
-                    ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Horarios para el ${vm.fechaSeleccionada.day}/${vm.fechaSeleccionada.month}/${vm.fechaSeleccionada.year}',
-                      style: EstilosTexto.tituloGrande,
-                    ),
-                    const SizedBox(height: 12),
-                    GrillaHorariosTurno(
-                      horarios: vm.horariosDisponibles,
-                      horaSeleccionada: vm.horaSeleccionada,
-                      cargando: vm.cargandoHorarios,
-                      alSeleccionarHora: (hora) => vm.seleccionarHora(hora),
-                    ),
-                    if (vm.errorGeneral != null) ...[
-                      const SizedBox(height: 16),
-                      Text(vm.errorGeneral!, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
-                    ],
-                    const SizedBox(height: 32),
-                    BotonPrincipal(
-                      texto: 'Continuar',
-                      onPressed: vm.horaSeleccionada == null
-                          ? () {
-                              mostrarNotificacionApp(
-                                context,
-                                tipo: TipoNotificacionApp.error,
-                                titulo: 'Elegí un horario',
-                                mensaje: 'Seleccioná un horario disponible para continuar.',
-                              );
-                            }
-                          : () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ChangeNotifierProvider<SolicitudTurnoViewModel>.value(
-                                    value: vm,
-                                    child: const PantallaConfirmarSolicitud(),
-                                  ),
-                                ),
-                              );
-                            },
-                    ),
-                  ],
-                ),
-              ),
             ),
           ],
         ),

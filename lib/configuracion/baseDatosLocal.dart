@@ -25,7 +25,7 @@ class BaseDatosLocal {
 
     _baseDatos = await openDatabase(
       ruta,
-      version: 7,
+      version: 8,
       onCreate: (db, version) async {
         // Tabla para guardar los turnos localmente.
         // sincronizado: 1 si ya se guardó en el servidor, 0 si se creó o modificó sin conexión.
@@ -34,6 +34,7 @@ class BaseDatosLocal {
         // errorSincronizacion: mensaje descriptivo si falló la sincronización con el servidor.
         // respuestaPaciente: guarda si el paciente confirmó asistencia o no ('SIN_RESPUESTA', 'ASISTIRA', 'NO_ASISTIRA').
         // origenPendiente: registra quién originó un cambio de estado pendiente de envío ('PACIENTE' o 'CENTRO').
+        // pacienteCuentaPendiente: 1 si el paciente reservó como invitado y aún no activó su cuenta.
         await db.execute('''
           CREATE TABLE turnos (
             id INTEGER PRIMARY KEY,
@@ -50,13 +51,12 @@ class BaseDatosLocal {
             errorSincronizacion TEXT,
             operacionPendiente TEXT,
             respuestaPaciente TEXT NOT NULL DEFAULT 'SIN_RESPUESTA',
-            origenPendiente TEXT
+            origenPendiente TEXT,
+            pacienteCuentaPendiente INTEGER NOT NULL DEFAULT 0
           )
         ''');
 
         // Tabla para cachear la nómina de médicos.
-        // Se guarda un objeto JSON en "datos" para simplificar la estructura y mapearlo directo a Dart.
-        // sincronizado indica si la info coincide con la API y operacionPendiente registra cambios locales.
         await db.execute('''
           CREATE TABLE medicos (
             id INTEGER PRIMARY KEY,
@@ -67,7 +67,6 @@ class BaseDatosLocal {
         ''');
 
         // Tabla para guardar las especialidades médicas.
-        // Se almacena la info en JSON dentro de "datos" para simplificar lecturas sin crear múltiples tablas relacionadas.
         await db.execute('''
           CREATE TABLE especialidades (
             id INTEGER PRIMARY KEY,
@@ -76,7 +75,6 @@ class BaseDatosLocal {
         ''');
 
         // Tabla para la configuración de atención y horarios de cada médico.
-        // Guarda en "datos" la estructura JSON completa de la agenda del médico.
         await db.execute('''
           CREATE TABLE horarios_medico (
             medicoId INTEGER PRIMARY KEY,
@@ -178,6 +176,15 @@ class BaseDatosLocal {
             'turnos',
             'origenPendiente',
             'TEXT',
+          );
+        }
+        // Versión 8: agrega pacienteCuentaPendiente en turnos para indicar si el paciente aún no activó su cuenta.
+        if (oldVersion < 8) {
+          await _agregarColumnaSiNoExiste(
+            db,
+            'turnos',
+            'pacienteCuentaPendiente',
+            'INTEGER NOT NULL DEFAULT 0',
           );
         }
       },

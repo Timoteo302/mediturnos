@@ -9,7 +9,7 @@ import '../../modelos/horarioDisponible.dart';
 class AlmacenTurnosLocal {
   Future<Database> get _db => BaseDatosLocal.obtenerBaseDatos();
 
-  // Guarda una lista de turnos en la tabla local. Guarda la respuestaPaciente pero no puedeConfirmarse.
+  // Guarda una lista de turnos en la tabla local. Guarda la respuestaPaciente y pacienteCuentaPendiente.
   Future<void> guardarTurnos(
     List<TurnoDetalle> turnos, {
     String? operacionPendiente,
@@ -43,6 +43,7 @@ class AlmacenTurnosLocal {
         'operacionPendiente':
             turno.sincronizado ? null : (operacionPendiente ?? 'CREAR'),
         'respuestaPaciente': turno.respuestaPaciente,
+        'pacienteCuentaPendiente': turno.pacienteCuentaPendiente ? 1 : 0,
       }, conflictAlgorithm: ConflictAlgorithm.replace);
     }
   }
@@ -133,6 +134,7 @@ class AlmacenTurnosLocal {
     final hora = fila['hora'].toString();
     final respuestaPaciente = fila['respuestaPaciente']?.toString() ?? 'SIN_RESPUESTA';
     final puedeConfirmarse = _calcularPuedeConfirmarse(estado, fecha, hora);
+    final pacienteCuentaPendiente = fila['pacienteCuentaPendiente'] == 1;
 
     return TurnoDetalle(
       id: fila['id'] as int,
@@ -144,6 +146,7 @@ class AlmacenTurnosLocal {
       errorSincronizacion: fila['errorSincronizacion']?.toString(),
       respuestaPaciente: respuestaPaciente,
       puedeConfirmarse: puedeConfirmarse,
+      pacienteCuentaPendiente: pacienteCuentaPendiente,
       paciente: PacienteDetalle(
         id: fila['pacienteId'] as int? ?? 0,
         nombre: pacienteNombre,

@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mediturnos/autenticacion/presentacion/viewmodels/autenticacionViewModel.dart';
 import 'package:mediturnos/autenticacion/presentacion/pantallas/pantallaLogin.dart';
+import 'package:mediturnos/autenticacion/presentacion/pantallas/pantallaCrearCuenta.dart';
 import 'package:mediturnos/componentes/inicio/bannerUrgencia.dart';
 import 'package:mediturnos/componentes/comunes/botonPrincipal.dart';
 import 'package:mediturnos/componentes/comunes/iconoCampanita.dart';
 import 'package:mediturnos/componentes/comunes/indicadorConexion.dart';
+import 'package:mediturnos/componentes/comunes/dialogoRequiereCuenta.dart';
 import 'package:mediturnos/componentes/inicio/tarjetaAccesoRapido.dart';
 import 'package:mediturnos/componentes/inicio/tarjetaProximoTurno.dart';
 import 'package:mediturnos/configuracion/coloresApp.dart';
@@ -46,6 +48,7 @@ class _VistaInicioPaciente extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<InicioPacienteViewModel>();
+    final authVm = context.watch<AutenticacionViewModel>();
 
     return Scaffold(
       backgroundColor: ColoresApp.fondoPantalla,
@@ -84,25 +87,85 @@ class _VistaInicioPaciente extends StatelessWidget {
                           },
                         ),
                         const SizedBox(height: 28),
-                        TarjetaProximoTurno(
-                          turno: vm.proximoTurno,
-                          tiempoRestante: vm.proximoTurno != null
-                              ? FormatoFechaEspanolHelper.tiempoRestante(vm.proximoTurno!)
-                              : '',
-                          onVerDetalle: () {
-                            if (vm.proximoTurno != null) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => PantallaDetalleTurno(
-                                    turno: vm.proximoTurno!,
-                                    soloLectura: false,
-                                  ),
+                        authVm.esInvitado
+                            ? Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: Colors.grey.shade300),
                                 ),
-                              ).then((_) => vm.cargar());
-                            }
-                          },
-                        ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Creá tu cuenta o iniciá sesión para ver tus turnos.',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        color: ColoresApp.textoTitulo,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 14),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: BotonPrincipal(
+                                            texto: 'Iniciar sesión',
+                                            onPressed: () {
+                                              authVm.salirDeInvitado();
+                                              Navigator.pushAndRemoveUntil(
+                                                context,
+                                                MaterialPageRoute(builder: (context) => const PantallaLogin()),
+                                                (route) => false,
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: OutlinedButton(
+                                            onPressed: () {
+                                              authVm.salirDeInvitado();
+                                              Navigator.pushAndRemoveUntil(
+                                                context,
+                                                MaterialPageRoute(builder: (context) => const PantallaCrearCuenta()),
+                                                (route) => false,
+                                              );
+                                            },
+                                            style: OutlinedButton.styleFrom(
+                                              side: const BorderSide(color: ColoresApp.primario, width: 1.5),
+                                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                              padding: const EdgeInsets.symmetric(vertical: 14),
+                                            ),
+                                            child: const Text('Crear cuenta', style: TextStyle(fontWeight: FontWeight.bold, color: ColoresApp.primario)),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : TarjetaProximoTurno(
+                                turno: vm.proximoTurno,
+                                tiempoRestante: vm.proximoTurno != null
+                                    ? FormatoFechaEspanolHelper.tiempoRestante(vm.proximoTurno!)
+                                    : '',
+                                onVerDetalle: () {
+                                  if (vm.proximoTurno != null) {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => PantallaDetalleTurno(
+                                          turno: vm.proximoTurno!,
+                                          soloLectura: false,
+                                        ),
+                                      ),
+                                    ).then((_) => vm.cargar());
+                                  }
+                                },
+                              ),
                         const SizedBox(height: 28),
                         _construirAccesosRapidos(context, vm),
                         const SizedBox(height: 24),
@@ -116,6 +179,8 @@ class _VistaInicioPaciente extends StatelessWidget {
   }
 
   Widget _construirEncabezadoSuperior(BuildContext context) {
+    final authVm = context.watch<AutenticacionViewModel>();
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -147,25 +212,46 @@ class _VistaInicioPaciente extends StatelessWidget {
         ),
         Row(
           mainAxisSize: MainAxisSize.min,
-          children: [
-            const IconoCampanita(),
-            const IndicadorConexion(),
-            IconButton(
-              icon: const Icon(
-                Icons.logout_rounded,
-                color: ColoresApp.primario,
-                size: 26,
-              ),
-              onPressed: () {
-                context.read<AutenticacionViewModel>().cerrarSesion();
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => const PantallaLogin()),
-                  (route) => false,
-                );
-              },
-            ),
-          ],
+          children: authVm.esInvitado
+              ? [
+                  const IndicadorConexion(),
+                  TextButton(
+                    onPressed: () {
+                      authVm.salirDeInvitado();
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (context) => const PantallaLogin()),
+                        (route) => false,
+                      );
+                    },
+                    child: const Text(
+                      'Iniciar sesión',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: ColoresApp.primario,
+                      ),
+                    ),
+                  ),
+                ]
+              : [
+                  const IconoCampanita(),
+                  const IndicadorConexion(),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.logout_rounded,
+                      color: ColoresApp.primario,
+                      size: 26,
+                    ),
+                    onPressed: () {
+                      context.read<AutenticacionViewModel>().cerrarSesion();
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (context) => const PantallaLogin()),
+                        (route) => false,
+                      );
+                    },
+                  ),
+                ],
         ),
       ],
     );
@@ -173,7 +259,9 @@ class _VistaInicioPaciente extends StatelessWidget {
 
   Widget _construirSeccionSaludo(BuildContext context, InicioPacienteViewModel vm) {
     final authVm = context.watch<AutenticacionViewModel>();
-    final nombreReal = authVm.usuarioActual?.nombre ?? 'Paciente';
+    final nombreReal = authVm.esInvitado
+        ? 'invitado'
+        : (authVm.usuarioActual?.nombre ?? 'Paciente');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -218,6 +306,11 @@ class _VistaInicioPaciente extends StatelessWidget {
               icono: Icons.calendar_month_outlined,
               badgeTexto: vm.cantidadActivos > 0 ? '${vm.cantidadActivos} activos' : '',
               onTap: () {
+                final authVm = context.read<AutenticacionViewModel>();
+                if (authVm.esInvitado) {
+                  DialogoRequiereCuenta.mostrar(context);
+                  return;
+                }
                 Navigator.push(
                   context,
                   MaterialPageRoute(

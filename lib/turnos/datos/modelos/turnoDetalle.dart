@@ -2,7 +2,7 @@ import '../../../../autenticacion/datos/modelos/paciente.dart';
 import '../../../../medicos/datos/modelos/medico.dart';
 import 'estadoTurno.dart';
 
-// Los campos respuestaPaciente y origenPendiente se persisten localmente en la tabla 'turnos' de SQLite a través de AlmacenTurnosLocal.
+// Los campos respuestaPaciente, origenPendiente y pacienteCuentaPendiente se persisten localmente en la tabla 'turnos' de SQLite a través de AlmacenTurnosLocal.
 // puedeConfirmarse no se guarda en SQLite porque se calcula en tiempo real al leer el turno según la hora del dispositivo.
 
 /// Representa el detalle completo de un turno médico con datos de paciente y médico.
@@ -18,6 +18,7 @@ class TurnoDetalle {
   final String? errorSincronizacion;
   final String respuestaPaciente; // "SIN_RESPUESTA", "ASISTIRA" o "NO_ASISTIRA"
   final bool puedeConfirmarse; // true si está dentro de las 24 horas previas al turno
+  final bool pacienteCuentaPendiente; // true si el paciente reservó como invitado y no activó la cuenta
 
   TurnoDetalle({
     required this.id,
@@ -31,6 +32,7 @@ class TurnoDetalle {
     required this.medico,
     this.respuestaPaciente = 'SIN_RESPUESTA',
     this.puedeConfirmarse = false,
+    this.pacienteCuentaPendiente = false,
   });
 
   /// Devuelve la fecha y hora combinadas en un objeto DateTime.
@@ -77,6 +79,7 @@ class TurnoDetalle {
       errorSincronizacion: json['errorSincronizacion']?.toString(),
       respuestaPaciente: json['respuestaPaciente']?.toString() ?? 'SIN_RESPUESTA',
       puedeConfirmarse: json['puedeConfirmarse'] is bool ? json['puedeConfirmarse'] as bool : false,
+      pacienteCuentaPendiente: json['pacienteCuentaPendiente'] is bool ? json['pacienteCuentaPendiente'] as bool : false,
     );
   }
 
@@ -93,6 +96,7 @@ class TurnoDetalle {
       'errorSincronizacion': errorSincronizacion,
       'respuestaPaciente': respuestaPaciente,
       'puedeConfirmarse': puedeConfirmarse,
+      'pacienteCuentaPendiente': pacienteCuentaPendiente,
     };
   }
 }

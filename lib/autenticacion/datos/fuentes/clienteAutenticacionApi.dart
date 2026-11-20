@@ -44,6 +44,8 @@ class ClienteAutenticacionApi {
         throw ExcepcionAutenticacion(ErrorAutenticacion.credencialesInvalidas, mensaje: mensaje);
       case 'CUENTA_INACTIVA':
         throw ExcepcionAutenticacion(ErrorAutenticacion.cuentaInactiva, mensaje: mensaje);
+      case 'ACTIVACION_PENDIENTE':
+        throw ExcepcionAutenticacion(ErrorAutenticacion.activacionPendiente, mensaje: mensaje);
       case 'EMAIL_DUPLICADO':
         throw ExcepcionAutenticacion(ErrorAutenticacion.emailDuplicado, campo: campo, mensaje: mensaje);
       case 'DNI_DUPLICADO':

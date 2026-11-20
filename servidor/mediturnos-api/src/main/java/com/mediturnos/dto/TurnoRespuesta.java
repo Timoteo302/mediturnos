@@ -19,6 +19,7 @@ public class TurnoRespuesta {
     private String fechaCreacion;
     private String respuestaPaciente;
     private boolean puedeConfirmarse;
+    private boolean pacienteCuentaPendiente;
     private PacienteResumen paciente;
     private MedicoResumen medico;
 }
