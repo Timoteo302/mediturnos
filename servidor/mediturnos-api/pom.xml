@@ -64,6 +64,7 @@
     </dependencies>
 
     <build>
+        <finalName>mediturnos-api</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
