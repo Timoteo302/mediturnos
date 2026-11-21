@@ -76,7 +76,7 @@ class TarjetaResumenJornada extends StatelessWidget {
               _construirMetrica(
                 valor: '$medicosActivos',
                 etiqueta: 'Médicos activos',
-                subetiqueta: 'En consultorio',
+                subetiqueta: 'En el sistema',
                 colorSubetiqueta: ColoresApp.textoSecundario,
               ),
             ],
