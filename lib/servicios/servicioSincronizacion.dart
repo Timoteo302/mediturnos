@@ -13,8 +13,8 @@ class ServicioSincronizacion {
   final http.Client _clienteHttp;
   static bool _sincronizando = false;
 
-  ServicioSincronizacion(this.repositorio, {http.Client? clienteHttp})
-      : _clienteHttp = clienteHttp ?? http.Client();
+  ServicioSincronizacion(this.repositorio, {required http.Client clienteHttp})
+      : _clienteHttp = clienteHttp;
 
   Future<List<Turno>> obtenerTurnosPendientes() async {
     final turnos = await repositorio.obtenerTurnos();
@@ -81,6 +81,11 @@ class ServicioSincronizacion {
                 )
                 .timeout(ConfiguracionServidor.tiempoEspera);
 
+            if (respuesta.statusCode == 401) {
+              // Si el pedido da 401, frenar la sincronización inmediatamente sin marcar los turnos como error.
+              return;
+            }
+
             if (respuesta.statusCode >= 200 && respuesta.statusCode < 300) {
               final datos = jsonDecode(utf8.decode(respuesta.bodyBytes));
               final turnoSincronizado = Turno(
@@ -119,6 +124,10 @@ class ServicioSincronizacion {
                   }),
                 )
                 .timeout(ConfiguracionServidor.tiempoEspera);
+
+            if (respuesta.statusCode == 401) {
+              return;
+            }
 
             if (respuesta.statusCode >= 200 && respuesta.statusCode < 300) {
               final datos = jsonDecode(utf8.decode(respuesta.bodyBytes));
@@ -163,6 +172,10 @@ class ServicioSincronizacion {
                   body: jsonEncode(bodyMap),
                 )
                 .timeout(ConfiguracionServidor.tiempoEspera);
+
+            if (respuesta.statusCode == 401) {
+              return;
+            }
 
             if (respuesta.statusCode >= 200 && respuesta.statusCode < 300) {
               final datos = jsonDecode(utf8.decode(respuesta.bodyBytes));

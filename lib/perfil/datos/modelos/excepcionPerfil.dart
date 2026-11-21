@@ -3,6 +3,7 @@ enum ErrorPerfil {
   sinConexion,
   datosInvalidos,
   usuarioNoEncontrado,
+  sinPermiso,
   errorServidor,
   desconocido,
 }

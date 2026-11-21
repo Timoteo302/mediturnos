@@ -14,6 +14,7 @@ import com.mediturnos.repository.PacienteRepository;
 import com.mediturnos.repository.TurnoRepository;
 import com.mediturnos.repository.UsuarioRepository;
 import com.mediturnos.service.NotificacionService;
+import com.mediturnos.service.ServicioToken;
 import com.mediturnos.service.correo.ServicioCorreo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
@@ -71,12 +73,19 @@ class RespuestaTurnoControllerTest {
     @Autowired
     private NotificacionService notificacionService;
 
+    @Autowired
+    private ServicioToken servicioToken;
+
     @MockitoBean
     private ServicioCorreo servicioCorreo;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private Usuario admin;
+    private Usuario pUser;
     private Paciente paciente;
     private Medico medico;
+    private String tokenAdmin;
+    private String tokenPaciente;
 
     @BeforeEach
     void setUp() {
@@ -88,17 +97,18 @@ class RespuestaTurnoControllerTest {
         usuarioRepository.deleteAll();
 
         // Admin
-        Usuario admin = new Usuario();
+        admin = new Usuario();
         admin.setNombre("Admin");
         admin.setApellido("Sistema");
         admin.setEmail("admin@mediturnos.com");
         admin.setContrasena(passwordEncoder.encode("Admin123"));
         admin.setRol(Usuario.Rol.ADMIN);
         admin.setActivo(true);
-        usuarioRepository.save(admin);
+        admin = usuarioRepository.save(admin);
+        tokenAdmin = servicioToken.generar(admin).token();
 
         // Paciente
-        Usuario pUser = new Usuario();
+        pUser = new Usuario();
         pUser.setNombre("Juan");
         pUser.setApellido("Pérez");
         pUser.setEmail("juan@mediturnos.com");
@@ -112,6 +122,7 @@ class RespuestaTurnoControllerTest {
         paciente.setDni("30111222");
         paciente.setTelefono("1122334455");
         paciente = pacienteRepository.save(paciente);
+        tokenPaciente = servicioToken.generar(pUser).token();
 
         Especialidad esp = new Especialidad();
         esp.setNombre("Cardiología");
@@ -140,15 +151,12 @@ class RespuestaTurnoControllerTest {
 
         assertNull(turno.getTokenRespuesta());
 
-        // Disparar la notificación de recordatorio
         notificacionService.crearParaPaciente(turno, "RECORDATORIO_ASISTENCIA", "¿Vas a asistir?", "Mensaje recordatorio");
 
-        // Verificar que se generó un token en el turno
         Turno turnoActualizado = turnoRepository.findById(turno.getId()).orElseThrow();
         assertNotNull(turnoActualizado.getTokenRespuesta());
         assertFalse(turnoActualizado.getTokenRespuesta().isBlank());
 
-        // Verificar llamado al servicio de correo
         ArgumentCaptor<String> captorSi = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> captorNo = ArgumentCaptor.forClass(String.class);
 
@@ -177,6 +185,7 @@ class RespuestaTurnoControllerTest {
         turno = turnoRepository.save(turno);
 
         mockMvc.perform(patch("/turnos/" + turno.getId() + "/estado")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"estado\":\"CONFIRMADO\"}"))
                 .andExpect(status().isOk());
@@ -199,8 +208,8 @@ class RespuestaTurnoControllerTest {
         turno.setClaveSolicitud("req-canc-1");
         turno = turnoRepository.save(turno);
 
-        // Cancelación con origen CENTRO
         mockMvc.perform(patch("/turnos/" + turno.getId() + "/estado")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"estado\":\"CANCELADO\",\"origen\":\"CENTRO\"}"))
                 .andExpect(status().isOk());
@@ -223,8 +232,8 @@ class RespuestaTurnoControllerTest {
         turno.setClaveSolicitud("req-canc-paciente");
         turno = turnoRepository.save(turno);
 
-        // Cancelación con origen PACIENTE
         mockMvc.perform(patch("/turnos/" + turno.getId() + "/estado")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenPaciente)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"estado\":\"CANCELADO\",\"origen\":\"PACIENTE\"}"))
                 .andExpect(status().isOk());
@@ -244,10 +253,10 @@ class RespuestaTurnoControllerTest {
         turno.setClaveSolicitud("req-err-mail");
         turno = turnoRepository.save(turno);
 
-        // Forzar excepción en el servicio de correo
         doThrow(new RuntimeException("Error en servicio SMTP")).when(servicioCorreo).enviarTurnoConfirmado(anyString(), anyString(), any());
 
         mockMvc.perform(patch("/turnos/" + turno.getId() + "/estado")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"estado\":\"CONFIRMADO\"}"))
                 .andExpect(status().isOk());
@@ -369,16 +378,17 @@ class RespuestaTurnoControllerTest {
         turno.setClaveSolicitud("req-reprog");
         turno = turnoRepository.save(turno);
 
-        // Crear agenda para el médico en la nueva fecha
         LocalDate nuevaFecha = LocalDate.now(ZoneId.of("America/Argentina/Buenos_Aires")).plusDays(3);
         int diaSemana = nuevaFecha.getDayOfWeek().getValue();
         mockMvc.perform(put("/medicos/" + medico.getId() + "/horarios")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(Map.of("horarios", List.of(
                         Map.of("diaSemana", diaSemana, "horaInicio", "10:00", "horaFin", "12:00", "duracionTurno", 30)
                 )))));
 
         mockMvc.perform(put("/turnos/" + turno.getId())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenPaciente)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(new ObjectMapper().writeValueAsString(Map.of("fecha", nuevaFecha.toString(), "hora", "10:30"))))
                 .andExpect(status().isOk());

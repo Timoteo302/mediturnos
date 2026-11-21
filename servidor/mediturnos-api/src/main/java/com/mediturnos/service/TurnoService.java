@@ -8,6 +8,8 @@ import com.mediturnos.repository.HorarioAtencionRepository;
 import com.mediturnos.repository.MedicoRepository;
 import com.mediturnos.repository.PacienteRepository;
 import com.mediturnos.repository.TurnoRepository;
+import com.mediturnos.security.ProveedorUsuarioActual;
+import com.mediturnos.security.UsuarioActual;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -24,7 +26,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Servicio encargado de gestionar el ciclo de vida completo de los turnos médicos.
+ * Servicio encargado de gestionar el ciclo de vida completo de los turnos médicos y la autorización por dueño.
  */
 @Service
 public class TurnoService {
@@ -47,15 +49,26 @@ public class TurnoService {
     @Autowired(required = false)
     private RecordatorioTurnosService recordatorioTurnosService;
 
+    @Autowired
+    private ProveedorUsuarioActual proveedorUsuarioActual;
+
     private static final ZoneId ZONA_BUENOS_AIRES = ZoneId.of("America/Argentina/Buenos_Aires");
     private static final DateTimeFormatter FORMATO_HORA = DateTimeFormatter.ofPattern("HH:mm");
     private static final List<String> ESTADOS_VALIDOS = List.of("PENDIENTE", "CONFIRMADO", "CANCELADO", "ATENDIDO");
 
     /**
-     * Lista los turnos aplicando filtros opcionales (pacienteId, medicoId, fecha, estado) ordenados por fecha y hora.
+     * Lista los turnos aplicando filtros opcionales ordenados por fecha y hora, forzando pacienteId si es un paciente.
      */
     @Transactional(readOnly = true)
     public List<TurnoRespuesta> listarConFiltros(Integer pacienteId, Integer medicoId, String fechaStr, String estadoStr) {
+        UsuarioActual actual = proveedorUsuarioActual.obtenerActual().orElse(null);
+        if (actual != null && !actual.esAdmin()) {
+            if (pacienteId != null && !pacienteId.equals(actual.pacienteId())) {
+                throw new ExcepcionApi(HttpStatus.FORBIDDEN, "SIN_PERMISO", "No tenés permiso para consultar turnos de otro paciente.");
+            }
+            pacienteId = actual.pacienteId();
+        }
+
         LocalDate fecha = null;
         if (fechaStr != null && !fechaStr.trim().isEmpty()) {
             try {
@@ -80,22 +93,30 @@ public class TurnoService {
     }
 
     /**
-     * Obtiene un turno por su ID.
+     * Obtiene un turno por su ID garantizando que pertenezca al paciente si no es admin.
      */
     @Transactional(readOnly = true)
     public TurnoRespuesta obtenerPorId(Integer id) {
         Turno turno = turnoRepository.findById(id)
                 .orElseThrow(() -> new ExcepcionApi(HttpStatus.NOT_FOUND, "TURNO_NO_ENCONTRADO", "Turno no encontrado."));
+
+        UsuarioActual actual = proveedorUsuarioActual.obtenerActual().orElse(null);
+        if (actual != null && !actual.esAdmin()) {
+            if (actual.pacienteId() == null || !actual.pacienteId().equals(turno.getPaciente().getId())) {
+                throw new ExcepcionApi(HttpStatus.FORBIDDEN, "SIN_PERMISO", "No tenés permiso para acceder a este turno.");
+            }
+        }
+
         return convertirADto(turno);
     }
 
     /**
-     * Resultado de la operación de creación de turno (incluye indicación de si fue por idempotencia).
+     * Resultado de la operación de creación de turno.
      */
     public record ResultadoCreacion(TurnoRespuesta respuesta, boolean yaExistia) {}
 
     /**
-     * Crea un nuevo turno validando la idempotencia por claveSolicitud y la disponibilidad de horarios.
+     * Crea un nuevo turno validando que el pacienteId pertenezca al usuario autenticado si es un paciente.
      */
     @Transactional
     public ResultadoCreacion crear(TurnoCreacionSolicitud solicitud) {
@@ -103,7 +124,18 @@ public class TurnoService {
             throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "La solicitud no puede ser nula.", "paciente");
         }
 
-        // 1. Idempotencia: si ya existe por claveSolicitud, se devuelve 200 OK inmediatamente sin validar nada más
+        Integer pacienteId = solicitud.getPacienteIdEfectivo();
+        UsuarioActual actual = proveedorUsuarioActual.obtenerActual().orElse(null);
+        if (actual != null && !actual.esAdmin()) {
+            if (pacienteId != null && !pacienteId.equals(actual.pacienteId())) {
+                throw new ExcepcionApi(HttpStatus.FORBIDDEN, "SIN_PERMISO", "No tenés permiso para solicitar turnos para otro paciente.");
+            }
+            if (pacienteId == null) {
+                pacienteId = actual.pacienteId();
+            }
+        }
+
+        // 1. Idempotencia
         String claveSolicitud = solicitud.getClaveSolicitud();
         if (claveSolicitud != null && !claveSolicitud.trim().isEmpty()) {
             Optional<Turno> existente = turnoRepository.findByClaveSolicitud(claveSolicitud.trim());
@@ -116,14 +148,13 @@ public class TurnoService {
         }
 
         // 2. Validar paciente
-        Integer pacienteId = solicitud.getPacienteIdEfectivo();
         if (pacienteId == null) {
             throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El paciente es obligatorio.", "paciente");
         }
         Paciente paciente = pacienteRepository.findById(pacienteId)
                 .orElseThrow(() -> new ExcepcionApi(HttpStatus.NOT_FOUND, "PACIENTE_NO_ENCONTRADO", "Paciente no encontrado."));
 
-        // 3. Validar médico y estado de actividad
+        // 3. Validar médico y estado
         Integer medicoId = solicitud.getMedicoIdEfectivo();
         if (medicoId == null) {
             throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El médico es obligatorio.", "medico");
@@ -135,7 +166,7 @@ public class TurnoService {
             throw new ExcepcionApi(HttpStatus.CONFLICT, "MEDICO_INACTIVO", "El médico se encuentra inactivo.");
         }
 
-        // 4. Validar estado (debe ser PENDIENTE o no especificarse)
+        // 4. Validar estado
         String estado = solicitud.getEstado();
         if (estado == null || estado.trim().isEmpty()) {
             estado = "PENDIENTE";
@@ -150,10 +181,10 @@ public class TurnoService {
         LocalDate fecha = parsearFecha(solicitud.getFecha());
         LocalTime hora = parsearHora(solicitud.getHora());
 
-        // 6. Validar disponibilidad de horario (agenda, franja, fecha/hora futura)
+        // 6. Validar disponibilidad
         validarHorarioDisponible(medico, fecha, hora);
 
-        // 7. Validar si el horario ya está ocupado por otro turno no cancelado del médico
+        // 7. Ocupación de horario
         if (turnoRepository.existsByMedicoIdAndFechaAndHoraAndEstadoNot(medico.getId(), fecha, hora, "CANCELADO")) {
             throw new ExcepcionApi(HttpStatus.CONFLICT, "HORARIO_OCUPADO", "El médico ya tiene un turno reservado en ese horario.");
         }
@@ -179,14 +210,20 @@ public class TurnoService {
     }
 
     /**
-     * Reprograma la fecha y hora de un turno existente en estado PENDIENTE o CONFIRMADO.
+     * Reprograma un turno validando que pertenezca al paciente en sesión si no es admin.
      */
     @Transactional
     public TurnoRespuesta reprogramar(Integer id, TurnoReprogramarSolicitud solicitud) {
         Turno turno = turnoRepository.findById(id)
                 .orElseThrow(() -> new ExcepcionApi(HttpStatus.NOT_FOUND, "TURNO_NO_ENCONTRADO", "Turno no encontrado."));
 
-        // Solo se permite reprogramar si está PENDIENTE o CONFIRMADO
+        UsuarioActual actual = proveedorUsuarioActual.obtenerActual().orElse(null);
+        if (actual != null && !actual.esAdmin()) {
+            if (actual.pacienteId() == null || !actual.pacienteId().equals(turno.getPaciente().getId())) {
+                throw new ExcepcionApi(HttpStatus.FORBIDDEN, "SIN_PERMISO", "No tenés permiso para acceder a este turno.");
+            }
+        }
+
         if (!"PENDIENTE".equals(turno.getEstado()) && !"CONFIRMADO".equals(turno.getEstado())) {
             throw new ExcepcionApi(HttpStatus.CONFLICT, "TURNO_NO_MODIFICABLE", "El turno no se puede modificar en su estado actual.");
         }
@@ -203,10 +240,8 @@ public class TurnoService {
             throw new ExcepcionApi(HttpStatus.CONFLICT, "MEDICO_INACTIVO", "El médico se encuentra inactivo.");
         }
 
-        // Validar que la nueva fecha/hora coincida con la agenda del médico y no haya pasado
         validarHorarioDisponible(medico, nuevaFecha, nuevaHora);
 
-        // Validar que el horario no esté ocupado por OTRO turno no cancelado del mismo médico
         if (turnoRepository.existsByMedicoIdAndFechaAndHoraAndEstadoNotAndIdNot(medico.getId(), nuevaFecha, nuevaHora, "CANCELADO", id)) {
             throw new ExcepcionApi(HttpStatus.CONFLICT, "HORARIO_OCUPADO", "El médico ya tiene un turno reservado en ese horario.");
         }
@@ -236,7 +271,7 @@ public class TurnoService {
     }
 
     /**
-     * Modifica el estado de un turno respetando la máquina de estados permitida.
+     * Modifica el estado del turno aplicando autorización estricta por rol (PACIENTE solo CANCELADO, ADMIN cualquiera).
      */
     @Transactional
     public TurnoRespuesta cambiarEstado(Integer id, TurnoEstadoSolicitud solicitud) {
@@ -252,14 +287,30 @@ public class TurnoService {
             throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El estado especificado no es válido.", "estado");
         }
 
+        String origen = solicitud.getOrigen();
+        UsuarioActual actual = proveedorUsuarioActual.obtenerActual().orElse(null);
+        if (actual != null && !actual.esAdmin()) {
+            if (actual.pacienteId() == null || !actual.pacienteId().equals(turno.getPaciente().getId())) {
+                throw new ExcepcionApi(HttpStatus.FORBIDDEN, "SIN_PERMISO", "No tenés permiso para acceder a este turno.");
+            }
+            if (!"CANCELADO".equals(nuevoEstado)) {
+                throw new ExcepcionApi(HttpStatus.FORBIDDEN, "SIN_PERMISO", "No tenés permiso para realizar esta transición de estado.");
+            }
+            origen = "PACIENTE";
+        } else if (actual != null && actual.esAdmin()) {
+            if (origen == null || origen.isBlank()) {
+                origen = "CENTRO";
+            }
+        }
+
         String estadoActual = turno.getEstado();
 
-        // Si se pide el mismo estado que ya tiene, se responde 200 sin cambios
+        // Mismo estado
         if (nuevoEstado.equals(estadoActual)) {
             return convertirADto(turno);
         }
 
-        // Validaciones de transición de estado
+        // Transiciones
         boolean esValida = false;
         if ("PENDIENTE".equals(estadoActual)) {
             esValida = "CONFIRMADO".equals(nuevoEstado) || "CANCELADO".equals(nuevoEstado);
@@ -271,7 +322,6 @@ public class TurnoService {
             throw new ExcepcionApi(HttpStatus.CONFLICT, "TRANSICION_INVALIDA", "No se permite cambiar el estado de " + estadoActual + " a " + nuevoEstado + ".");
         }
 
-        // Regla especial: ATENDIDO solo si la fecha del turno es hoy o anterior en Buenos Aires
         if ("ATENDIDO".equals(nuevoEstado)) {
             LocalDate hoy = LocalDate.now(ZONA_BUENOS_AIRES);
             if (turno.getFecha().isAfter(hoy)) {
@@ -296,7 +346,6 @@ public class TurnoService {
         }
         
         if ("CANCELADO".equals(nuevoEstado)) {
-            String origen = solicitud.getOrigen() != null ? solicitud.getOrigen() : "PACIENTE";
             if ("CENTRO".equals(origen)) {
                 String msg = String.format("El centro canceló tu turno del %02d/%02d a las %s. Podés pedir uno nuevo desde la app.", guardado.getFecha().getDayOfMonth(), guardado.getFecha().getMonthValue(), guardado.getHora().format(FORMATO_HORA));
                 notificacionService.crearParaPaciente(guardado, "TURNO_CANCELADO_CENTRO", "Tu turno fue cancelado", msg);
@@ -307,7 +356,7 @@ public class TurnoService {
     }
 
     /**
-     * Mantiene compatibilidad con el método de eliminación previa.
+     * Mantiene la eliminación del turno.
      */
     @Transactional
     public void eliminar(Integer id) {
@@ -317,9 +366,6 @@ public class TurnoService {
         turnoRepository.deleteById(id);
     }
 
-    /**
-     * Parsea una fecha en formato YYYY-MM-DD.
-     */
     private LocalDate parsearFecha(String fechaStr) {
         if (fechaStr == null || fechaStr.trim().isEmpty()) {
             throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "La fecha es obligatoria.", "fecha");
@@ -331,9 +377,6 @@ public class TurnoService {
         }
     }
 
-    /**
-     * Parsea una hora en formato HH:mm o HH:mm:ss.
-     */
     private LocalTime parsearHora(String horaStr) {
         if (horaStr == null || horaStr.trim().isEmpty()) {
             throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "La hora es obligatoria.", "hora");
@@ -350,19 +393,14 @@ public class TurnoService {
         }
     }
 
-    /**
-     * Valida que la fecha y hora sean futuras en Buenos Aires y correspondan a un turno válido de la agenda del médico.
-     */
     private void validarHorarioDisponible(Medico medico, LocalDate fecha, LocalTime hora) {
         LocalDateTime ahora = LocalDateTime.now(ZONA_BUENOS_AIRES);
         LocalDateTime fechaHoraTurno = LocalDateTime.of(fecha, hora);
 
-        // Regla: la fecha y hora no deben haber pasado
         if (fechaHoraTurno.isBefore(ahora)) {
             throw new ExcepcionApi(HttpStatus.CONFLICT, "HORARIO_NO_DISPONIBLE", "La fecha y hora especificadas ya han pasado.");
         }
 
-        // Día de la semana (1 = Lunes ... 7 = Domingo)
         int diaSemana = fecha.getDayOfWeek().getValue();
 
         List<HorarioAtencion> franjas = horarioAtencionRepository.findByMedicoIdAndDiaSemanaAndActivoTrueOrderByHoraInicioAsc(medico.getId(), diaSemana);
@@ -370,7 +408,6 @@ public class TurnoService {
             throw new ExcepcionApi(HttpStatus.CONFLICT, "HORARIO_NO_DISPONIBLE", "El médico no atiende el día de la semana correspondiente a la fecha.");
         }
 
-        // Verificar que la hora coincida exactamente con el inicio de un slot dentro de alguna franja activa
         boolean coincideConSlot = false;
         for (HorarioAtencion f : franjas) {
             LocalTime t = f.getHoraInicio();
@@ -392,9 +429,6 @@ public class TurnoService {
         }
     }
 
-    /**
-     * Convierte la entidad Turno a su DTO de salida TurnoRespuesta.
-     */
     public TurnoRespuesta convertirADto(Turno turno) {
         Paciente p = turno.getPaciente();
         PacienteResumen pacienteDto = null;
@@ -440,12 +474,19 @@ public class TurnoService {
     }
 
     /**
-     * Procesa la respuesta del paciente sobre si asistirá o no al turno.
+     * Procesa la respuesta del paciente validando la propiedad del turno.
      */
     @Transactional
     public TurnoRespuesta responderAsistencia(Integer id, Boolean asistira) {
         Turno turno = turnoRepository.findById(id)
                 .orElseThrow(() -> new ExcepcionApi(HttpStatus.NOT_FOUND, "TURNO_NO_ENCONTRADO", "Turno no encontrado."));
+
+        UsuarioActual actual = proveedorUsuarioActual.obtenerActual().orElse(null);
+        if (actual != null && !actual.esAdmin()) {
+            if (actual.pacienteId() == null || !actual.pacienteId().equals(turno.getPaciente().getId())) {
+                throw new ExcepcionApi(HttpStatus.FORBIDDEN, "SIN_PERMISO", "No tenés permiso para acceder a este turno.");
+            }
+        }
 
         if (!"PENDIENTE".equals(turno.getEstado()) && !"CONFIRMADO".equals(turno.getEstado())) {
             throw new ExcepcionApi(HttpStatus.CONFLICT, "TURNO_NO_MODIFICABLE", "Solo se puede responder asistencia para turnos PENDIENTES o CONFIRMADOS.");
@@ -468,7 +509,6 @@ public class TurnoService {
         
         Turno guardado = turnoRepository.save(turno);
         
-        // Marcar como leída la notificación RECORDATORIO_ASISTENCIA de este turno
         notificacionService.marcarRecordatorioLeido(id);
         
         return convertirADto(guardado);

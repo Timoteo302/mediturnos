@@ -109,66 +109,65 @@ class TarjetaAccionAdmin extends StatelessWidget {
       );
     }
 
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE8F3FF),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icono, color: ColoresApp.primario, size: 20),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: const BoxDecoration(
+                color: Color(0xFFE8F3FF),
+                shape: BoxShape.circle,
               ),
-              const SizedBox(height: 12),
-              Text(
-                titulo,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: ColoresApp.textoTitulo,
-                ),
+              child: Icon(icono, color: ColoresApp.primario, size: 20),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              titulo,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: ColoresApp.textoTitulo,
               ),
-              const SizedBox(height: 4),
-              Text(
-                subtitulo,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: ColoresApp.textoSecundario,
-                ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitulo,
+              style: const TextStyle(
+                fontSize: 12,
+                color: ColoresApp.textoSecundario,
               ),
-              const SizedBox(height: 14),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    infoPie ?? '',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: ColoresApp.primario,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const Icon(
-                    Icons.arrow_forward,
-                    size: 16,
+            ),
+            const SizedBox(height: 14),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  infoPie ?? '',
+                  style: const TextStyle(
+                    fontSize: 11,
                     color: ColoresApp.primario,
+                    fontWeight: FontWeight.w600,
                   ),
-                ],
-              ),
-            ],
-          ),
+                ),
+                const Icon(
+                  Icons.arrow_forward,
+                  size: 16,
+                  color: ColoresApp.primario,
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

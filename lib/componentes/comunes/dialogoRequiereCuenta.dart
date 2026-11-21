@@ -51,12 +51,17 @@ class DialogoRequiereCuenta extends StatelessWidget {
         ),
         ElevatedButton(
           onPressed: () {
+            // Salir del modo invitado y dejar la pila como [PantallaLogin, PantallaCrearCuenta]
             authVm.salirDeInvitado();
             Navigator.pop(context);
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (context) => const PantallaCrearCuenta()),
+              MaterialPageRoute(builder: (context) => const PantallaLogin()),
               (route) => false,
+            );
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const PantallaCrearCuenta()),
             );
           },
           style: ElevatedButton.styleFrom(

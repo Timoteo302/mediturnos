@@ -9,6 +9,8 @@ import com.mediturnos.model.Usuario;
 import com.mediturnos.repository.NotificacionRepository;
 import com.mediturnos.repository.TurnoRepository;
 import com.mediturnos.repository.UsuarioRepository;
+import com.mediturnos.security.ProveedorUsuarioActual;
+import com.mediturnos.security.UsuarioActual;
 import com.mediturnos.service.correo.ServicioCorreo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +43,9 @@ public class NotificacionService {
 
     @Autowired
     private ServicioCorreo servicioCorreo;
+
+    @Autowired
+    private ProveedorUsuarioActual proveedorUsuarioActual;
 
     @Value("${mediturnos.url-publica:http://localhost:8080}")
     private String urlPublica;
@@ -137,10 +142,11 @@ public class NotificacionService {
     }
 
     /**
-     * Lista las últimas 50 notificaciones de un usuario.
+     * Lista las últimas 50 notificaciones de un usuario validando permisos por dueño.
      */
     @Transactional(readOnly = true)
     public List<NotificacionRespuesta> listar(Integer usuarioId) {
+        validarUsuarioActual(usuarioId);
         if (!usuarioRepository.existsById(usuarioId)) {
             throw new ExcepcionApi(HttpStatus.NOT_FOUND, "USUARIO_NO_ENCONTRADO", "El usuario no existe.");
         }
@@ -149,10 +155,11 @@ public class NotificacionService {
     }
 
     /**
-     * Cuenta cuántas notificaciones no leídas tiene un usuario.
+     * Cuenta cuántas notificaciones no leídas tiene un usuario validando permisos por dueño.
      */
     @Transactional(readOnly = true)
     public long contarNoLeidas(Integer usuarioId) {
+        validarUsuarioActual(usuarioId);
         if (!usuarioRepository.existsById(usuarioId)) {
             throw new ExcepcionApi(HttpStatus.NOT_FOUND, "USUARIO_NO_ENCONTRADO", "El usuario no existe.");
         }
@@ -160,12 +167,20 @@ public class NotificacionService {
     }
 
     /**
-     * Marca una notificación específica como leída.
+     * Marca una notificación específica como leída validando pertenencia.
      */
     @Transactional
     public void marcarLeida(Integer notificacionId) {
         Notificacion notif = notificacionRepository.findById(notificacionId)
                 .orElseThrow(() -> new ExcepcionApi(HttpStatus.NOT_FOUND, "NOTIFICACION_NO_ENCONTRADA", "Notificación no encontrada."));
+
+        UsuarioActual actual = proveedorUsuarioActual.obtenerActual().orElse(null);
+        if (actual != null && !actual.esAdmin()) {
+            if (!notif.getUsuario().getId().equals(actual.id())) {
+                throw new ExcepcionApi(HttpStatus.FORBIDDEN, "SIN_PERMISO", "No tenés permiso para modificar esta notificación.");
+            }
+        }
+
         notif.setLeida(true);
         notificacionRepository.save(notif);
     }
@@ -175,6 +190,7 @@ public class NotificacionService {
      */
     @Transactional
     public void marcarTodasLeidas(Integer usuarioId) {
+        validarUsuarioActual(usuarioId);
         if (!usuarioRepository.existsById(usuarioId)) {
             throw new ExcepcionApi(HttpStatus.NOT_FOUND, "USUARIO_NO_ENCONTRADO", "El usuario no existe.");
         }
@@ -183,6 +199,15 @@ public class NotificacionService {
             notif.setLeida(true);
         }
         notificacionRepository.saveAll(noLeidas);
+    }
+
+    private void validarUsuarioActual(Integer usuarioId) {
+        UsuarioActual actual = proveedorUsuarioActual.obtenerActual().orElse(null);
+        if (actual != null && !actual.esAdmin()) {
+            if (usuarioId == null || !usuarioId.equals(actual.id())) {
+                throw new ExcepcionApi(HttpStatus.FORBIDDEN, "SIN_PERMISO", "No tenés permiso para acceder a las notificaciones de otro usuario.");
+            }
+        }
     }
 
     /**

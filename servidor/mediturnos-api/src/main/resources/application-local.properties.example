@@ -1,3 +1,7 @@
 # Copiá este archivo como application-local.properties (no se sube a git)
-# y poné la contraseña de tu MySQL local.
+# y poné la contraseña de tu MySQL local y un secreto JWT local.
 spring.datasource.password=CAMBIAR_POR_TU_CONTRASENA
+
+# Secreto JWT para firmar tokens (mínimo 32 bytes codificados en Base64).
+# Ejemplo para generar en PowerShell: [Convert]::ToBase64String((1..32 | % { Get-Random -Min 0 -Max 256 }))
+mediturnos.jwt.secreto=CAMBIAR_POR_UN_SECRETO_LARGO

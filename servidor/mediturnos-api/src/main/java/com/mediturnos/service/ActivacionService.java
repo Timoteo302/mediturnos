@@ -35,6 +35,9 @@ public class ActivacionService {
     @Autowired
     private ServicioCorreo servicioCorreo;
 
+    @Autowired
+    private ServicioToken servicioToken;
+
     @Value("${mediturnos.recuperacion.modo-demostracion:true}")
     private boolean modoDemostracion;
 
@@ -68,7 +71,7 @@ public class ActivacionService {
     }
 
     /**
-     * Confirma la activación de cuenta, guarda la nueva contraseña e inicia sesión.
+     * Confirma la activación de cuenta, guarda la nueva contraseña, e inicia sesión devolviendo el JWT.
      */
     @Transactional
     public UsuarioRespuesta confirmar(String email, String codigo, String contrasena) {
@@ -118,13 +121,13 @@ public class ActivacionService {
         activacion.setUsado(true);
         activacionCuentaRepository.save(activacion);
         
-        // Mapear como login
         Paciente paciente = null;
         if (usuario.getRol() == Usuario.Rol.PACIENTE) {
             paciente = pacienteRepository.findByUsuarioId(usuario.getId()).orElse(null);
         }
 
-        return mapToRespuesta(usuario, paciente);
+        ServicioToken.ResultadoToken tokenRes = servicioToken.generar(usuario);
+        return mapToRespuestaConToken(usuario, paciente, tokenRes.token(), tokenRes.venceEn().toString());
     }
     
     /**
@@ -154,7 +157,7 @@ public class ActivacionService {
         return generarYEnviar(usuario, "Tenés turnos reservados en MediTurnos.");
     }
 
-    private UsuarioRespuesta mapToRespuesta(Usuario usuario, Paciente paciente) {
+    private UsuarioRespuesta mapToRespuestaConToken(Usuario usuario, Paciente paciente, String token, String tokenVenceEn) {
         com.mediturnos.dto.PacienteResumen pacienteResumen = null;
         if (usuario.getRol() == Usuario.Rol.PACIENTE && paciente != null) {
             pacienteResumen = new com.mediturnos.dto.PacienteResumen(paciente.getId(), paciente.getDni(), paciente.getTelefono());
@@ -168,7 +171,9 @@ public class ActivacionService {
                 usuario.getRol().name(),
                 usuario.getActivo(),
                 usuario.getFechaCreacion(),
-                pacienteResumen
+                pacienteResumen,
+                token,
+                tokenVenceEn
         );
     }
 }

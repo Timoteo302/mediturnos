@@ -52,3 +52,5 @@ app.*.map.json
 servidor/mediturnos-api/target/
 # Contraseña de MySQL local de cada PC
 servidor/mediturnos-api/src/main/resources/application-local.properties
+
+Add-Content -Encoding utf8 .gitignore "`n# Compilación de Android`nandroid/build/"

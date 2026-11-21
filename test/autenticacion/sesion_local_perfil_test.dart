@@ -48,6 +48,15 @@ class FakeAlmacenSesionLocal implements AlmacenSesionLocal {
   }
 
   @override
+  Future<Map<String, dynamic>?> obtenerPorUsuarioId(int usuarioId) async {
+    for (final s in _baseSimulada.values) {
+      final map = json.decode(s['usuario_json']) as Map<String, dynamic>;
+      if (map['id'] == usuarioId) return s;
+    }
+    return null;
+  }
+
+  @override
   Future<void> borrar(String email) async {
     _baseSimulada.remove(email.trim().toLowerCase());
   }

@@ -1,9 +1,15 @@
-import 'package:flutter/foundation.dart';
+import 'dart:convert';
+import 'package:flutter/material.dart';
 import 'package:mediturnos/autenticacion/datos/modelos/usuario.dart';
+import 'package:mediturnos/autenticacion/presentacion/pantallas/pantallaLogin.dart';
 import 'package:mediturnos/autenticacion/datos/modelos/rolUsuario.dart';
 import 'package:mediturnos/autenticacion/datos/modelos/excepcionAutenticacion.dart';
 import 'package:mediturnos/autenticacion/datos/repositorios/repositorioAutenticacion.dart';
+import 'package:mediturnos/autenticacion/datos/fuentes/almacenToken.dart';
+import 'package:mediturnos/autenticacion/datos/fuentes/almacenSesionLocal.dart';
 import 'package:mediturnos/configuracion/configuracionServidor.dart';
+import 'package:mediturnos/configuracion/clavesGlobales.dart';
+import 'package:mediturnos/componentes/comunes/notificacionApp.dart';
 import 'package:mediturnos/servicios/servicioLimpiezaLocal.dart';
 
 // Estructura en memoria para almacenar una reserva seleccionada por un invitado antes de iniciar sesión.
@@ -26,12 +32,15 @@ class ReservaPendienteInvitado {
 // ViewModel para gestionar el estado de sesión, autenticación y modo invitado del usuario.
 class AutenticacionViewModel extends ChangeNotifier {
   final RepositorioAutenticacion _repositorio;
+  final AlmacenToken? _almacenToken;
   final Future<void> Function() _limpiezaLocal;
 
   AutenticacionViewModel(
     this._repositorio, {
+    AlmacenToken? almacenToken,
     Future<void> Function()? limpiezaLocal,
-  }) : _limpiezaLocal = limpiezaLocal ?? limpiarDatosAlCerrarSesion;
+  })  : _almacenToken = almacenToken,
+        _limpiezaLocal = limpiezaLocal ?? limpiarDatosAlCerrarSesion;
 
   bool _descartado = false;
   bool _cargando = false;
@@ -60,13 +69,65 @@ class AutenticacionViewModel extends ChangeNotifier {
   void entrarComoInvitado() {
     _esInvitado = true;
     _usuarioActual = null;
+    _almacenToken?.borrar();
     notifyListeners();
   }
 
   // Sale del modo invitado para permitir iniciar sesión o crear cuenta.
   void salirDeInvitado() {
     _esInvitado = false;
+    _almacenToken?.borrar();
     notifyListeners();
+  }
+
+  // Intenta restaurar la sesión del usuario guardada en SQLite si el token sigue vigente.
+  Future<bool> restaurarSesion(AlmacenSesionLocal local, AlmacenToken almacenToken) async {
+    try {
+      final token = await almacenToken.leerToken();
+      final usuarioId = await almacenToken.leerUsuarioId();
+
+      if (token == null || usuarioId == null) {
+        return false;
+      }
+
+      final fila = await local.obtenerPorUsuarioId(usuarioId);
+      if (fila == null) {
+        return false;
+      }
+
+      final jsonStr = fila['usuario_json']?.toString() ?? '{}';
+      final map = json.decode(jsonStr) as Map<String, dynamic>;
+      _usuarioActual = Usuario.fromJson(map, sesionOffline: false);
+      _esInvitado = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Error al restaurar sesión: $e');
+      return false;
+    }
+  }
+
+  // Maneja la expiración de la sesión (HTTP 401), borra el token y redirige al login sin borrar turnos pendientes localmente.
+  Future<void> sesionVencida() async {
+    await _almacenToken?.borrar();
+
+    _esInvitado = false;
+    _usuarioActual = null;
+    notifyListeners();
+
+    final nav = claveNavegacionGlobal.currentState;
+    if (nav != null) {
+      nav.pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const PantallaLogin()),
+        (route) => false,
+      );
+    }
+
+    mostrarNotificacionAppGlobal(
+      tipo: TipoNotificacionApp.advertencia,
+      titulo: 'Tu sesión venció',
+      mensaje: 'Iniciá sesión de nuevo. Tus turnos pendientes se van a enviar después.',
+    );
   }
 
   // Guarda los datos de la reserva pendiente que seleccionó el invitado.
@@ -201,10 +262,12 @@ class AutenticacionViewModel extends ChangeNotifier {
     }
   }
 
-  // Cierra la sesión activa del usuario, resetea el estado invitado y ejecuta la limpieza local.
+  // Cierra la sesión activa del usuario, resetea el estado invitado y borra las credenciales del almacenamiento seguro.
   Future<void> cerrarSesion() async {
     _cargando = true;
     notifyListeners();
+
+    await _almacenToken?.borrar();
 
     try {
       await _limpiezaLocal();

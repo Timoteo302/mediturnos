@@ -6,6 +6,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
 import 'configuracion/clavesGlobales.dart';
+import 'configuracion/clienteHttpAutenticado.dart';
 
 import 'turnos/datos/repositorios/repositorioGestionTurnosOfflineFirst.dart';
 import 'turnos/datos/fuentes/local/almacenTurnosLocal.dart';
@@ -13,8 +14,10 @@ import 'turnos/datos/fuentes/local/almacenTurnosLocal.dart';
 import 'autenticacion/datos/repositorios/repositorioAutenticacion.dart';
 import 'autenticacion/datos/repositorios/repositorioAutenticacionOfflineFirst.dart';
 import 'autenticacion/datos/fuentes/clienteAutenticacionApi.dart';
+import 'autenticacion/datos/fuentes/almacenToken.dart';
+import 'autenticacion/datos/fuentes/almacenSesionLocal.dart';
 import 'autenticacion/datos/fuentes/almacenSesionLocalSqlite.dart';
-import 'autenticacion/presentacion/pantallas/pantallaLogin.dart';
+import 'autenticacion/presentacion/pantallas/pantallaArranque.dart';
 import 'autenticacion/presentacion/viewmodels/autenticacionViewModel.dart';
 import 'configuracion/temaApp.dart';
 
@@ -51,39 +54,59 @@ class MediTurnosApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final almacenToken = AlmacenToken();
+    late final ClienteHttpAutenticado clienteHttp;
+
+    clienteHttp = ClienteHttpAutenticado(
+      http.Client(),
+      almacenToken: almacenToken,
+      alSesionVencida: () {
+        final ctx = claveNavegacionGlobal.currentContext;
+        if (ctx != null) {
+          final authVm = ctx.read<AutenticacionViewModel>();
+          authVm.sesionVencida();
+        }
+      },
+    );
+
     return MultiProvider(
       providers: [
+        Provider<AlmacenToken>.value(value: almacenToken),
+        Provider<AlmacenSesionLocal>(create: (_) => AlmacenSesionLocalSqlite()),
+        Provider<http.Client>.value(value: clienteHttp),
+        Provider<ClienteHttpAutenticado>.value(value: clienteHttp),
         Provider<RepositorioAutenticacion>(
-          create: (_) => RepositorioAutenticacionOfflineFirst(
-            remoto: ClienteAutenticacionApi(http.Client()),
-            local: AlmacenSesionLocalSqlite(),
+          create: (context) => RepositorioAutenticacionOfflineFirst(
+            remoto: ClienteAutenticacionApi(clienteHttp, almacenToken: almacenToken),
+            local: context.read<AlmacenSesionLocal>(),
           ),
         ),
         ChangeNotifierProvider<AutenticacionViewModel>(
-          create: (context) =>
-              AutenticacionViewModel(context.read<RepositorioAutenticacion>()),
+          create: (context) => AutenticacionViewModel(
+            context.read<RepositorioAutenticacion>(),
+            almacenToken: almacenToken,
+          ),
         ),
         Provider<RepositorioMedicos>(
           create: (_) => RepositorioMedicosOfflineFirst(
-            remoto: RepositorioMedicosApi(ClienteMedicosApi(http.Client())),
+            remoto: RepositorioMedicosApi(ClienteMedicosApi(clienteHttp)),
             local: AlmacenMedicosLocal(),
           ),
         ),
         Provider<RepositorioGestionTurnos>(
           create: (_) => RepositorioGestionTurnosOfflineFirst(
-            ClienteTurnosApi(http.Client()),
+            ClienteTurnosApi(clienteHttp),
             AlmacenTurnosLocal(),
           ),
         ),
         Provider<RepositorioNotificaciones>(
           create: (_) => RepositorioNotificacionesApi(
-            ClienteNotificacionesApi(http.Client()),
+            ClienteNotificacionesApi(clienteHttp),
           ),
         ),
-
         Provider<ServicioMonitoreoSincronizacion>(
           lazy: false,
-          create: (_) => ServicioMonitoreoSincronizacion()..iniciar(),
+          create: (_) => ServicioMonitoreoSincronizacion(clienteHttp: clienteHttp)..iniciar(),
           dispose: (_, servicio) => servicio.detener(),
         ),
         ChangeNotifierProvider<EstadoConexionViewModel>(
@@ -108,7 +131,7 @@ class MediTurnosApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         title: 'MediTurnos',
         theme: TemaApp.tema,
-        home: const PantallaLogin(),
+        home: const PantallaArranque(),
       ),
     );
   }

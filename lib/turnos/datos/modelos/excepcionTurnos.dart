@@ -11,6 +11,7 @@ enum ErrorTurnos {
   medicoInactivo,
   pacienteNoEncontrado,
   confirmacionAnticipada, // Error cuando se intenta confirmar un turno con más de 24h de anticipación.
+  sinPermiso,
   sinConexion,
   errorServidor,
   desconocido,

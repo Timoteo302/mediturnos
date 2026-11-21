@@ -185,6 +185,19 @@ class _PantallaLoginState extends State<PantallaLogin> {
     );
   }
 
+  void _irAActivarCuenta() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PantallaActivarCuenta(
+          email: emailController.text.trim(),
+          venceEnDias: 7,
+          vieneDeLogin: true,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<AutenticacionViewModel>();
@@ -248,6 +261,17 @@ class _PantallaLoginState extends State<PantallaLogin> {
                     onTap: _irAOlvideContrasena,
                     child: const Text(
                       '¿Olvidaste tu contraseña?',
+                      style: EstilosTexto.enlace,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: GestureDetector(
+                    onTap: _irAActivarCuenta,
+                    child: const Text(
+                      '¿Reservaste como invitado? Activá tu cuenta',
                       style: EstilosTexto.enlace,
                     ),
                   ),

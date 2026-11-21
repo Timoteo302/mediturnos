@@ -6,6 +6,8 @@ import com.mediturnos.dto.EstadoSolicitud;
 import com.mediturnos.service.EspecialidadService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,10 +25,13 @@ public class EspecialidadController {
 
     /**
      * Endpoint GET /especialidades
-     * Retorna la lista de especialidades activas (o todas si incluirInactivas=true) ordenadas por nombre.
+     * Retorna la lista de especialidades activas (o todas si incluirInactivas=true sólo para administradores).
      */
     @GetMapping
     public List<EspecialidadRespuesta> listar(@RequestParam(required = false) Boolean incluirInactivas) {
+        if (Boolean.TRUE.equals(incluirInactivas) && !esAdminActual()) {
+            incluirInactivas = false;
+        }
         return especialidadService.listar(incluirInactivas);
     }
 
@@ -56,5 +61,14 @@ public class EspecialidadController {
     @PatchMapping("/{id}/estado")
     public EspecialidadRespuesta cambiarEstado(@PathVariable Integer id, @RequestBody EstadoSolicitud solicitud) {
         return especialidadService.cambiarEstado(id, solicitud);
+    }
+
+    private boolean esAdminActual() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            return false;
+        }
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
     }
 }
