@@ -45,6 +45,9 @@ public class NotificacionService {
     private ServicioCorreo servicioCorreo;
 
     @Autowired
+    private com.mediturnos.service.push.ServicioPush servicioPush;
+
+    @Autowired
     private ProveedorUsuarioActual proveedorUsuarioActual;
 
     @Value("${mediturnos.url-publica:http://localhost:8080}")
@@ -109,7 +112,20 @@ public class NotificacionService {
         notif.setTitulo(titulo);
         notif.setMensaje(mensaje);
         notif.setLeida(false);
-        notificacionRepository.save(notif);
+        Notificacion notifGuardada = notificacionRepository.save(notif);
+
+        if (usuario != null && usuario.getId() != null) {
+            java.util.Map<String, String> datosPush = new java.util.HashMap<>();
+            datosPush.put("tipo", tipo != null ? tipo : "");
+            datosPush.put("turnoId", turno != null && turno.getId() != null ? String.valueOf(turno.getId()) : "");
+            datosPush.put("notificacionId", notifGuardada.getId() != null ? String.valueOf(notifGuardada.getId()) : "");
+
+            try {
+                servicioPush.enviarAUsuario((long) usuario.getId(), titulo, mensaje, datosPush);
+            } catch (Exception e) {
+                log.warn("Error al intentar solicitar el envío de notificación push: {}", e.getMessage());
+            }
+        }
     }
 
     private DatosTurnoCorreo crearDatosTurnoCorreo(Turno turno) {

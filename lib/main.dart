@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
@@ -37,9 +38,16 @@ import 'notificaciones/presentacion/viewmodels/notificacionesViewModel.dart';
 
 import 'servicios/servicioMonitoreoSincronizacion.dart';
 import 'servicios/estadoConexionViewModel.dart';
+import 'servicios/servicioNotificacionesPush.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Inicialización de Firebase en el arranque de la app.
+  // Nota: Para iOS falta el archivo GoogleService-Info.plist y la clave APNs (requiere cuenta de Apple Developer).
+  try {
+    await Firebase.initializeApp();
+  } catch (_) {}
 
   // Inicialización de SQLite para Flutter Web Edge.
   if (kIsWeb) {
@@ -50,11 +58,14 @@ Future<void> main() async {
 }
 
 class MediTurnosApp extends StatelessWidget {
-  const MediTurnosApp({super.key});
+  final ServicioNotificacionesPush? servicioPush;
+
+  const MediTurnosApp({super.key, this.servicioPush});
 
   @override
   Widget build(BuildContext context) {
     final almacenToken = AlmacenToken();
+    final pushService = servicioPush ?? ServicioNotificacionesPush();
     late final ClienteHttpAutenticado clienteHttp;
 
     clienteHttp = ClienteHttpAutenticado(
@@ -69,9 +80,32 @@ class MediTurnosApp extends StatelessWidget {
       },
     );
 
+    pushService.inicializar(
+      estaAutenticado: () {
+        final ctx = claveNavegacionGlobal.currentContext;
+        if (ctx == null) return false;
+        try {
+          final authVm = ctx.read<AutenticacionViewModel>();
+          return authVm.estaAutenticado;
+        } catch (_) {
+          return false;
+        }
+      },
+      alRecibirNotificacion: () {
+        final ctx = claveNavegacionGlobal.currentContext;
+        if (ctx != null) {
+          try {
+            final notifVm = ctx.read<NotificacionesViewModel>();
+            notifVm.consultarCantidadNoLeidas();
+          } catch (_) {}
+        }
+      },
+    );
+
     return MultiProvider(
       providers: [
         Provider<AlmacenToken>.value(value: almacenToken),
+        Provider<ServicioNotificacionesPush>.value(value: pushService),
         Provider<AlmacenSesionLocal>(create: (_) => AlmacenSesionLocalSqlite()),
         Provider<http.Client>.value(value: clienteHttp),
         Provider<ClienteHttpAutenticado>.value(value: clienteHttp),
@@ -85,6 +119,8 @@ class MediTurnosApp extends StatelessWidget {
           create: (context) => AutenticacionViewModel(
             context.read<RepositorioAutenticacion>(),
             almacenToken: almacenToken,
+            servicioPush: pushService,
+            clienteHttp: clienteHttp,
           ),
         ),
         Provider<RepositorioMedicos>(

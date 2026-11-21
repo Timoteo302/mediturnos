@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "217233477824",
+    "project_id": "mediturnos-fad17",
+    "storage_bucket": "mediturnos-fad17.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:217233477824:android:dce2f5d4707f39aa2b9d25",
+        "android_client_info": {
+          "package_name": "com.mediturnos.mediturnos"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCJ-zfLAXnd-AMamTyTakZFbR_yyYjtsKE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

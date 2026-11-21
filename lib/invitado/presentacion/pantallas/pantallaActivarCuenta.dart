@@ -7,6 +7,8 @@ import 'package:mediturnos/componentes/comunes/botonPrincipal.dart';
 import 'package:mediturnos/componentes/comunes/campoTexto.dart';
 import 'package:mediturnos/componentes/comunes/indicadorConexion.dart';
 import 'package:mediturnos/componentes/comunes/notificacionApp.dart';
+import 'package:mediturnos/configuracion/clienteHttpAutenticado.dart';
+import 'package:mediturnos/servicios/servicioNotificacionesPush.dart';
 import 'package:mediturnos/componentes/turnos/tarjetaResumenTurno.dart';
 import 'package:mediturnos/configuracion/coloresApp.dart';
 import 'package:mediturnos/configuracion/estilosTexto.dart';
@@ -113,6 +115,12 @@ class _VistaActivarCuentaState extends State<_VistaActivarCuenta> {
     if (usuario != null) {
       await authVm.actualizarUsuarioActual(usuario);
       authVm.salirDeInvitado();
+
+      try {
+        final clienteHttp = context.read<ClienteHttpAutenticado>();
+        final servicioPush = context.read<ServicioNotificacionesPush>();
+        servicioPush.registrar(clienteHttp: clienteHttp);
+      } catch (_) {}
 
       if (!mounted) return;
 

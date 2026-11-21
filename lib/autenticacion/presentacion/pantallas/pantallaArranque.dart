@@ -5,6 +5,8 @@ import '../../datos/fuentes/almacenSesionLocal.dart';
 import '../viewmodels/autenticacionViewModel.dart';
 import '../../../componentes/comunes/notificacionApp.dart';
 import '../../../configuracion/coloresApp.dart';
+import '../../../configuracion/clienteHttpAutenticado.dart';
+import '../../../servicios/servicioNotificacionesPush.dart';
 import '../../../inicio/presentacion/pantallas/pantallaInicioPaciente.dart';
 import '../../../inicio/presentacion/pantallas/pantallaInicioAdmin.dart';
 import 'pantallaLogin.dart';
@@ -37,6 +39,12 @@ class _PantallaArranqueState extends State<PantallaArranque> {
     if (!mounted) return;
 
     if (sesionRestaurada && authVm.estaAutenticado) {
+      try {
+        final clienteHttp = context.read<ClienteHttpAutenticado>();
+        final servicioPush = context.read<ServicioNotificacionesPush>();
+        servicioPush.registrar(clienteHttp: clienteHttp);
+      } catch (_) {}
+
       final destino = authVm.esAdmin ? const PantallaInicioAdmin() : const PantallaInicioPaciente();
       Navigator.pushReplacement(
         context,

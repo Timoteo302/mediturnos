@@ -11,6 +11,8 @@ import 'package:mediturnos/configuracion/configuracionServidor.dart';
 import 'package:mediturnos/configuracion/clavesGlobales.dart';
 import 'package:mediturnos/componentes/comunes/notificacionApp.dart';
 import 'package:mediturnos/servicios/servicioLimpiezaLocal.dart';
+import 'package:mediturnos/servicios/servicioNotificacionesPush.dart';
+import 'package:mediturnos/configuracion/clienteHttpAutenticado.dart';
 
 // Estructura en memoria para almacenar una reserva seleccionada por un invitado antes de iniciar sesión.
 class ReservaPendienteInvitado {
@@ -34,13 +36,19 @@ class AutenticacionViewModel extends ChangeNotifier {
   final RepositorioAutenticacion _repositorio;
   final AlmacenToken? _almacenToken;
   final Future<void> Function() _limpiezaLocal;
+  final ServicioNotificacionesPush? _servicioPush;
+  final ClienteHttpAutenticado? _clienteHttp;
 
   AutenticacionViewModel(
     this._repositorio, {
     AlmacenToken? almacenToken,
     Future<void> Function()? limpiezaLocal,
+    ServicioNotificacionesPush? servicioPush,
+    ClienteHttpAutenticado? clienteHttp,
   })  : _almacenToken = almacenToken,
-        _limpiezaLocal = limpiezaLocal ?? limpiarDatosAlCerrarSesion;
+        _limpiezaLocal = limpiezaLocal ?? limpiarDatosAlCerrarSesion,
+        _servicioPush = servicioPush,
+        _clienteHttp = clienteHttp;
 
   bool _descartado = false;
   bool _cargando = false;
@@ -228,6 +236,8 @@ class AutenticacionViewModel extends ChangeNotifier {
       _esInvitado = false;
       _cargando = false;
       notifyListeners();
+
+      _servicioPush?.registrar(clienteHttp: _clienteHttp);
       return true;
     } on ExcepcionAutenticacion catch (e) {
       _cargando = false;
@@ -266,6 +276,10 @@ class AutenticacionViewModel extends ChangeNotifier {
   Future<void> cerrarSesion() async {
     _cargando = true;
     notifyListeners();
+
+    try {
+      await _servicioPush?.desregistrar(clienteHttp: _clienteHttp);
+    } catch (_) {}
 
     await _almacenToken?.borrar();
 

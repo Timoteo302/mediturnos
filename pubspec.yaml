@@ -38,8 +38,11 @@ dependencies:
   uuid: ^4.6.0
   cupertino_icons: ^1.0.8
   sqflite_common_ffi_web: ^1.2.2
-  connectivity_plus: ^7.3.2
+  connectivity_plus: ^7.3.1
   flutter_secure_storage: ^9.2.4
+  firebase_core: ^3.13.0
+  firebase_messaging: ^15.2.4
+  flutter_local_notifications: ^18.0.1
 
 dev_dependencies:
   flutter_test:
