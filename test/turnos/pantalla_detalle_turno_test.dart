@@ -41,7 +41,7 @@ class FakeRepositorioAutenticacion implements RepositorioAutenticacion {
   Future<void> actualizarCopiaLocal(Usuario usuario) async {}
 }
 
-class FakeRepositorioGestionTurnosDetalle implements RepositorioGestionTurnos {
+class FakeRepositorioGestionTurnosDetalle extends Fake implements RepositorioGestionTurnos {
   final TurnoDetalle turnoPrueba = TurnoDetalle(
     id: 1,
     estado: EstadoTurno.pendiente,

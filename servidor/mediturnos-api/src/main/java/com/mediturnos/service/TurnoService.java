@@ -349,6 +349,17 @@ public class TurnoService {
             if ("CENTRO".equals(origen)) {
                 String msg = String.format("El centro canceló tu turno del %02d/%02d a las %s. Podés pedir uno nuevo desde la app.", guardado.getFecha().getDayOfMonth(), guardado.getFecha().getMonthValue(), guardado.getHora().format(FORMATO_HORA));
                 notificacionService.crearParaPaciente(guardado, "TURNO_CANCELADO_CENTRO", "Tu turno fue cancelado", msg);
+            } else if ("PACIENTE".equals(origen)) {
+                // Notificación para los administradores cuando el paciente cancela su turno.
+                // Como el tipo en la BD es ENUM, reutilizamos PACIENTE_NO_ASISTIRA con título y mensaje personalizados.
+                String msg = String.format("%s %s canceló su turno del %02d/%02d a las %s con Dr/a. %s. El horario quedó libre.",
+                        guardado.getPaciente().getUsuario().getNombre(),
+                        guardado.getPaciente().getUsuario().getApellido(),
+                        guardado.getFecha().getDayOfMonth(),
+                        guardado.getFecha().getMonthValue(),
+                        guardado.getHora().format(FORMATO_HORA),
+                        guardado.getMedico().getApellido());
+                notificacionService.crearParaAdmins(guardado, "PACIENTE_NO_ASISTIRA", "Turno cancelado por el paciente", msg);
             }
         }
 

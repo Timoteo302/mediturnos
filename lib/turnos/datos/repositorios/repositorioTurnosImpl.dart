@@ -112,11 +112,36 @@ class RepositorioTurnosImpl implements RepositorioTurnos {
   Future<void> marcarErrorSincronizacion(int id, String error) async {
     final db = await BaseDatosLocal.obtenerBaseDatos();
 
-    await db.update(
-      'turnos',
-      {'errorSincronizacion': error},
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    final filas = await db.query('turnos', where: 'id = ?', whereArgs: [id]);
+    if (filas.isNotEmpty) {
+      final fila = filas.first;
+      final medicoId = fila['medicoId'] as int?;
+      final fechaStr = fila['fecha']?.toString();
+      final horaStr = fila['hora']?.toString();
+
+      await db.update(
+        'turnos',
+        {'errorSincronizacion': error},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+
+      // Si es un turno local nuevo (id < 0), liberamos su horario en la caché local para que vuelva a aparecer disponible
+      if (id < 0 && medicoId != null && fechaStr != null && horaStr != null) {
+        await db.update(
+          'disponibilidades',
+          {'disponible': 1},
+          where: 'medicoId = ? AND fecha = ? AND hora = ?',
+          whereArgs: [medicoId, fechaStr, horaStr],
+        );
+      }
+    } else {
+      await db.update(
+        'turnos',
+        {'errorSincronizacion': error},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    }
   }
 }

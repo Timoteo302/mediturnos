@@ -7,9 +7,9 @@ import '../../datos/repositorios/repositorioGestionTurnos.dart';
 /// ViewModel para gestionar la lista de turnos del paciente (Próximos e Historial).
 class MisTurnosViewModel extends ChangeNotifier {
   final RepositorioGestionTurnos _repositorioTurnos;
-  final int pacienteId;
+  final int? pacienteId;
 
-  MisTurnosViewModel(this._repositorioTurnos, {required this.pacienteId}) {
+  MisTurnosViewModel(this._repositorioTurnos, {this.pacienteId}) {
     cargar();
   }
 
@@ -25,9 +25,10 @@ class MisTurnosViewModel extends ChangeNotifier {
   String? get errorAccion => _errorAccion;
 
   List<TurnoDetalle> get proximos {
-    final lista = _turnos.where((t) => t.esProximo).toList();
-    lista.sort((a, b) => a.fechaHora.compareTo(b.fechaHora));
-    return lista;
+    final noRegistrados = _turnos.where((t) => t.noRegistrado).toList();
+    final proxs = _turnos.where((t) => t.esProximo).toList();
+    proxs.sort((a, b) => a.fechaHora.compareTo(b.fechaHora));
+    return [...noRegistrados, ...proxs];
   }
 
   List<TurnoDetalle> get historial {
@@ -36,7 +37,7 @@ class MisTurnosViewModel extends ChangeNotifier {
     return lista;
   }
 
-  int get cantProximos => proximos.length;
+  int get cantProximos => _turnos.where((t) => t.esProximo).length;
 
   @override
   void dispose() {
@@ -49,14 +50,22 @@ class MisTurnosViewModel extends ChangeNotifier {
     if (!_descartado) super.notifyListeners();
   }
 
-  /// Carga los turnos del paciente.
+  /// Carga los turnos del paciente. Si es invitado (pacienteId == null), deja la lista vacía sin llamar al repositorio.
   Future<void> cargar() async {
+    if (pacienteId == null) {
+      _cargando = false;
+      _turnos = [];
+      _error = null;
+      notifyListeners();
+      return;
+    }
+
     _cargando = true;
     _error = null;
     notifyListeners();
 
     try {
-      _turnos = await _repositorioTurnos.obtenerTurnos(pacienteId: pacienteId);
+      _turnos = await _repositorioTurnos.obtenerTurnos(pacienteId: pacienteId!);
       _cargando = false;
       notifyListeners();
     } on ExcepcionTurnos catch (e) {

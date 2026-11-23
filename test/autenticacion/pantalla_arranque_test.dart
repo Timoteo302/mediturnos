@@ -143,7 +143,7 @@ class ServicioSincronizacionFake implements ServicioMonitoreoSincronizacion {
   void detener() {}
 }
 
-class RepositorioGestionTurnosFake implements RepositorioGestionTurnos {
+class RepositorioGestionTurnosFake extends Fake implements RepositorioGestionTurnos {
   @override
   Future<List<TurnoDetalle>> obtenerTurnos({int? pacienteId, int? medicoId, DateTime? fecha, EstadoTurno? estado}) async => [];
   @override

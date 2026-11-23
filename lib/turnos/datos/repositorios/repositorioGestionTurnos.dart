@@ -11,4 +11,5 @@ abstract class RepositorioGestionTurnos {
   Future<TurnoDetalle> reprogramarTurno({required int turnoId, required DateTime fecha, required String hora});
   Future<TurnoDetalle> cambiarEstadoTurno({required int turnoId, required EstadoTurno estado, String? origen});
   Future<TurnoDetalle> responderAsistencia({required int turnoId, required bool asistira});
+  Future<void> eliminarTurnoLocal(int id);
 }

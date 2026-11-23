@@ -24,7 +24,7 @@ class TarjetaEstadoReserva extends StatelessWidget {
         border: Border.all(color: ColoresApp.bordeCampo),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -39,18 +39,26 @@ class TarjetaEstadoReserva extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: turno.estado.fondo,
+                  color: turno.noRegistrado
+                      ? Colors.red.withValues(alpha: 0.1)
+                      : turno.estado.fondo,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(turno.estado.icono, size: 14, color: turno.estado.color),
+                    Icon(
+                      turno.noRegistrado
+                          ? Icons.error_outline
+                          : turno.estado.icono,
+                      size: 14,
+                      color: turno.noRegistrado ? Colors.red : turno.estado.color,
+                    ),
                     const SizedBox(width: 4),
                     Text(
-                      turno.estado.etiqueta,
+                      turno.noRegistrado ? 'No registrado' : turno.estado.etiqueta,
                       style: TextStyle(
-                        color: turno.estado.color,
+                        color: turno.noRegistrado ? Colors.red : turno.estado.color,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                       ),
@@ -79,9 +87,9 @@ class TarjetaEstadoReserva extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: ColoresApp.fondoIcono.withOpacity(0.5),
+              color: ColoresApp.fondoIcono.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: ColoresApp.bordeCampo.withOpacity(0.5)),
+              border: Border.all(color: ColoresApp.bordeCampo.withValues(alpha: 0.5)),
             ),
             child: Row(
               children: [
@@ -140,6 +148,36 @@ class TarjetaEstadoReserva extends StatelessWidget {
               ],
             ),
           ),
+          if (turno.errorSincronizacion != null) ...[
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Explicación del error:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.red,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    turno.errorSincronizacion!,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           const Divider(color: ColoresApp.bordeCampo, height: 1),
           const SizedBox(height: 14),
@@ -155,29 +193,32 @@ class TarjetaEstadoReserva extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    '#${turno.id}',
-                    style: const TextStyle(
+                    turno.noRegistrado
+                        ? 'Sin número (no se registró)'
+                        : '#${turno.id}',
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: ColoresApp.textoTitulo,
+                      color: turno.noRegistrado ? Colors.red : ColoresApp.textoTitulo,
                     ),
                   ),
                 ],
               ),
-              OutlinedButton.icon(
-                onPressed: () {},
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: ColoresApp.primario,
-                  side: const BorderSide(color: ColoresApp.primario),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+              if (!turno.noRegistrado)
+                OutlinedButton.icon(
+                  onPressed: () {},
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: ColoresApp.primario,
+                    side: const BorderSide(color: ColoresApp.primario),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    minimumSize: Size.zero,
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  minimumSize: Size.zero,
+                  icon: const Icon(Icons.copy_outlined, size: 14),
+                  label: const Text('Copiar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                 ),
-                icon: const Icon(Icons.copy_outlined, size: 14),
-                label: const Text('Copiar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-              ),
             ],
           ),
         ],

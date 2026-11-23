@@ -1,18 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../configuracion/coloresApp.dart';
 import '../../turnos/datos/modelos/turnoDetalle.dart';
 import '../../turnos/datos/modelos/estadoTurno.dart';
+import '../../turnos/datos/repositorios/repositorioGestionTurnos.dart';
 import '../../turnos/presentacion/estadoTurnoUi.dart';
+import '../../turnos/presentacion/pantallas/pantallaSeleccionarTurno.dart';
+import '../../medicos/datos/modelos/medico.dart';
+import '../../medicos/datos/modelos/especialidad.dart';
 import 'dialogoAsistenciaTurno.dart';
 
 // Tarjeta que muestra un turno en la lista de "Mis Turnos" del paciente.
-// Permite confirmar asistencia si el turno es dentro de las 24 hs y no fue respondido.
+// Si el turno es noRegistrado (error de sincronización en creación con ID negativo), muestra etiqueta "No registrado" y opciones para elegir otro horario o quitar.
 class TarjetaTurnoPaciente extends StatelessWidget {
   final TurnoDetalle turno;
   final bool esHistorial;
   final VoidCallback alVerDetalle;
   final VoidCallback? alCancelar;
+  final VoidCallback? alEliminar;
 
   const TarjetaTurnoPaciente({
     super.key,
@@ -20,6 +26,7 @@ class TarjetaTurnoPaciente extends StatelessWidget {
     this.esHistorial = false,
     required this.alVerDetalle,
     this.alCancelar,
+    this.alEliminar,
   });
 
   @override
@@ -56,7 +63,7 @@ class TarjetaTurnoPaciente extends StatelessWidget {
                   vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: turno.errorSincronizacion != null
+                  color: turno.noRegistrado
                       ? Colors.red.withValues(alpha: 0.1)
                       : !turno.sincronizado
                       ? Colors.orange.withValues(alpha: 0.1)
@@ -67,13 +74,13 @@ class TarjetaTurnoPaciente extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      turno.errorSincronizacion != null
+                      turno.noRegistrado
                           ? Icons.error_outline
                           : !turno.sincronizado
                           ? Icons.sync
                           : turno.estado.icono,
                       size: 14,
-                      color: turno.errorSincronizacion != null
+                      color: turno.noRegistrado
                           ? Colors.red
                           : !turno.sincronizado
                           ? Colors.orange
@@ -81,15 +88,15 @@ class TarjetaTurnoPaciente extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      turno.errorSincronizacion != null
-                          ? 'Error de sincronización'
+                      turno.noRegistrado
+                          ? 'No registrado'
                           : !turno.sincronizado
                           ? 'Pendiente de sincronización'
                           : turno.estado.etiqueta,
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: turno.errorSincronizacion != null
+                        color: turno.noRegistrado
                             ? Colors.red
                             : !turno.sincronizado
                             ? Colors.orange[800]
@@ -159,52 +166,117 @@ class TarjetaTurnoPaciente extends StatelessWidget {
             ),
           ],
           const Divider(height: 20, color: Color(0xFFE2E8F0)),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              if (!esHistorial && dentroDe24h && turno.respuestaPaciente == 'SIN_RESPUESTA')
-                ElevatedButton.icon(
-                  onPressed: () {
-                    final fechaTexto = '${turno.fecha.day}/${turno.fecha.month}/${turno.fecha.year}';
-                    showDialog(
-                      context: context,
-                      builder: (context) => DialogoAsistenciaTurno(
-                        turnoId: turno.id,
-                        medicoNombre: turno.medico.nombreCompleto,
-                        fechaTexto: fechaTexto,
-                        hora: turno.hora,
+          if (turno.noRegistrado)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final medicoObj = Medico(
+                      id: turno.medico.id,
+                      nombre: turno.medico.nombre,
+                      apellido: turno.medico.apellido,
+                      especialidad: Especialidad(
+                        id: turno.medico.especialidad.id,
+                        nombre: turno.medico.especialidad.nombre,
+                        activo: true,
+                      ),
+                      activo: true,
+                    );
+                    final res = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PantallaSeleccionarTurno(medico: medicoObj),
                       ),
                     );
+                    if (res == true && context.mounted) {
+                      await context.read<RepositorioGestionTurnos>().eliminarTurnoLocal(turno.id);
+                      alEliminar?.call();
+                    }
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: ColoresApp.primario,
+                    side: const BorderSide(color: ColoresApp.primario),
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  icon: const Icon(Icons.check_circle_outline, size: 15),
-                  label: const Text('Confirmar asistencia', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                )
-              else
-                const SizedBox.shrink(),
-              Row(
-                children: [
-                  TextButton(
-                    onPressed: alVerDetalle,
-                    child: const Text('Ver detalle'),
-                  ),
-                  if (!esHistorial && alCancelar != null) ...[
-                    const SizedBox(width: 8),
-                    TextButton(
-                      onPressed: alCancelar,
-                      style: TextButton.styleFrom(foregroundColor: Colors.red),
-                      child: const Text('Cancelar'),
+                  icon: const Icon(Icons.calendar_month_outlined, size: 15),
+                  label: const Text('Elegir otro horario', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    final confirmar = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('¿Quitar turno no registrado?'),
+                        content: const Text('¿Estás seguro de que deseas eliminar esta solicitud de turno de tu dispositivo?'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            style: TextButton.styleFrom(foregroundColor: Colors.red),
+                            child: const Text('Quitar'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmar == true && context.mounted) {
+                      await context.read<RepositorioGestionTurnos>().eliminarTurnoLocal(turno.id);
+                      alEliminar?.call();
+                    }
+                  },
+                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  child: const Text('Quitar', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            )
+          else
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (!esHistorial && dentroDe24h && turno.respuestaPaciente == 'SIN_RESPUESTA')
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      final fechaTexto = '${turno.fecha.day}/${turno.fecha.month}/${turno.fecha.year}';
+                      showDialog(
+                        context: context,
+                        builder: (context) => DialogoAsistenciaTurno(
+                          turnoId: turno.id,
+                          medicoNombre: turno.medico.nombreCompleto,
+                          fechaTexto: fechaTexto,
+                          hora: turno.hora,
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
+                    icon: const Icon(Icons.check_circle_outline, size: 15),
+                    label: const Text('Confirmar asistencia', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  )
+                else
+                  const SizedBox.shrink(),
+                Row(
+                  children: [
+                    TextButton(
+                      onPressed: alVerDetalle,
+                      child: const Text('Ver detalle'),
+                    ),
+                    if (!esHistorial && alCancelar != null) ...[
+                      const SizedBox(width: 8),
+                      TextButton(
+                        onPressed: alCancelar,
+                        style: TextButton.styleFrom(foregroundColor: Colors.red),
+                        child: const Text('Cancelar'),
+                      ),
+                    ],
                   ],
-                ],
-              ),
-            ],
-          ),
+                ),
+              ],
+            ),
         ],
       ),
     );

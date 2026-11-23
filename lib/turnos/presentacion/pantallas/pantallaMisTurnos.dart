@@ -23,7 +23,7 @@ class PantallaMisTurnos extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authVm = context.read<AutenticacionViewModel>();
-    final pacienteId = authVm.usuarioActual?.paciente?.id ?? 1;
+    final pacienteId = authVm.usuarioActual?.paciente?.id;
 
     return ChangeNotifierProvider(
       create: (context) => MisTurnosViewModel(
@@ -183,6 +183,7 @@ class _VistaMisTurnosState extends State<_VistaMisTurnos> {
                                     alCancelar: _indicePestana == 0
                                         ? () => _confirmarCancelar(context, vm, turno)
                                         : null,
+                                    alEliminar: () => vm.cargar(),
                                   ),
                                 );
                               },

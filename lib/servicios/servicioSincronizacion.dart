@@ -153,6 +153,9 @@ class ServicioSincronizacion {
                 if (codigoError == 'HORARIO_OCUPADO') {
                   huboHorarioOcupado = true;
                 }
+                if (id >= 0) {
+                  await _restaurarEstadoRealServidor(id, db);
+                }
               }
             }
           } else if (operacion == 'CAMBIAR_ESTADO') {
@@ -200,6 +203,9 @@ class ServicioSincronizacion {
                 erroresTotal++;
                 if (codigoError == 'HORARIO_OCUPADO') {
                   huboHorarioOcupado = true;
+                }
+                if (id >= 0) {
+                  await _restaurarEstadoRealServidor(id, db);
                 }
               }
             }
@@ -261,5 +267,35 @@ class ServicioSincronizacion {
       await repositorio.marcarErrorSincronizacion(id, detalle);
     }
     return codigoServidor;
+  }
+
+  // Restaura la información real del servidor en la base local si falla la reprogramación o cambio de estado de un turno existente.
+  Future<void> _restaurarEstadoRealServidor(int id, dynamic db) async {
+    try {
+      final res = await _clienteHttp
+          .get(Uri.parse('${ConfiguracionServidor.urlBase}/turnos/$id'))
+          .timeout(ConfiguracionServidor.tiempoEspera);
+
+      if (res.statusCode == 200) {
+        final datos = jsonDecode(utf8.decode(res.bodyBytes));
+        await db.update(
+          'turnos',
+          {
+            'fecha': datos['fecha']?.toString(),
+            'hora': datos['hora']?.toString(),
+            'estado': datos['estado']?.toString(),
+            'respuestaPaciente': datos['respuestaPaciente']?.toString() ?? 'SIN_RESPUESTA',
+            'sincronizado': 1,
+            'operacionPendiente': null,
+            'origenPendiente': null,
+            'errorSincronizacion': null,
+          },
+          where: 'id = ?',
+          whereArgs: [id],
+        );
+      } else if (res.statusCode == 404) {
+        await db.delete('turnos', where: 'id = ?', whereArgs: [id]);
+      }
+    } catch (_) {}
   }
 }

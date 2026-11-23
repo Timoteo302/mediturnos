@@ -10,7 +10,7 @@ import 'package:mediturnos/medicos/datos/modelos/horarioAtencion.dart';
 import 'package:mediturnos/medicos/datos/repositorios/repositorioMedicos.dart';
 import 'package:mediturnos/turnos/presentacion/viewmodels/turnosAdminViewModel.dart';
 
-class FakeRepositorioGestionTurnos implements RepositorioGestionTurnos {
+class FakeRepositorioGestionTurnos extends Fake implements RepositorioGestionTurnos {
   bool simularSinConexion = false;
   bool simularError409 = false;
   bool simularConfirmacionAnticipada = false;

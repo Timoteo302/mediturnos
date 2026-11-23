@@ -28,7 +28,7 @@ class PantallaInicioPaciente extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authVm = context.read<AutenticacionViewModel>();
-    final pacienteId = authVm.usuarioActual?.paciente?.id ?? 1;
+    final pacienteId = authVm.usuarioActual?.paciente?.id;
     final nombre = authVm.usuarioActual?.nombre ?? 'Paciente';
 
     return ChangeNotifierProvider(

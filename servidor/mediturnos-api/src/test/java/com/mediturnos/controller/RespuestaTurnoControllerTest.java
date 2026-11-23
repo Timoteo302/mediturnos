@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mediturnos.dto.DatosTurnoCorreo;
 import com.mediturnos.model.Especialidad;
 import com.mediturnos.model.Medico;
+import com.mediturnos.model.Notificacion;
 import com.mediturnos.model.Paciente;
 import com.mediturnos.model.Turno;
 import com.mediturnos.model.Usuario;
@@ -222,7 +223,7 @@ class RespuestaTurnoControllerTest {
     }
 
     @Test
-    void testCancelacionPacienteNoEnviaCorreoAlPaciente() throws Exception {
+    void testCancelacionPacienteNoEnviaCorreoAlPacientePeroCreaNotificacionAdmin() throws Exception {
         Turno turno = new Turno();
         turno.setPaciente(paciente);
         turno.setMedico(medico);
@@ -239,6 +240,14 @@ class RespuestaTurnoControllerTest {
                 .andExpect(status().isOk());
 
         verify(servicioCorreo, never()).enviarTurnoCanceladoCentro(anyString(), anyString(), any());
+
+        // Comprobamos que se crea una notificación para el administrador
+        List<Notificacion> notificacionesAdmin = notificacionRepository.findTop50ByUsuarioIdOrderByFechaCreacionDesc(admin.getId());
+        assertFalse(notificacionesAdmin.isEmpty());
+        Notificacion notif = notificacionesAdmin.get(0);
+        assertEquals("PACIENTE_NO_ASISTIRA", notif.getTipo());
+        assertEquals("Turno cancelado por el paciente", notif.getTitulo());
+        assertTrue(notif.getMensaje().contains("Juan Pérez canceló su turno del"));
     }
 
     @Test

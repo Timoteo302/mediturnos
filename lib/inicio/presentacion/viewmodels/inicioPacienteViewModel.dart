@@ -8,10 +8,10 @@ import '../../../../turnos/logica/formatoFechaEspanol.dart';
 /// ViewModel para gestionar el estado de la pantalla de inicio del paciente.
 class InicioPacienteViewModel extends ChangeNotifier {
   final RepositorioGestionTurnos _repositorioTurnos;
-  final int pacienteId;
+  final int? pacienteId;
   final String nombreUsuario;
 
-  InicioPacienteViewModel(this._repositorioTurnos, {required this.pacienteId, required this.nombreUsuario}) {
+  InicioPacienteViewModel(this._repositorioTurnos, {this.pacienteId, required this.nombreUsuario}) {
     cargar();
   }
 
@@ -47,14 +47,22 @@ class InicioPacienteViewModel extends ChangeNotifier {
     if (!_descartado) super.notifyListeners();
   }
 
-  /// Carga los turnos del paciente desde el repositorio.
+  /// Carga los turnos del paciente desde el repositorio. Si es invitado (pacienteId == null), deja turnos vacíos sin llamar al repositorio.
   Future<void> cargar() async {
+    if (pacienteId == null) {
+      _cargando = false;
+      _turnos = [];
+      _error = null;
+      notifyListeners();
+      return;
+    }
+
     _cargando = true;
     _error = null;
     notifyListeners();
 
     try {
-      _turnos = await _repositorioTurnos.obtenerTurnos(pacienteId: pacienteId);
+      _turnos = await _repositorioTurnos.obtenerTurnos(pacienteId: pacienteId!);
       _cargando = false;
       notifyListeners();
     } on ExcepcionTurnos catch (e) {

@@ -44,4 +44,9 @@ class RepositorioGestionTurnosApi implements RepositorioGestionTurnos {
   Future<TurnoDetalle> responderAsistencia({required int turnoId, required bool asistira}) {
     return clienteApi.responderAsistencia(turnoId: turnoId, asistira: asistira);
   }
+
+  @override
+  Future<void> eliminarTurnoLocal(int id) async {
+    // Operación no aplicable para acceso directo a API remota
+  }
 }
