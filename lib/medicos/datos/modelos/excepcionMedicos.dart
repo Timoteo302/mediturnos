@@ -5,6 +5,7 @@ enum ErrorMedicos {
   especialidadDuplicada,
   especialidadEnUso,
   especialidadNoEncontrada,
+  sinPermiso,
   sinConexion,
   errorServidor,
   desconocido,

@@ -65,6 +65,8 @@ class ClienteTurnosApi {
           throw ExcepcionTurnos(ErrorTurnos.pacienteNoEncontrado, mensajeServidor: mensaje);
         case 'CONFIRMACION_ANTICIPADA':
           throw ExcepcionTurnos(ErrorTurnos.confirmacionAnticipada, mensajeServidor: mensaje);
+        case 'SIN_PERMISO':
+          throw ExcepcionTurnos(ErrorTurnos.sinPermiso, mensajeServidor: mensaje ?? 'No tenés permiso para hacer esto.');
         default:
           throw ExcepcionTurnos(ErrorTurnos.desconocido, mensajeServidor: mensaje);
       }

@@ -62,6 +62,17 @@ class AlmacenTurnosLocal {
     return filas.map(_mapearFilaATurnoDetalle).toList();
   }
 
+  // Elimina un turno de la base local solo si su ID es negativo y sincronizado es 0.
+  Future<int> eliminarTurnoLocal(int id) async {
+    if (id >= 0) return 0;
+    final db = await _db;
+    return await db.delete(
+      'turnos',
+      where: 'id = ? AND id < 0 AND sincronizado = 0',
+      whereArgs: [id],
+    );
+  }
+
   // Busca un turno específico por su ID en SQLite.
   Future<TurnoDetalle?> obtenerTurnoPorId(int id) async {
     final db = await _db;

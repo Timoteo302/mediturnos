@@ -112,7 +112,7 @@ class ActivarCuentaViewModel extends ChangeNotifier {
       if (e.tipo == TipoErrorInvitado.esperaParaReenviar) {
         _errorGeneral = e.mensaje ?? 'Esperá un momento antes de solicitar otro código.';
       } else if (e.tipo == TipoErrorInvitado.activacionNoEncontrada) {
-        _errorGeneral = e.mensaje ?? 'No encontramos una cuenta pendiente con ese correo.';
+        _errorGeneral = e.mensaje ?? 'No hay una cuenta pendiente de activar con ese correo.';
       } else if (e.tipo == TipoErrorInvitado.sinConexion) {
         _errorGeneral = 'Necesitás conexión para solicitar el código.';
       } else {
@@ -172,7 +172,7 @@ class ActivarCuentaViewModel extends ChangeNotifier {
           _errorGeneral = 'Hiciste demasiados intentos. Pedí un código nuevo.';
           break;
         case TipoErrorInvitado.activacionNoEncontrada:
-          _errorGeneral = e.mensaje ?? 'No encontramos la activación correspondiente.';
+          _errorGeneral = e.mensaje ?? 'No hay una cuenta pendiente de activar con ese correo.';
           break;
         case TipoErrorInvitado.sinConexion:
           _errorGeneral = 'Necesitás conexión para activar tu cuenta.';

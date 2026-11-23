@@ -36,14 +36,22 @@ class RepositorioGestionTurnosOfflineFirst implements RepositorioGestionTurnos {
 
       await _almacenLocal.guardarTurnos(turnos);
 
+      // Si el usuario es ADMIN (o pacienteId == null), devolver SOLO lo que trae el servidor
+      if (pacienteId == null) {
+        return turnos;
+      }
+
       final turnosLocales = await _almacenLocal.obtenerTurnos(
         pacienteId: pacienteId,
       );
 
-      // Conservamos todos los turnos locales no sincronizados (pendientes o con error)
-      final turnosPendientesLocales = turnosLocales
-          .where((turno) => !turno.sincronizado)
-          .toList();
+      // Conservamos solo los turnos locales no sincronizados de ESE pacienteId y aplicamos los mismos filtros
+      final turnosPendientesLocales = _aplicarFiltros(
+        turnosLocales.where((t) => !t.sincronizado).toList(),
+        medicoId: medicoId,
+        fecha: fecha,
+        estado: estado,
+      );
 
       final idsPendientes = turnosPendientesLocales
           .map((turno) => turno.id)
@@ -56,25 +64,35 @@ class RepositorioGestionTurnosOfflineFirst implements RepositorioGestionTurnos {
     } on ExcepcionTurnos catch (e) {
       if (e.tipo != ErrorTurnos.sinConexion) rethrow;
 
-      var locales = await _almacenLocal.obtenerTurnos(pacienteId: pacienteId);
-      if (medicoId != null) {
-        locales = locales.where((t) => t.medico.id == medicoId).toList();
-      }
-      if (estado != null) {
-        locales = locales.where((t) => t.estado == estado).toList();
-      }
-      if (fecha != null) {
-        locales = locales
-            .where(
-              (t) =>
-                  t.fecha.year == fecha.year &&
-                  t.fecha.month == fecha.month &&
-                  t.fecha.day == fecha.day,
-            )
-            .toList();
-      }
-      return locales;
+      final locales = await _almacenLocal.obtenerTurnos(pacienteId: pacienteId);
+      return _aplicarFiltros(locales, medicoId: medicoId, fecha: fecha, estado: estado);
     }
+  }
+
+  List<TurnoDetalle> _aplicarFiltros(
+    List<TurnoDetalle> lista, {
+    int? medicoId,
+    DateTime? fecha,
+    EstadoTurno? estado,
+  }) {
+    var resultado = lista;
+    if (medicoId != null) {
+      resultado = resultado.where((t) => t.medico.id == medicoId).toList();
+    }
+    if (estado != null) {
+      resultado = resultado.where((t) => t.estado == estado).toList();
+    }
+    if (fecha != null) {
+      resultado = resultado
+          .where(
+            (t) =>
+                t.fecha.year == fecha.year &&
+                t.fecha.month == fecha.month &&
+                t.fecha.day == fecha.day,
+          )
+          .toList();
+    }
+    return resultado;
   }
 
   @override
@@ -106,7 +124,6 @@ class RepositorioGestionTurnosOfflineFirst implements RepositorioGestionTurnos {
     } on ExcepcionTurnos catch (e) {
       if (e.tipo != ErrorTurnos.sinConexion) rethrow;
 
-      // 1. Intentar leer disponibilidad exacta previamente cacheada
       final horariosCacheados = await _almacenLocal.obtenerDisponibilidad(
         medicoId,
         fecha,
@@ -115,7 +132,6 @@ class RepositorioGestionTurnosOfflineFirst implements RepositorioGestionTurnos {
         return horariosCacheados;
       }
 
-      // 2. Fallback: calcular bloques desde los horarios de atención base del médico
       final horariosBase = await _almacenMedicos.obtenerHorarios(medicoId);
       if (horariosBase.isEmpty) rethrow;
 
@@ -219,7 +235,6 @@ class RepositorioGestionTurnosOfflineFirst implements RepositorioGestionTurnos {
         turnoLocal,
       ], operacionPendiente: 'CREAR');
 
-      // Marca la disponibilidad del horario reservado como ocupado sin conexión.
       await _almacenLocal.marcarHorarioLocal(medicoId, fecha, hora, disponible: false);
 
       return turnoLocal;
@@ -241,9 +256,16 @@ class RepositorioGestionTurnosOfflineFirst implements RepositorioGestionTurnos {
       await _almacenLocal.guardarTurnos([actualizado]);
       return actualizado;
     } on ExcepcionTurnos catch (e) {
-      if (e.tipo != ErrorTurnos.sinConexion) rethrow;
+      if (e.tipo != ErrorTurnos.sinConexion) {
+        if (turnoId >= 0) {
+          try {
+            final real = await _clienteApi.obtenerTurno(turnoId);
+            await _almacenLocal.guardarTurnos([real]);
+          } catch (_) {}
+        }
+        rethrow;
+      }
 
-      // Leemos el turno previo para conocer la fecha y hora anteriores.
       final turnoAnterior = await _almacenLocal.obtenerTurnoPorId(turnoId);
 
       final actualizadoLocal = await _almacenLocal.actualizarTurnoOffline(
@@ -255,14 +277,12 @@ class RepositorioGestionTurnosOfflineFirst implements RepositorioGestionTurnos {
 
       if (actualizadoLocal != null) {
         if (turnoAnterior != null) {
-          // Libera el horario viejo para que vuelva a figurar libre en SQLite.
           await _almacenLocal.marcarHorarioLocal(
             turnoAnterior.medico.id,
             turnoAnterior.fecha,
             turnoAnterior.hora,
             disponible: true,
           );
-          // Ocupa el nuevo horario seleccionado en la base local.
           await _almacenLocal.marcarHorarioLocal(
             turnoAnterior.medico.id,
             fecha,
@@ -276,7 +296,6 @@ class RepositorioGestionTurnosOfflineFirst implements RepositorioGestionTurnos {
     }
   }
 
-  // Cambia el estado de un turno offline-first y reenvía el origen del cambio si hay conexión.
   @override
   Future<TurnoDetalle> cambiarEstadoTurno({
     required int turnoId,
@@ -292,7 +311,15 @@ class RepositorioGestionTurnosOfflineFirst implements RepositorioGestionTurnos {
       await _almacenLocal.guardarTurnos([actualizado]);
       return actualizado;
     } on ExcepcionTurnos catch (e) {
-      if (e.tipo != ErrorTurnos.sinConexion) rethrow;
+      if (e.tipo != ErrorTurnos.sinConexion) {
+        if (turnoId >= 0) {
+          try {
+            final real = await _clienteApi.obtenerTurno(turnoId);
+            await _almacenLocal.guardarTurnos([real]);
+          } catch (_) {}
+        }
+        rethrow;
+      }
 
       final turnoAnterior = await _almacenLocal.obtenerTurnoPorId(turnoId);
 
@@ -305,7 +332,6 @@ class RepositorioGestionTurnosOfflineFirst implements RepositorioGestionTurnos {
 
       if (actualizadoLocal != null) {
         if (estado == EstadoTurno.cancelado && turnoAnterior != null) {
-          // Al cancelar sin conexión, libera el horario en la base local para que quede disponible.
           await _almacenLocal.marcarHorarioLocal(
             turnoAnterior.medico.id,
             turnoAnterior.fecha,
@@ -319,7 +345,6 @@ class RepositorioGestionTurnosOfflineFirst implements RepositorioGestionTurnos {
     }
   }
 
-  // Responde a la asistencia del turno vía la API remota.
   @override
   Future<TurnoDetalle> responderAsistencia({
     required int turnoId,
@@ -338,7 +363,11 @@ class RepositorioGestionTurnosOfflineFirst implements RepositorioGestionTurnos {
     }
   }
 
-  // Obtiene el nombre del paciente buscando el ID de paciente dentro de la sesión guardada sin usar el ID de usuario.
+  @override
+  Future<void> eliminarTurnoLocal(int id) async {
+    await _almacenLocal.eliminarTurnoLocal(id);
+  }
+
   Future<String> _resolverNombrePaciente(int pacienteId) async {
     try {
       final dbSesion = await _almacenSesion.database;

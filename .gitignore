@@ -52,3 +52,6 @@ app.*.map.json
 servidor/mediturnos-api/target/
 # Contraseña de MySQL local de cada PC
 servidor/mediturnos-api/src/main/resources/application-local.properties
+
+# Compilación de Android
+android/build/

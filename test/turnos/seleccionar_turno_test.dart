@@ -15,7 +15,7 @@ import 'package:mediturnos/servicios/estadoConexionViewModel.dart';
 import 'package:mediturnos/turnos/presentacion/pantallas/pantallaSeleccionarTurno.dart';
 
 // Repositorios falsos para probar la selección de turno.
-class FakeRepositorioGestionTurnosSeleccion implements RepositorioGestionTurnos {
+class FakeRepositorioGestionTurnosSeleccion extends Fake implements RepositorioGestionTurnos {
   @override
   Future<List<HorarioDisponible>> obtenerDisponibilidad({required int medicoId, required DateTime fecha}) async {
     return [HorarioDisponible(hora: '09:00', disponible: true)];

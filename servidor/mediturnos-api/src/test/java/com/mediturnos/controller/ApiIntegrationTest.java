@@ -11,11 +11,13 @@ import com.mediturnos.repository.MedicoRepository;
 import com.mediturnos.repository.PacienteRepository;
 import com.mediturnos.repository.UsuarioRepository;
 import com.mediturnos.repository.TurnoRepository;
+import com.mediturnos.service.ServicioToken;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
@@ -58,10 +60,18 @@ class ApiIntegrationTest {
     @Autowired
     private TurnoRepository turnoRepository;
 
+    @Autowired
+    private ServicioToken servicioToken;
+
     @Autowired(required = false)
     private RecordatorioTurnosService recordatorioTurnosService;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private Usuario admin;
+    private Usuario pacienteUser;
+    private Paciente paciente;
+    private String tokenAdmin;
+    private String tokenPaciente;
 
     @BeforeEach
     void setUp() {
@@ -73,30 +83,32 @@ class ApiIntegrationTest {
         usuarioRepository.deleteAll();
 
         // Admin
-        Usuario admin = new Usuario();
+        admin = new Usuario();
         admin.setNombre("Administrador");
         admin.setApellido("MediTurnos");
         admin.setEmail("admin@mediturnos.com");
         admin.setContrasena(passwordEncoder.encode("Admin1234"));
         admin.setRol(Usuario.Rol.ADMIN);
         admin.setActivo(true);
-        usuarioRepository.save(admin);
+        admin = usuarioRepository.save(admin);
+        tokenAdmin = servicioToken.generar(admin).token();
 
         // Paciente
-        Usuario pacienteUser = new Usuario();
+        pacienteUser = new Usuario();
         pacienteUser.setNombre("Matías");
         pacienteUser.setApellido("Romero");
         pacienteUser.setEmail("paciente@mediturnos.com");
         pacienteUser.setContrasena(passwordEncoder.encode("Paciente1234"));
         pacienteUser.setRol(Usuario.Rol.PACIENTE);
         pacienteUser.setActivo(true);
-        Usuario savedPacienteUser = usuarioRepository.save(pacienteUser);
+        pacienteUser = usuarioRepository.save(pacienteUser);
 
-        Paciente paciente = new Paciente();
-        paciente.setUsuario(savedPacienteUser);
+        paciente = new Paciente();
+        paciente.setUsuario(pacienteUser);
         paciente.setDni("36782904");
         paciente.setTelefono("1122334455");
-        pacienteRepository.save(paciente);
+        paciente = pacienteRepository.save(paciente);
+        tokenPaciente = servicioToken.generar(pacienteUser).token();
     }
 
     @Test
@@ -113,6 +125,7 @@ class ApiIntegrationTest {
                 .andExpect(jsonPath("$.rol").value("ADMIN"))
                 .andExpect(jsonPath("$.paciente").doesNotExist())
                 .andExpect(jsonPath("$.contrasena").doesNotExist())
+                .andExpect(jsonPath("$.token").exists())
                 .andExpect(jsonPath("$.*", org.hamcrest.Matchers.not(org.hamcrest.Matchers.hasItem(org.hamcrest.Matchers.containsString("contrasena")))));
     }
 
@@ -130,6 +143,7 @@ class ApiIntegrationTest {
                 .andExpect(jsonPath("$.rol").value("PACIENTE"))
                 .andExpect(jsonPath("$.paciente.id").exists())
                 .andExpect(jsonPath("$.paciente.dni").value("36782904"))
+                .andExpect(jsonPath("$.token").exists())
                 .andExpect(jsonPath("$.contrasena").doesNotExist());
     }
 
@@ -180,7 +194,8 @@ class ApiIntegrationTest {
                 "apellido", "Pérez",
                 "email", "otro.juan@test.com",
                 "contrasena", "Password123",
-                "dni", "40123456"
+                "dni", "40123456",
+                "telefono", "1199887766"
         );
         mockMvc.perform(post("/usuarios")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -278,12 +293,12 @@ class ApiIntegrationTest {
 
     @Test
     void test6_especialidadesEndpoints() throws Exception {
-        // Crear especialidad válida
         Map<String, String> espData = Map.of(
                 "nombre", "Cardiología",
                 "descripcion", "Especialidad del corazón"
         );
         mockMvc.perform(post("/especialidades")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(new ObjectMapper().writeValueAsString(espData)))
                 .andExpect(status().isCreated())
@@ -291,18 +306,18 @@ class ApiIntegrationTest {
                 .andExpect(jsonPath("$.nombre").value("Cardiología"))
                 .andExpect(jsonPath("$.activo").value(true));
 
-        // Probar especialidad duplicada (con sin tilde)
         Map<String, String> espDuplicada = Map.of("nombre", "cardiologia");
         mockMvc.perform(post("/especialidades")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(new ObjectMapper().writeValueAsString(espDuplicada)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.codigo").value("ESPECIALIDAD_DUPLICADA"))
                 .andExpect(jsonPath("$.campo").value("nombre"));
 
-        // Nombre vacío -> 400
         Map<String, String> espVacia = Map.of("nombre", "");
         mockMvc.perform(post("/especialidades")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(new ObjectMapper().writeValueAsString(espVacia)))
                 .andExpect(status().isBadRequest())
@@ -312,14 +327,12 @@ class ApiIntegrationTest {
 
     @Test
     void test7_medicosEndpoints() throws Exception {
-        // Guardar especialidad
         Especialidad esp = new Especialidad();
         esp.setNombre("Cardiología");
         esp.setDescripcion("Corazón");
         esp.setActivo(true);
         esp = especialidadRepository.save(esp);
 
-        // POST Médico válido
         Map<String, Object> medicoBody = Map.of(
                 "nombre", "Juan Manuel",
                 "apellido", "Gómez",
@@ -328,6 +341,7 @@ class ApiIntegrationTest {
                 "activo", true
         );
         MvcResult res = mockMvc.perform(post("/medicos")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(new ObjectMapper().writeValueAsString(medicoBody)))
                 .andExpect(status().isCreated())
@@ -336,8 +350,8 @@ class ApiIntegrationTest {
                 .andExpect(jsonPath("$.especialidad.nombre").value("Cardiología"))
                 .andReturn();
 
-        // Repetir matrícula -> 409 MATRICULA_DUPLICADA
         mockMvc.perform(post("/medicos")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(new ObjectMapper().writeValueAsString(medicoBody)))
                 .andExpect(status().isConflict())
@@ -347,7 +361,6 @@ class ApiIntegrationTest {
 
     @Test
     void test8_horariosEndpoints() throws Exception {
-        // Crear especialidad y médico
         Especialidad esp = new Especialidad();
         esp.setNombre("Dermatología");
         esp.setActivo(true);
@@ -361,7 +374,6 @@ class ApiIntegrationTest {
         medico.setActivo(true);
         medico = medicoRepository.save(medico);
 
-        // Cargar agenda de horarios
         Map<String, Object> agenda = Map.of(
                 "horarios", List.of(
                         Map.of("diaSemana", 1, "horaInicio", "08:30", "horaFin", "12:30", "duracionTurno", 30)
@@ -369,6 +381,7 @@ class ApiIntegrationTest {
         );
 
         mockMvc.perform(put("/medicos/" + medico.getId() + "/horarios")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(new ObjectMapper().writeValueAsString(agenda)))
                 .andExpect(status().isOk())
@@ -399,7 +412,6 @@ class ApiIntegrationTest {
 
     @Test
     void test10_turnosEndpoints() throws Exception {
-        // Crear especialidad, médico, agenda y paciente
         Especialidad esp = new Especialidad();
         esp.setNombre("Oftalmología");
         esp.setActivo(true);
@@ -413,9 +425,6 @@ class ApiIntegrationTest {
         medico.setActivo(true);
         medico = medicoRepository.save(medico);
 
-        Paciente paciente = pacienteRepository.findAll().get(0);
-
-        // Asignar agenda para un día futuro (ej: dentro de 10 días)
         LocalDate fechaFutura = LocalDate.now(ZoneId.of("America/Argentina/Buenos_Aires")).plusDays(10);
         int diaSemana = fechaFutura.getDayOfWeek().getValue();
 
@@ -425,11 +434,11 @@ class ApiIntegrationTest {
                 )
         );
         mockMvc.perform(put("/medicos/" + medico.getId() + "/horarios")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(new ObjectMapper().writeValueAsString(agenda)))
                 .andExpect(status().isOk());
 
-        // POST Turno en horario libre
         Map<String, Object> turnoPost = Map.of(
                 "paciente", Map.of("id", paciente.getId()),
                 "medico", Map.of("id", medico.getId()),
@@ -439,6 +448,7 @@ class ApiIntegrationTest {
         );
 
         MvcResult result = mockMvc.perform(post("/turnos")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenPaciente)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(new ObjectMapper().writeValueAsString(turnoPost)))
                 .andExpect(status().isCreated())
@@ -448,23 +458,22 @@ class ApiIntegrationTest {
                 .andExpect(jsonPath("$.medico.id").value(medico.getId()))
                 .andReturn();
 
-        // Repetir el mismo POST con la misma claveSolicitud -> 200 OK con el mismo ID (idempotencia)
         mockMvc.perform(post("/turnos")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenPaciente)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(new ObjectMapper().writeValueAsString(turnoPost)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.claveSolicitud").value("uuid-test-123"));
 
-        // GET /turnos/{id}
         String content = result.getResponse().getContentAsString();
         Map<?, ?> map = new ObjectMapper().readValue(content, Map.class);
         Integer turnoId = (Integer) map.get("id");
 
-        mockMvc.perform(get("/turnos/" + turnoId))
+        mockMvc.perform(get("/turnos/" + turnoId)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenPaciente))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(turnoId));
 
-        // GET /medicos/{id}/disponibilidad
         mockMvc.perform(get("/medicos/" + medico.getId() + "/disponibilidad?fecha=" + fechaFutura))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].hora").value("09:00"))
@@ -475,7 +484,6 @@ class ApiIntegrationTest {
 
     @Test
     void test11_actualizarPerfilPaciente() throws Exception {
-        Paciente paciente = pacienteRepository.findAll().get(0);
         Integer usuarioId = paciente.getUsuario().getId();
 
         Map<String, String> body = Map.of(
@@ -486,6 +494,7 @@ class ApiIntegrationTest {
         );
 
         mockMvc.perform(put("/usuarios/" + usuarioId + "/perfil")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenPaciente)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(new ObjectMapper().writeValueAsString(body)))
                 .andExpect(status().isOk())
@@ -497,7 +506,6 @@ class ApiIntegrationTest {
 
     @Test
     void test12_actualizarPerfilTelefonosInvalidos() throws Exception {
-        Paciente paciente = pacienteRepository.findAll().get(0);
         Integer usuarioId = paciente.getUsuario().getId();
 
         Map<String, String> body1 = Map.of(
@@ -505,26 +513,18 @@ class ApiIntegrationTest {
                 "telefono", "38414,04667"
         );
         mockMvc.perform(put("/usuarios/" + usuarioId + "/perfil")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenPaciente)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(new ObjectMapper().writeValueAsString(body1)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.campo").value("nombre")); // Falla por nombre < 2 primero
-
-        Map<String, String> body1b = Map.of(
-                "nombre", "Valido", "apellido", "Valido",
-                "telefono", "38414,04667"
-        );
-        mockMvc.perform(put("/usuarios/" + usuarioId + "/perfil")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(new ObjectMapper().writeValueAsString(body1b)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.campo").value("telefono"));
 
         Map<String, String> body2 = Map.of(
                 "nombre", "Valido", "apellido", "Valido",
-                "telefono", "1234567"
+                "telefono", "123456"
         );
         mockMvc.perform(put("/usuarios/" + usuarioId + "/perfil")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenPaciente)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(new ObjectMapper().writeValueAsString(body2)))
                 .andExpect(status().isBadRequest())
@@ -535,21 +535,23 @@ class ApiIntegrationTest {
                 "telefono", "1122334455"
         );
         mockMvc.perform(put("/usuarios/" + usuarioId + "/perfil")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenPaciente)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(new ObjectMapper().writeValueAsString(body3)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.campo").value("nombre"));
 
-        mockMvc.perform(put("/usuarios/99999/perfil")
+        mockMvc.perform(put("/usuarios/" + admin.getId() + "/perfil")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenPaciente)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(new ObjectMapper().writeValueAsString(body2)))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.codigo").value("USUARIO_NO_ENCONTRADO"));
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.codigo").value("SIN_PERMISO"));
     }
 
     @Test
     void test13_actualizarPerfilAdmin() throws Exception {
-        Usuario admin = usuarioRepository.findByEmail("admin@mediturnos.com").get();
+        Usuario adminUser = usuarioRepository.findByEmail("admin@mediturnos.com").get();
 
         Map<String, String> body = Map.of(
                 "nombre", "Admin Modificado",
@@ -557,7 +559,8 @@ class ApiIntegrationTest {
                 "telefono", "1122334455"
         );
 
-        mockMvc.perform(put("/usuarios/" + admin.getId() + "/perfil")
+        mockMvc.perform(put("/usuarios/" + adminUser.getId() + "/perfil")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(new ObjectMapper().writeValueAsString(body)))
                 .andExpect(status().isOk())
@@ -579,7 +582,6 @@ class ApiIntegrationTest {
         medico.setActivo(true);
         medico.setEspecialidad(esp);
         medico = medicoRepository.save(medico);
-        Paciente paciente = pacienteRepository.findAll().get(0);
 
         LocalDate fechaHoy = LocalDate.now(ZoneId.of("America/Argentina/Buenos_Aires"));
         Integer[] turnos = new Integer[3];
@@ -595,16 +597,46 @@ class ApiIntegrationTest {
             turnos[i] = t.getId();
         }
 
-        mockMvc.perform(patch("/turnos/" + turnos[0] + "/estado").contentType(MediaType.APPLICATION_JSON).content("{\"estado\":\"CANCELADO\"}")).andExpect(status().isOk());
-        mockMvc.perform(patch("/turnos/" + turnos[0] + "/estado").contentType(MediaType.APPLICATION_JSON).content("{\"estado\":\"CONFIRMADO\"}"))
+        mockMvc.perform(patch("/turnos/" + turnos[0] + "/estado")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"estado\":\"CANCELADO\"}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(patch("/turnos/" + turnos[0] + "/estado")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"estado\":\"CONFIRMADO\"}"))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.codigo").value("TRANSICION_INVALIDA"));
 
-        mockMvc.perform(patch("/turnos/" + turnos[1] + "/estado").contentType(MediaType.APPLICATION_JSON).content("{\"estado\":\"CONFIRMADO\"}")).andExpect(status().isOk());
-        mockMvc.perform(patch("/turnos/" + turnos[1] + "/estado").contentType(MediaType.APPLICATION_JSON).content("{\"estado\":\"CANCELADO\"}")).andExpect(status().isOk());
+        mockMvc.perform(patch("/turnos/" + turnos[1] + "/estado")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"estado\":\"CONFIRMADO\"}"))
+                .andExpect(status().isOk());
 
-        mockMvc.perform(patch("/turnos/" + turnos[2] + "/estado").contentType(MediaType.APPLICATION_JSON).content("{\"estado\":\"CONFIRMADO\"}")).andExpect(status().isOk());
-        mockMvc.perform(patch("/turnos/" + turnos[2] + "/estado").contentType(MediaType.APPLICATION_JSON).content("{\"estado\":\"ATENDIDO\"}")).andExpect(status().isOk());
-        mockMvc.perform(patch("/turnos/" + turnos[2] + "/estado").contentType(MediaType.APPLICATION_JSON).content("{\"estado\":\"CANCELADO\"}"))
+        mockMvc.perform(patch("/turnos/" + turnos[1] + "/estado")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"estado\":\"CANCELADO\"}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(patch("/turnos/" + turnos[2] + "/estado")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"estado\":\"CONFIRMADO\"}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(patch("/turnos/" + turnos[2] + "/estado")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"estado\":\"ATENDIDO\"}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(patch("/turnos/" + turnos[2] + "/estado")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"estado\":\"CANCELADO\"}"))
                 .andExpect(status().isConflict()).andExpect(jsonPath("$.codigo").value("TRANSICION_INVALIDA"));
     }
 
@@ -622,7 +654,6 @@ class ApiIntegrationTest {
         medico.setActivo(true);
         medico.setEspecialidad(esp);
         medico = medicoRepository.save(medico);
-        Paciente paciente = pacienteRepository.findAll().get(0);
         
         LocalDate fechaHoy = LocalDate.now(ZoneId.of("America/Argentina/Buenos_Aires"));
         
@@ -637,18 +668,22 @@ class ApiIntegrationTest {
         
         Map<String, Object> req = Map.of("fecha", fechaHoy.plusDays(1).toString(), "hora", "16:00");
         mockMvc.perform(put("/medicos/" + medico.getId() + "/horarios")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(Map.of("horarios", List.of(
                         Map.of("diaSemana", fechaHoy.plusDays(1).getDayOfWeek().getValue(), "horaInicio", "15:00", "horaFin", "17:00", "duracionTurno", 30)
-                )))));
+                )))))
+                .andExpect(status().isOk());
                 
         mockMvc.perform(put("/turnos/" + t.getId())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenPaciente)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(req)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado").value("PENDIENTE"));
                 
         mockMvc.perform(patch("/turnos/" + t.getId() + "/estado")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"estado\":\"CANCELADO\", \"origen\":\"CENTRO\"}"))
                 .andExpect(status().isOk());
@@ -668,7 +703,6 @@ class ApiIntegrationTest {
         medico.setActivo(true);
         medico.setEspecialidad(esp);
         medico = medicoRepository.save(medico);
-        Paciente paciente = pacienteRepository.findAll().get(0);
         
         LocalDate fechaHoy = LocalDate.now(ZoneId.of("America/Argentina/Buenos_Aires"));
         LocalTime horaTurno = LocalTime.now(ZoneId.of("America/Argentina/Buenos_Aires")).plusHours(2);
@@ -685,12 +719,14 @@ class ApiIntegrationTest {
         recordatorioTurnosService.procesarAhora();
         
         mockMvc.perform(post("/turnos/" + t.getId() + "/asistencia")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenPaciente)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"asistira\": true}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.respuestaPaciente").value("ASISTIRA"));
                 
-        mockMvc.perform(get("/notificaciones?usuarioId=" + paciente.getUsuario().getId()))
+        mockMvc.perform(get("/notificaciones?usuarioId=" + paciente.getUsuario().getId())
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenPaciente))
                 .andExpect(status().isOk());
     }
 
@@ -712,10 +748,12 @@ class ApiIntegrationTest {
         LocalDate fechaHoy = LocalDate.now(ZoneId.of("America/Argentina/Buenos_Aires"));
         
         mockMvc.perform(put("/medicos/" + medico.getId() + "/horarios")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(Map.of("horarios", List.of(
                         Map.of("diaSemana", fechaHoy.plusDays(1).getDayOfWeek().getValue(), "horaInicio", "10:00", "horaFin", "11:00", "duracionTurno", 30)
-                )))));
+                )))))
+                .andExpect(status().isOk());
                 
         Map<String, String> body = Map.of(
                 "nombre", "Invitado",
@@ -729,7 +767,6 @@ class ApiIntegrationTest {
                 "claveSolicitud", "uuid-invitado-1"
         );
         
-        // Reserva nueva exitosa
         MvcResult result = mockMvc.perform(post("/reservas/invitado")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(body)))
@@ -740,32 +777,28 @@ class ApiIntegrationTest {
                 
         String codigo = (String) new ObjectMapper().readValue(result.getResponse().getContentAsString(), Map.class).get("codigoDemostracion");
         
-        // Login de cuenta pendiente -> 403
         mockMvc.perform(post("/login").contentType(MediaType.APPLICATION_JSON).content("{\"email\":\"invitado@test.com\",\"contrasena\":\"12345678\"}"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.codigo").value("ACTIVACION_PENDIENTE"));
                 
-        // Activación de cuenta
         mockMvc.perform(post("/activacion/confirmar").contentType(MediaType.APPLICATION_JSON).content("{\"email\":\"invitado@test.com\",\"codigo\":\"" + codigo + "\",\"contrasena\":\"NuevaClave123\"}"))
                 .andExpect(status().isOk());
-                
     }
 
     @Test
     void test17_saludYRutasInexistentes() throws Exception {
-        // Comprueba que GET /salud devuelve 200 con el estado ok.
         mockMvc.perform(get("/salud"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.estado").value("ok"));
 
-        // Comprueba que un endpoint inexistente devuelve 404 y RUTA_NO_ENCONTRADA en lugar de 500.
-        mockMvc.perform(get("/ruta-que-no-existe"))
+        mockMvc.perform(get("/ruta-que-no-existe")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.codigo").value("RUTA_NO_ENCONTRADA"))
                 .andExpect(jsonPath("$.error").value("La ruta solicitada no existe"));
 
-        // Comprueba que GET / devuelve 404 y RUTA_NO_ENCONTRADA (en vez de 500 ERROR_INTERNO).
-        mockMvc.perform(get("/"))
+        mockMvc.perform(get("/")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.codigo").value("RUTA_NO_ENCONTRADA"));
     }

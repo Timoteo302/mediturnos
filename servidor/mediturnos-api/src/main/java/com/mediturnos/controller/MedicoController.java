@@ -6,6 +6,8 @@ import com.mediturnos.service.HorarioAtencionService;
 import com.mediturnos.service.MedicoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,13 +31,15 @@ public class MedicoController {
 
     /**
      * Endpoint GET /medicos
-     * Mantiene compatibilidad actual (solo activos por defecto, filtra por especialidadId si se especifica)
-     * y soporta el parámetro opcional incluirInactivos=true para incluir médicos inactivos.
+     * Mantiene compatibilidad actual y soporta el parámetro opcional incluirInactivos=true (sólo para administradores).
      */
     @GetMapping
     public List<MedicoRespuesta> listar(
             @RequestParam(required = false) Integer especialidadId,
             @RequestParam(required = false) Boolean incluirInactivos) {
+        if (Boolean.TRUE.equals(incluirInactivos) && !esAdminActual()) {
+            incluirInactivos = false;
+        }
         return medicoService.listar(especialidadId, incluirInactivos);
     }
 
@@ -103,5 +107,14 @@ public class MedicoController {
             @PathVariable Integer id,
             @RequestParam String fecha) {
         return disponibilidadService.obtenerDisponibilidad(id, fecha);
+    }
+
+    private boolean esAdminActual() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            return false;
+        }
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
     }
 }

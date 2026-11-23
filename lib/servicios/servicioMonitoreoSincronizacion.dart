@@ -1,16 +1,23 @@
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:http/http.dart' as http;
 
 import '../turnos/datos/repositorios/repositorioTurnosImpl.dart';
 import 'servicioSincronizacion.dart';
 
 class ServicioMonitoreoSincronizacion {
   final Connectivity _connectivity = Connectivity();
+  final ServicioSincronizacion? _servicioSincronizacion;
 
   StreamSubscription<List<ConnectivityResult>>? _suscripcion;
 
-  final ServicioSincronizacion _servicioSincronizacion =
-      ServicioSincronizacion(RepositorioTurnosImpl());
+  ServicioMonitoreoSincronizacion({http.Client? clienteHttp})
+      : _servicioSincronizacion = clienteHttp != null
+            ? ServicioSincronizacion(
+                RepositorioTurnosImpl(),
+                clienteHttp: clienteHttp,
+              )
+            : null;
 
   Future<void> iniciar() async {
     _suscripcion = _connectivity.onConnectivityChanged.listen(
@@ -18,7 +25,7 @@ class ServicioMonitoreoSincronizacion {
         if (resultados.any(
           (resultado) => resultado != ConnectivityResult.none,
         )) {
-          _servicioSincronizacion.sincronizar();
+          _servicioSincronizacion?.sincronizar();
         }
       },
     );
@@ -28,7 +35,7 @@ class ServicioMonitoreoSincronizacion {
     if (estado.any(
       (resultado) => resultado != ConnectivityResult.none,
     )) {
-      await _servicioSincronizacion.sincronizar();
+      await _servicioSincronizacion?.sincronizar();
     }
   }
 
@@ -37,6 +44,6 @@ class ServicioMonitoreoSincronizacion {
   }
 
   void sincronizarAhora() {
-  _servicioSincronizacion.sincronizar();
-}
+    _servicioSincronizacion?.sincronizar();
+  }
 }

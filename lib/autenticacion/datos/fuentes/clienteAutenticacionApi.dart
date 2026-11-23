@@ -7,11 +7,13 @@ import '../../../configuracion/configuracionServidor.dart';
 import '../modelos/usuario.dart';
 import '../modelos/solicitudRecuperacion.dart';
 import '../modelos/excepcionAutenticacion.dart';
+import 'almacenToken.dart';
 
 class ClienteAutenticacionApi {
   final http.Client client;
+  final AlmacenToken? almacenToken;
 
-  ClienteAutenticacionApi(this.client);
+  ClienteAutenticacionApi(this.client, {this.almacenToken});
 
   Uri _uri(String path) => Uri.parse('${ConfiguracionServidor.urlBase}$path');
 
@@ -76,6 +78,17 @@ class ClienteAutenticacionApi {
       ).timeout(ConfiguracionServidor.tiempoEspera);
 
       final jsonMap = await _procesarRespuesta(respuesta);
+
+      final token = jsonMap['token']?.toString();
+      final venceEnStr = jsonMap['tokenVenceEn']?.toString();
+      final usuarioId = jsonMap['id'] is int 
+          ? jsonMap['id'] as int 
+          : int.tryParse(jsonMap['id']?.toString() ?? '');
+      if (token != null && token.isNotEmpty && venceEnStr != null) {
+        final venceEn = DateTime.tryParse(venceEnStr) ?? DateTime.now().add(const Duration(days: 7));
+        await almacenToken?.guardar(token, venceEn, usuarioId: usuarioId);
+      }
+
       return Usuario.fromJson(jsonMap);
     } on SocketException catch (e) {
       debugPrint('API iniciarSesion → $e');

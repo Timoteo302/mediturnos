@@ -55,6 +55,8 @@ class ClienteMedicosApi {
           throw ExcepcionMedicos(ErrorMedicos.especialidadEnUso, mensajeServidor: mensaje);
         case 'ESPECIALIDAD_NO_ENCONTRADA':
           throw ExcepcionMedicos(ErrorMedicos.especialidadNoEncontrada, mensajeServidor: mensaje);
+        case 'SIN_PERMISO':
+          throw ExcepcionMedicos(ErrorMedicos.sinPermiso, mensajeServidor: mensaje ?? 'No tenés permiso para hacer esto.');
         default:
           throw ExcepcionMedicos(ErrorMedicos.desconocido, mensajeServidor: mensaje);
       }

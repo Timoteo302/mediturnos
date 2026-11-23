@@ -9,6 +9,7 @@ import '../../../configuracion/coloresApp.dart';
 import '../../../configuracion/estilosTexto.dart';
 import '../../datos/repositorios/repositorioAutenticacion.dart';
 import '../viewmodels/registroViewModel.dart';
+import 'pantallaLogin.dart';
 
 class PantallaCrearCuenta extends StatelessWidget {
   const PantallaCrearCuenta({super.key});
@@ -53,6 +54,20 @@ class _VistaCrearCuentaState extends State<_VistaCrearCuenta> {
     super.dispose();
   }
 
+  // Si no hay ninguna pantalla debajo, vuelvo al login en vez de quedar en negro.
+  void _volverAlLogin({String? email}) {
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context, email);
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PantallaLogin(emailPrellenado: email),
+        ),
+      );
+    }
+  }
+
   Future<void> _registrar() async {
     FocusScope.of(context).unfocus();
     final vm = context.read<RegistroViewModel>();
@@ -75,7 +90,7 @@ class _VistaCrearCuentaState extends State<_VistaCrearCuenta> {
           backgroundColor: Colors.green,
         ),
       );
-      Navigator.pop(context, emailController.text.trim().toLowerCase());
+      _volverAlLogin(email: emailController.text.trim().toLowerCase());
     } else if (vm.errorGeneral != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -90,273 +105,281 @@ class _VistaCrearCuentaState extends State<_VistaCrearCuenta> {
   Widget build(BuildContext context) {
     final vm = context.watch<RegistroViewModel>();
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          _volverAlLogin();
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => _volverAlLogin(),
+          ),
+          title: const Text('Crear cuenta'),
+          actions: const [
+            IndicadorConexion(),
+          ],
         ),
-        title: const Text('Crear cuenta'),
-        actions: const [
-          IndicadorConexion(),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: ColoresApp.fondoIcono,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(Icons.person_add_outlined, size: 16, color: ColoresApp.primario),
-                  SizedBox(width: 6),
-                  Text(
-                    'Nuevo paciente',
-                    style: TextStyle(
-                      color: ColoresApp.primario,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: ColoresApp.fondoIcono,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.person_add_outlined, size: 16, color: ColoresApp.primario),
+                    SizedBox(width: 6),
+                    Text(
+                      'Nuevo paciente',
+                      style: TextStyle(
+                        color: ColoresApp.primario,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Completá tus datos para registrarte como paciente',
-              style: EstilosTexto.tituloGrande,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Vas a poder solicitar y gestionar tus turnos médicos desde la app.',
-              style: EstilosTexto.subtitulo,
-            ),
-            const SizedBox(height: 24),
-            
-            // Tarjeta Datos Personales
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: ColoresApp.bordeCampo),
+              const SizedBox(height: 16),
+              const Text(
+                'Completá tus datos para registrarte como paciente',
+                style: EstilosTexto.tituloGrande,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: const [
-                      Icon(Icons.person_outline, color: ColoresApp.primario, size: 20),
-                      SizedBox(width: 8),
-                      Text(
-                        '1. Datos personales',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: ColoresApp.textoTitulo,
+              const SizedBox(height: 8),
+              const Text(
+                'Vas a poder solicitar y gestionar tus turnos médicos desde la app.',
+                style: EstilosTexto.subtitulo,
+              ),
+              const SizedBox(height: 24),
+              
+              // Tarjeta Datos Personales
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: ColoresApp.bordeCampo),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: const [
+                        Icon(Icons.person_outline, color: ColoresApp.primario, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          '1. Datos personales',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: ColoresApp.textoTitulo,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  CampoTexto(
-                    controller: nombreController,
-                    etiqueta: 'Nombre *',
-                    hintText: 'Ej. Lucas',
-                    iconoPrefijo: Icons.person_outline,
-                    mensajeError: vm.errorNombre,
-                    alCambiar: (_) => vm.limpiarError('nombre'),
-                  ),
-                  const SizedBox(height: 16),
-                  CampoTexto(
-                    controller: apellidoController,
-                    etiqueta: 'Apellido *',
-                    hintText: 'Ej. González',
-                    iconoPrefijo: Icons.person_outline,
-                    mensajeError: vm.errorApellido,
-                    alCambiar: (_) => vm.limpiarError('apellido'),
-                  ),
-                  const SizedBox(height: 16),
-                  CampoTexto(
-                    controller: dniController,
-                    etiqueta: 'DNI (Documento Nacional de Identidad) *',
-                    hintText: '38450123',
-                    tipoTeclado: TextInputType.number,
-                    iconoPrefijo: Icons.badge_outlined,
-                    mensajeError: vm.errorDni,
-                    alCambiar: (_) => vm.limpiarError('dni'),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'ℹ Ingresá tu DNI sin puntos ni espacios.',
-                    style: TextStyle(fontSize: 12, color: ColoresApp.textoSecundario),
-                  ),
-                  const SizedBox(height: 16),
-                  CampoTexto(
-                    controller: telefonoController,
-                    etiqueta: 'Teléfono *',
-                    hintText: 'Ej: 3841 404667',
-                    tipoTeclado: TextInputType.phone,
-                    iconoPrefijo: Icons.phone_outlined,
-                    formateadoresEntrada: formateadoresTelefono,
-                    mensajeError: vm.errorTelefono,
-                    alCambiar: (_) => vm.limpiarError('telefono'),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Tarjeta Datos de Acceso
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: ColoresApp.bordeCampo),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: const [
-                      Icon(Icons.lock_outline, color: ColoresApp.primario, size: 20),
-                      SizedBox(width: 8),
-                      Text(
-                        '2. Datos de acceso',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: ColoresApp.textoTitulo,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  CampoTexto(
-                    controller: emailController,
-                    etiqueta: 'Correo electrónico *',
-                    hintText: 'ejemplo@correo.com',
-                    tipoTeclado: TextInputType.emailAddress,
-                    iconoPrefijo: Icons.email_outlined,
-                    mensajeError: vm.errorEmail,
-                    alCambiar: (_) => vm.limpiarError('email'),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'ℹ Vas a usar este correo para iniciar sesión.',
-                    style: TextStyle(fontSize: 12, color: ColoresApp.textoSecundario),
-                  ),
-                  const SizedBox(height: 16),
-                  CampoTexto(
-                    controller: contrasenaController,
-                    etiqueta: 'Contraseña *',
-                    hintText: '••••••••',
-                    ocultarTexto: !mostrarContrasena,
-                    iconoPrefijo: Icons.lock_outline,
-                    mensajeError: vm.errorContrasena,
-                    alCambiar: (_) => vm.limpiarError('contrasena'),
-                    iconoSufijo: IconButton(
-                      icon: Icon(
-                        mostrarContrasena ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                        color: ColoresApp.textoSecundario,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          mostrarContrasena = !mostrarContrasena;
-                        });
-                      },
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    '🔒 Mínimo 8 caracteres (recomendado incluir letras y números).',
-                    style: TextStyle(fontSize: 12, color: ColoresApp.textoSecundario),
-                  ),
-                  const SizedBox(height: 16),
-                  CampoTexto(
-                    controller: confirmarContrasenaController,
-                    etiqueta: 'Confirmar contraseña *',
-                    hintText: '••••••••',
-                    ocultarTexto: !mostrarConfirmacion,
-                    iconoPrefijo: Icons.lock_outline,
-                    mensajeError: vm.errorConfirmacion,
-                    alCambiar: (_) => vm.limpiarError('confirmacion'),
-                    iconoSufijo: IconButton(
-                      icon: Icon(
-                        mostrarConfirmacion ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                        color: ColoresApp.textoSecundario,
-                      ),
-                      onPressed: () {
-                        setState(() {
-                          mostrarConfirmacion = !mostrarConfirmacion;
-                        });
-                      },
+                    const SizedBox(height: 16),
+                    CampoTexto(
+                      controller: nombreController,
+                      etiqueta: 'Nombre *',
+                      hintText: 'Ej. Lucas',
+                      iconoPrefijo: Icons.person_outline,
+                      mensajeError: vm.errorNombre,
+                      alCambiar: (_) => vm.limpiarError('nombre'),
                     ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: ColoresApp.fondoIcono,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: const [
-                  Icon(Icons.shield_outlined, color: ColoresApp.primario),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Tus datos personales se guardan de forma confidencial.',
+                    const SizedBox(height: 16),
+                    CampoTexto(
+                      controller: apellidoController,
+                      etiqueta: 'Apellido *',
+                      hintText: 'Ej. González',
+                      iconoPrefijo: Icons.person_outline,
+                      mensajeError: vm.errorApellido,
+                      alCambiar: (_) => vm.limpiarError('apellido'),
+                    ),
+                    const SizedBox(height: 16),
+                    CampoTexto(
+                      controller: dniController,
+                      etiqueta: 'DNI (Documento Nacional de Identidad) *',
+                      hintText: '38450123',
+                      tipoTeclado: TextInputType.number,
+                      iconoPrefijo: Icons.badge_outlined,
+                      mensajeError: vm.errorDni,
+                      alCambiar: (_) => vm.limpiarError('dni'),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'ℹ Ingresá tu DNI sin puntos ni espacios.',
                       style: TextStyle(fontSize: 12, color: ColoresApp.textoSecundario),
                     ),
+                    const SizedBox(height: 16),
+                    CampoTexto(
+                      controller: telefonoController,
+                      etiqueta: 'Teléfono *',
+                      hintText: 'Ej: 3841 404667',
+                      tipoTeclado: TextInputType.phone,
+                      iconoPrefijo: Icons.phone_outlined,
+                      formateadoresEntrada: formateadoresTelefono,
+                      mensajeError: vm.errorTelefono,
+                      alCambiar: (_) => vm.limpiarError('telefono'),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // Tarjeta Datos de Acceso
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: ColoresApp.bordeCampo),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: const [
+                        Icon(Icons.lock_outline, color: ColoresApp.primario, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          '2. Datos de acceso',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: ColoresApp.textoTitulo,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    CampoTexto(
+                      controller: emailController,
+                      etiqueta: 'Correo electrónico *',
+                      hintText: 'ejemplo@correo.com',
+                      tipoTeclado: TextInputType.emailAddress,
+                      iconoPrefijo: Icons.email_outlined,
+                      mensajeError: vm.errorEmail,
+                      alCambiar: (_) => vm.limpiarError('email'),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'ℹ Vas a usar este correo para iniciar sesión.',
+                      style: TextStyle(fontSize: 12, color: ColoresApp.textoSecundario),
+                    ),
+                    const SizedBox(height: 16),
+                    CampoTexto(
+                      controller: contrasenaController,
+                      etiqueta: 'Contraseña *',
+                      hintText: '••••••••',
+                      ocultarTexto: !mostrarContrasena,
+                      iconoPrefijo: Icons.lock_outline,
+                      mensajeError: vm.errorContrasena,
+                      alCambiar: (_) => vm.limpiarError('contrasena'),
+                      iconoSufijo: IconButton(
+                        icon: Icon(
+                          mostrarContrasena ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                          color: ColoresApp.textoSecundario,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            mostrarContrasena = !mostrarContrasena;
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      '🔒 Mínimo 8 caracteres (recomendado incluir letras y números).',
+                      style: TextStyle(fontSize: 12, color: ColoresApp.textoSecundario),
+                    ),
+                    const SizedBox(height: 16),
+                    CampoTexto(
+                      controller: confirmarContrasenaController,
+                      etiqueta: 'Confirmar contraseña *',
+                      hintText: '••••••••',
+                      ocultarTexto: !mostrarConfirmacion,
+                      iconoPrefijo: Icons.lock_outline,
+                      mensajeError: vm.errorConfirmacion,
+                      alCambiar: (_) => vm.limpiarError('confirmacion'),
+                      iconoSufijo: IconButton(
+                        icon: Icon(
+                          mostrarConfirmacion ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                          color: ColoresApp.textoSecundario,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            mostrarConfirmacion = !mostrarConfirmacion;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: ColoresApp.fondoIcono,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: const [
+                    Icon(Icons.shield_outlined, color: ColoresApp.primario),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Tus datos personales se guardan de forma confidencial.',
+                        style: TextStyle(fontSize: 12, color: ColoresApp.textoSecundario),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              BotonPrincipal(
+                texto: 'Crear cuenta',
+                onPressed: _registrar,
+                cargando: vm.cargando,
+              ),
+
+              const SizedBox(height: 24),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    '¿Ya tenés cuenta? ',
+                    style: EstilosTexto.subtitulo,
+                  ),
+                  GestureDetector(
+                    onTap: () => _volverAlLogin(),
+                    child: const Text(
+                      'Iniciar sesión',
+                      style: EstilosTexto.enlaceDestacado,
+                    ),
                   ),
                 ],
               ),
-            ),
 
-            const SizedBox(height: 24),
-
-            BotonPrincipal(
-              texto: 'Crear cuenta',
-              onPressed: _registrar,
-              cargando: vm.cargando,
-            ),
-
-            const SizedBox(height: 24),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  '¿Ya tenés cuenta? ',
-                  style: EstilosTexto.subtitulo,
-                ),
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: const Text(
-                    'Iniciar sesión',
-                    style: EstilosTexto.enlaceDestacado,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-          ],
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );

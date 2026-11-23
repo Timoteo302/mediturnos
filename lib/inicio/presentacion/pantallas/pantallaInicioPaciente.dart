@@ -28,7 +28,7 @@ class PantallaInicioPaciente extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authVm = context.read<AutenticacionViewModel>();
-    final pacienteId = authVm.usuarioActual?.paciente?.id ?? 1;
+    final pacienteId = authVm.usuarioActual?.paciente?.id;
     final nombre = authVm.usuarioActual?.nombre ?? 'Paciente';
 
     return ChangeNotifierProvider(
@@ -127,11 +127,16 @@ class _VistaInicioPaciente extends StatelessWidget {
                                         Expanded(
                                           child: OutlinedButton(
                                             onPressed: () {
+                                              // Salir del modo invitado y dejar la pila como [PantallaLogin, PantallaCrearCuenta]
                                               authVm.salirDeInvitado();
                                               Navigator.pushAndRemoveUntil(
                                                 context,
-                                                MaterialPageRoute(builder: (context) => const PantallaCrearCuenta()),
+                                                MaterialPageRoute(builder: (context) => const PantallaLogin()),
                                                 (route) => false,
+                                              );
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(builder: (context) => const PantallaCrearCuenta()),
                                               );
                                             },
                                             style: OutlinedButton.styleFrom(

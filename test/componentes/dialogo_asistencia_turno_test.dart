@@ -30,7 +30,7 @@ class FakeRepositorioNotificacionesDialogo implements RepositorioNotificaciones 
   Future<void> marcarTodasLeidas({required int usuarioId}) async {}
 }
 
-class FakeRepositorioGestionTurnosDialogo implements RepositorioGestionTurnos {
+class FakeRepositorioGestionTurnosDialogo extends Fake implements RepositorioGestionTurnos {
   final TurnoDetalle turnoPrueba = TurnoDetalle(
     id: 5,
     estado: EstadoTurno.cancelado,

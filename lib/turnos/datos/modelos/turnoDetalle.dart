@@ -53,8 +53,11 @@ class TurnoDetalle {
     return fecha.isBefore(soloHoy);
   }
 
-  /// Indica si el turno es próximo (pendiente o confirmado y fecha actual o futura).
-  bool get esProximo => !esHistorial;
+  /// Indica si un turno local nuevo no se pudo registrar en el servidor (tiene error de sincronización y ID negativo).
+  bool get noRegistrado => errorSincronizacion != null && id < 0;
+
+  /// Indica si el turno es próximo (pendiente o confirmado, fecha actual o futura, y no falló en el registro local).
+  bool get esProximo => !esHistorial && !noRegistrado;
 
   factory TurnoDetalle.fromJson(Map<String, dynamic> json) {
     final fechaStr = json['fecha']?.toString() ?? DateTime.now().toIso8601String().substring(0, 10);

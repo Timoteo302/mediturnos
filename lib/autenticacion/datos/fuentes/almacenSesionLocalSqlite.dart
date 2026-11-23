@@ -39,7 +39,6 @@ class AlmacenSesionLocalSqlite implements AlmacenSesionLocal {
   Future<void> guardar(Usuario usuario, String contrasenaHash) async {
     final db = await database;
     final jsonMap = usuario.toJson();
-    // Mantenemos el estado real de sesionOffline del usuario (false si es online, true si es offline)
     jsonMap['sesionOffline'] = usuario.sesionOffline;
     final usuarioJsonStr = json.encode(jsonMap);
 
@@ -59,12 +58,9 @@ class AlmacenSesionLocalSqlite implements AlmacenSesionLocal {
   Future<void> actualizarDatosUsuario(Usuario usuario) async {
     final db = await database;
     final jsonMap = usuario.toJson();
-    // Guardamos el JSON con sesionOffline en false para reflejar los datos actualizados desde el servidor
     jsonMap['sesionOffline'] = false;
     final usuarioJsonStr = json.encode(jsonMap);
 
-    // Actualizo solo los datos del usuario; la contraseña guardada no se toca.
-    // Si no existe la fila (0 afectadas), no hace nada porque no se puede crear una copia de sesión sin el hash de contraseña.
     await db.update(
       'sesiones_locales',
       {
@@ -88,6 +84,24 @@ class AlmacenSesionLocalSqlite implements AlmacenSesionLocal {
 
     if (resultado.isNotEmpty) {
       return resultado.first;
+    }
+    return null;
+  }
+
+  @override
+  Future<Map<String, dynamic>?> obtenerPorUsuarioId(int usuarioId) async {
+    final db = await database;
+    final resultado = await db.query('sesiones_locales');
+
+    for (final fila in resultado) {
+      try {
+        final jsonStr = fila['usuario_json']?.toString() ?? '{}';
+        final map = json.decode(jsonStr) as Map<String, dynamic>;
+        final id = map['id'] is int ? map['id'] : int.tryParse(map['id']?.toString() ?? '');
+        if (id == usuarioId) {
+          return fila;
+        }
+      } catch (_) {}
     }
     return null;
   }

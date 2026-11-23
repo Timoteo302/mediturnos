@@ -12,6 +12,8 @@ import '../../datos/fuentes/clientePerfilApi.dart';
 import '../../datos/repositorios/repositorioPerfilApi.dart';
 import '../viewmodels/editarPerfilViewModel.dart';
 
+import 'package:http/http.dart' as http;
+
 // Pantalla para editar los datos de perfil del usuario.
 class PantallaEditarPerfil extends StatelessWidget {
   const PantallaEditarPerfil({super.key});
@@ -20,7 +22,7 @@ class PantallaEditarPerfil extends StatelessWidget {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (context) => EditarPerfilViewModel(
-        RepositorioPerfilApi(ClientePerfilApi()),
+        RepositorioPerfilApi(ClientePerfilApi(context.read<http.Client>())),
       ),
       child: const _VistaEditarPerfil(),
     );

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import '../../../autenticacion/datos/fuentes/almacenToken.dart';
 import '../../../configuracion/configuracionServidor.dart';
 import '../modelos/resultadoReservaInvitado.dart';
 import '../modelos/excepcionInvitado.dart';
@@ -10,8 +11,9 @@ import '../modelos/excepcionInvitado.dart';
 // Cliente HTTP encargado de consultar los endpoints de reservas e invitación en la API remota.
 class ClienteInvitadoApi {
   final http.Client client;
+  final AlmacenToken? almacenToken;
 
-  ClienteInvitadoApi(this.client);
+  ClienteInvitadoApi(this.client, {this.almacenToken});
 
   Uri _uri(String path) => Uri.parse('${ConfiguracionServidor.urlBase}$path');
 
@@ -126,7 +128,19 @@ class ClienteInvitadoApi {
         }),
       ).timeout(ConfiguracionServidor.tiempoEspera);
 
-      return await _procesarRespuesta(respuesta);
+      final jsonMap = await _procesarRespuesta(respuesta);
+
+      final token = jsonMap['token']?.toString();
+      final venceEnStr = jsonMap['tokenVenceEn']?.toString();
+      final usuarioId = jsonMap['id'] is int 
+          ? jsonMap['id'] as int 
+          : int.tryParse(jsonMap['id']?.toString() ?? '');
+      if (token != null && token.isNotEmpty && venceEnStr != null) {
+        final venceEn = DateTime.tryParse(venceEnStr) ?? DateTime.now().add(const Duration(days: 7));
+        await almacenToken?.guardar(token, venceEn, usuarioId: usuarioId);
+      }
+
+      return jsonMap;
     } on SocketException catch (e) {
       debugPrint('API confirmarActivacion → $e');
       throw ExcepcionInvitado(TipoErrorInvitado.sinConexion);

@@ -60,7 +60,7 @@ class FakeRepositorioNotificaciones implements RepositorioNotificaciones {
   }
 }
 
-class FakeRepositorioGestionTurnosNotif implements RepositorioGestionTurnos {
+class FakeRepositorioGestionTurnosNotif extends Fake implements RepositorioGestionTurnos {
   int? turnoIdAsistencia;
   bool? asistiraRespuesta;
 

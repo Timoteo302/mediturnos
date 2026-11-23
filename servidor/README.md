@@ -73,5 +73,9 @@ En entornos de producción (Azure App Service), la configuración se inyecta med
 | `MEDITURNOS_CORREO_PROVEEDOR` | Proveedor de envío de correo | `azure` (o `demostracion`) |
 | `MEDITURNOS_CORREO_AZURE_CADENACONEXION` | Cadena de conexión para Azure Communication Services | `cadena_de_conexion_a_azure` |
 | `MEDITURNOS_CORREO_REMITENTE` | Dirección de correo del remitente configurada en Azure | `DoNotReply@midominio.com` |
+| `MEDITURNOS_PUSH_PROVEEDOR` | Proveedor de envío de notificaciones push | `azure` (o `demostracion`) |
+| `MEDITURNOS_PUSH_AZURE_CADENACONEXION` | Cadena de conexión para Azure Notification Hubs | `Cadena_de_conexion_azure` |
+| `MEDITURNOS_PUSH_AZURE_NOMBREHUB` | Nombre del Notification Hub en Azure | `mediturnos-hub` |
 | `MEDITURNOS_URLPUBLICA` | URL pública de la aplicación para enlaces de correos | `https://mediturnos.azurewebsites.net` |
+| `MEDITURNOS_JWT_SECRETO` | Secreto en Base64 (mínimo 32 bytes) para firma de tokens JWT | `secreto_base64_azure` |
 | `MEDITURNOS_RECORDATORIOS_HABILITADOS` | Habilita la tarea programada de recordatorios | `true` |

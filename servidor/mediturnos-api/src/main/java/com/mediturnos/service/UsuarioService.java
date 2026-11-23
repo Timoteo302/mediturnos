@@ -7,6 +7,8 @@ import com.mediturnos.model.Paciente;
 import com.mediturnos.model.Usuario;
 import com.mediturnos.repository.PacienteRepository;
 import com.mediturnos.repository.UsuarioRepository;
+import com.mediturnos.security.ProveedorUsuarioActual;
+import com.mediturnos.security.UsuarioActual;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -15,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 @Service
 public class UsuarioService {
@@ -27,14 +28,14 @@ public class UsuarioService {
     private PacienteRepository pacienteRepository;
 
     @Autowired
-    private ValidadorDatosPersona validador;
+    private ServicioToken servicioToken;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Transactional
     public UsuarioRespuesta registrarUsuario(Map<String, String> body) {
         if (body == null) {
-            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "Faltan datos obligatorios");
+            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "Solicitud nula");
         }
 
         String nombre = body.get("nombre");
@@ -44,25 +45,32 @@ public class UsuarioService {
         String dni = body.get("dni");
         String telefono = body.get("telefono");
 
-        // Validaciones
-        validador.validarNombre(nombre);
-        validador.validarApellido(apellido);
-        validador.validarEmail(email);
+        if (nombre == null || nombre.isBlank()) {
+            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El nombre es obligatorio", "nombre");
+        }
+        if (apellido == null || apellido.isBlank()) {
+            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El apellido es obligatorio", "apellido");
+        }
+        if (email == null || email.isBlank()) {
+            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El email es obligatorio", "email");
+        }
         if (contrasena == null || contrasena.length() < 8 || contrasena.length() > 72) {
             throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "La contraseña debe tener entre 8 y 72 caracteres", "contrasena");
         }
-        validador.validarDni(dni);
-        if (telefono != null && !telefono.isBlank()) {
-            validador.validarTelefono(telefono);
+        if (dni == null || dni.isBlank()) {
+            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El DNI es obligatorio", "dni");
         }
+        if (telefono == null || telefono.isBlank()) {
+            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El teléfono es obligatorio", "telefono");
+        }
+        validarTelefono(telefono);
 
-        // Duplicados
         String emailNorm = email.trim().toLowerCase();
         if (usuarioRepository.existsByEmail(emailNorm)) {
             throw new ExcepcionApi(HttpStatus.CONFLICT, "EMAIL_DUPLICADO", "El email ya está registrado", "email");
         }
-        String dniTrim = dni.trim();
-        if (pacienteRepository.existsByDni(dniTrim)) {
+
+        if (pacienteRepository.existsByDni(dni.trim())) {
             throw new ExcepcionApi(HttpStatus.CONFLICT, "DNI_DUPLICADO", "El DNI ya está registrado", "dni");
         }
 
@@ -73,13 +81,15 @@ public class UsuarioService {
         usuario.setContrasena(passwordEncoder.encode(contrasena));
         usuario.setRol(Usuario.Rol.PACIENTE);
         usuario.setActivo(true);
+        usuario.setContrasenaPendiente(false);
 
         Usuario nuevoUsuario = usuarioRepository.save(usuario);
 
         Paciente paciente = new Paciente();
         paciente.setUsuario(nuevoUsuario);
-        paciente.setDni(dniTrim);
-        paciente.setTelefono(telefono != null && !telefono.isBlank() ? telefono.trim() : null);
+        paciente.setDni(dni.trim());
+        paciente.setTelefono(telefono.trim());
+
         pacienteRepository.save(paciente);
 
         return mapToRespuesta(nuevoUsuario, paciente);
@@ -115,10 +125,71 @@ public class UsuarioService {
             paciente = pacienteRepository.findByUsuarioId(usuario.getId()).orElse(null);
         }
 
+        ServicioToken.ResultadoToken tokenRes = servicioToken.generar(usuario);
+        return mapToRespuestaConToken(usuario, paciente, tokenRes.token(), tokenRes.venceEn().toString());
+    }
+
+    @Autowired
+    private ProveedorUsuarioActual proveedorUsuarioActual;
+
+    @Transactional
+    public UsuarioRespuesta actualizarPerfil(Integer id, Map<String, String> body) {
+        UsuarioActual actual = proveedorUsuarioActual.obtenerActual().orElse(null);
+        if (actual != null && !actual.esAdmin()) {
+            if (id == null || !id.equals(actual.id())) {
+                throw new ExcepcionApi(HttpStatus.FORBIDDEN, "SIN_PERMISO", "No tenés permiso para modificar el perfil de otro usuario.");
+            }
+        }
+
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new ExcepcionApi(HttpStatus.NOT_FOUND, "USUARIO_NO_ENCONTRADO", "Usuario no encontrado"));
+
+        if (body == null) {
+            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "Solicitud nula");
+        }
+
+        String nombre = body.get("nombre");
+        String apellido = body.get("apellido");
+        String telefono = body.get("telefono");
+
+        if (nombre == null || nombre.isBlank()) {
+            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El nombre es obligatorio", "nombre");
+        }
+        if (apellido == null || apellido.isBlank()) {
+            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El apellido es obligatorio", "apellido");
+        }
+        if (telefono == null || telefono.isBlank()) {
+            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El teléfono es obligatorio", "telefono");
+        }
+        validarTelefono(telefono);
+
+        usuario.setNombre(nombre.trim());
+        usuario.setApellido(apellido.trim());
+        usuarioRepository.save(usuario);
+
+        Paciente paciente = null;
+        if (usuario.getRol() == Usuario.Rol.PACIENTE) {
+            paciente = pacienteRepository.findByUsuarioId(usuario.getId())
+                    .orElseThrow(() -> new ExcepcionApi(HttpStatus.NOT_FOUND, "PACIENTE_NO_ENCONTRADO", "Paciente no encontrado"));
+            paciente.setTelefono(telefono.trim());
+            pacienteRepository.save(paciente);
+        }
+
         return mapToRespuesta(usuario, paciente);
     }
 
+    private void validarTelefono(String telefono) {
+        String num = telefono.replaceAll("[\\s\\-\\(\\)\\+]", "");
+        if (num.length() < 7 || num.length() > 15 || !num.matches("\\d+")) {
+            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El teléfono debe contener entre 7 y 15 dígitos numéricos", "telefono");
+        }
+    }
+
     private UsuarioRespuesta mapToRespuesta(Usuario usuario, Paciente paciente) {
+        return mapToRespuestaConToken(usuario, paciente, null, null);
+    }
+
+    private UsuarioRespuesta mapToRespuestaConToken(Usuario usuario, Paciente paciente, String token, String tokenVenceEn) {
         PacienteResumen pacienteResumen = null;
         if (usuario.getRol() == Usuario.Rol.PACIENTE) {
             if (paciente == null) {
@@ -137,44 +208,9 @@ public class UsuarioService {
                 usuario.getRol().name(),
                 usuario.getActivo(),
                 usuario.getFechaCreacion(),
-                pacienteResumen
+                pacienteResumen,
+                token,
+                tokenVenceEn
         );
-    }
-
-    /**
-     * Actualiza nombre, apellido y teléfono (si es paciente) del usuario.
-     */
-    @Transactional
-    public UsuarioRespuesta actualizarPerfil(Integer id, Map<String, String> body) {
-        if (body == null) {
-            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "Faltan datos obligatorios");
-        }
-
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new ExcepcionApi(HttpStatus.NOT_FOUND, "USUARIO_NO_ENCONTRADO", "El usuario no existe"));
-
-        String nombre = body.get("nombre");
-        String apellido = body.get("apellido");
-        String telefono = body.get("telefono");
-
-        validador.validarNombre(nombre);
-        validador.validarApellido(apellido);
-
-        usuario.setNombre(nombre.trim());
-        usuario.setApellido(apellido.trim());
-
-        Paciente paciente = null;
-        if (usuario.getRol() == Usuario.Rol.PACIENTE) {
-            validador.validarTelefono(telefono);
-            paciente = pacienteRepository.findByUsuarioId(usuario.getId()).orElse(null);
-            if (paciente != null) {
-                paciente.setTelefono(telefono.trim());
-                pacienteRepository.save(paciente);
-            }
-        }
-
-        usuarioRepository.save(usuario);
-
-        return mapToRespuesta(usuario, paciente);
     }
 }

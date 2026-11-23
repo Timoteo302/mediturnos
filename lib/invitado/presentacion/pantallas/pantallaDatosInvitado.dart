@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:mediturnos/autenticacion/presentacion/pantallas/pantallaLogin.dart';
+import 'package:mediturnos/autenticacion/datos/fuentes/almacenToken.dart';
 import 'package:mediturnos/autenticacion/presentacion/viewmodels/autenticacionViewModel.dart';
 import 'package:mediturnos/componentes/comunes/botonPrincipal.dart';
 import 'package:mediturnos/componentes/comunes/campoTexto.dart';
@@ -37,7 +38,7 @@ class PantallaDatosInvitado extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Provider<RepositorioInvitado>(
-      create: (_) => RepositorioInvitadoApi(ClienteInvitadoApi(http.Client())),
+      create: (context) => RepositorioInvitadoApi(ClienteInvitadoApi(context.read<http.Client>(), almacenToken: context.read<AlmacenToken>())),
       child: ChangeNotifierProvider<DatosInvitadoViewModel>(
         create: (context) => DatosInvitadoViewModel(context.read<RepositorioInvitado>()),
         child: _VistaDatosInvitado(

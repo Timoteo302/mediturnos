@@ -11,7 +11,7 @@ import '../modelos/excepcionPerfil.dart';
 class ClientePerfilApi {
   final http.Client client;
 
-  ClientePerfilApi({http.Client? client}) : client = client ?? http.Client();
+  ClientePerfilApi(this.client);
 
   Uri _uri(String path) {
     return Uri.parse('${ConfiguracionServidor.urlBase}$path');
@@ -50,8 +50,15 @@ class ClientePerfilApi {
 
       final errorMsg = decoded is Map ? decoded['error']?.toString() : null;
       final campoMsg = decoded is Map ? decoded['campo']?.toString() : null;
+      final codigoMsg = decoded is Map ? decoded['codigo']?.toString() : null;
 
-      if (respuesta.statusCode == 400) {
+      if (respuesta.statusCode == 403 || codigoMsg == 'SIN_PERMISO') {
+        throw ExcepcionPerfil(
+          ErrorPerfil.sinPermiso,
+          mensaje: errorMsg ?? 'No tenés permiso para hacer esto.',
+          campo: campoMsg,
+        );
+      } else if (respuesta.statusCode == 400) {
         throw ExcepcionPerfil(
           ErrorPerfil.datosInvalidos,
           mensaje: errorMsg ?? 'Datos inválidos.',

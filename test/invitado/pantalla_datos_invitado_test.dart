@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:mediturnos/autenticacion/datos/fuentes/almacenToken.dart';
 import 'package:mediturnos/autenticacion/datos/modelos/usuario.dart';
 import 'package:mediturnos/autenticacion/datos/modelos/solicitudRecuperacion.dart';
 import 'package:mediturnos/autenticacion/datos/repositorios/repositorioAutenticacion.dart';
@@ -16,6 +19,54 @@ import 'package:mediturnos/servicios/estadoConexionViewModel.dart';
 import 'package:mediturnos/servicios/servicioMonitoreoSincronizacion.dart';
 import 'package:mediturnos/turnos/datos/modelos/estadoTurno.dart';
 import 'package:mediturnos/turnos/datos/modelos/turnoDetalle.dart';
+
+class FakeStorageForDatosInvitadoTest extends Fake implements FlutterSecureStorage {
+  final Map<String, String> _datos = {};
+
+  @override
+  Future<void> write({
+    required String key,
+    required String? value,
+    IOSOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    MacOsOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    if (value != null) {
+      _datos[key] = value;
+    } else {
+      _datos.remove(key);
+    }
+  }
+
+  @override
+  Future<String?> read({
+    required String key,
+    IOSOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    MacOsOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    return _datos[key];
+  }
+
+  @override
+  Future<void> delete({
+    required String key,
+    IOSOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    MacOsOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    _datos.remove(key);
+  }
+}
 
 class RepositorioAutenticacionFake implements RepositorioAutenticacion {
   @override
@@ -112,13 +163,15 @@ class RepositorioInvitadoWidgetFake implements RepositorioInvitado {
 void main() {
   late EstadoConexionViewModel conexionVm;
   late AutenticacionViewModel authVm;
+  late AlmacenToken almacenToken;
 
   setUp(() {
+    almacenToken = AlmacenToken(storage: FakeStorageForDatosInvitadoTest());
     conexionVm = EstadoConexionViewModel(
       ServicioSincronizacionFake(),
       verificadorConexion: () async => true,
     );
-    authVm = AutenticacionViewModel(RepositorioAutenticacionFake());
+    authVm = AutenticacionViewModel(RepositorioAutenticacionFake(), almacenToken: almacenToken);
   });
 
   tearDown(() {
@@ -138,6 +191,8 @@ void main() {
 
     return MultiProvider(
       providers: [
+        Provider<AlmacenToken>.value(value: almacenToken),
+        Provider<http.Client>.value(value: http.Client()),
         ChangeNotifierProvider<EstadoConexionViewModel>.value(value: conexionModel),
         ChangeNotifierProvider<AutenticacionViewModel>.value(value: authVm),
         Provider<RepositorioInvitado>(create: (_) => RepositorioInvitadoWidgetFake()),

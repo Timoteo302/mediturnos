@@ -1,21 +1,23 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:mediturnos/autenticacion/presentacion/pantallas/pantallaLogin.dart';
 import 'package:mediturnos/main.dart';
 
 void main() {
-  testWidgets('MediTurnosApp smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MediTurnosApp());
+  setUpAll(() {
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+    FlutterSecureStorage.setMockInitialValues({});
+  });
 
-    // Verify that the login screen is shown.
+  testWidgets('MediTurnosApp smoke test', (WidgetTester tester) async {
+    await tester.pumpWidget(const MediTurnosApp());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    expect(find.byType(PantallaLogin), findsOneWidget);
     expect(find.text('Iniciar sesión'), findsOneWidget);
     expect(find.text('MediTurnos'), findsWidgets);
   });

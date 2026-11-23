@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
+import 'package:mediturnos/autenticacion/datos/fuentes/almacenToken.dart';
 import 'package:mediturnos/autenticacion/presentacion/viewmodels/autenticacionViewModel.dart';
 import 'package:mediturnos/componentes/comunes/botonPrincipal.dart';
 import 'package:mediturnos/componentes/comunes/campoTexto.dart';
 import 'package:mediturnos/componentes/comunes/indicadorConexion.dart';
 import 'package:mediturnos/componentes/comunes/notificacionApp.dart';
+import 'package:mediturnos/configuracion/clienteHttpAutenticado.dart';
+import 'package:mediturnos/servicios/servicioNotificacionesPush.dart';
 import 'package:mediturnos/componentes/turnos/tarjetaResumenTurno.dart';
 import 'package:mediturnos/configuracion/coloresApp.dart';
 import 'package:mediturnos/configuracion/estilosTexto.dart';
@@ -27,7 +30,7 @@ class PantallaActivarCuenta extends StatelessWidget {
   const PantallaActivarCuenta({
     super.key,
     required this.email,
-    required this.venceEnDias,
+    this.venceEnDias = 7,
     this.turno,
     this.codigoDemostracion,
     this.vieneDeLogin = false,
@@ -36,7 +39,7 @@ class PantallaActivarCuenta extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Provider<RepositorioInvitado>(
-      create: (_) => RepositorioInvitadoApi(ClienteInvitadoApi(http.Client())),
+      create: (context) => RepositorioInvitadoApi(ClienteInvitadoApi(context.read<http.Client>(), almacenToken: context.read<AlmacenToken>())),
       child: ChangeNotifierProvider<ActivarCuentaViewModel>(
         create: (context) => ActivarCuentaViewModel(context.read<RepositorioInvitado>()),
         child: _VistaActivarCuenta(
@@ -101,8 +104,8 @@ class _VistaActivarCuentaState extends State<_VistaActivarCuenta> {
     final authVm = context.read<AutenticacionViewModel>();
 
     final usuario = await vm.confirmar(
-      email: emailController.text,
-      codigo: codigoController.text,
+      email: emailController.text.trim(),
+      codigo: codigoController.text.trim(),
       contrasena: contrasenaController.text,
       repetir: repetirController.text,
     );
@@ -112,6 +115,12 @@ class _VistaActivarCuentaState extends State<_VistaActivarCuenta> {
     if (usuario != null) {
       await authVm.actualizarUsuarioActual(usuario);
       authVm.salirDeInvitado();
+
+      try {
+        final clienteHttp = context.read<ClienteHttpAutenticado>();
+        final servicioPush = context.read<ServicioNotificacionesPush>();
+        servicioPush.registrar(clienteHttp: clienteHttp);
+      } catch (_) {}
 
       if (!mounted) return;
 
@@ -131,7 +140,19 @@ class _VistaActivarCuentaState extends State<_VistaActivarCuenta> {
 
   Future<void> _reenviar() async {
     final vm = context.read<ActivarCuentaViewModel>();
-    final res = await vm.reenviar(emailController.text);
+    final emailStr = emailController.text.trim();
+
+    if (emailStr.isEmpty) {
+      mostrarNotificacionApp(
+        context,
+        tipo: TipoNotificacionApp.error,
+        titulo: 'Correo requerido',
+        mensaje: 'Ingresá tu correo electrónico para solicitar el código.',
+      );
+      return;
+    }
+
+    final res = await vm.reenviar(emailStr);
 
     if (!mounted) return;
 
@@ -142,8 +163,8 @@ class _VistaActivarCuentaState extends State<_VistaActivarCuenta> {
       mostrarNotificacionApp(
         context,
         tipo: TipoNotificacionApp.informacion,
-        titulo: 'Código reenviado',
-        mensaje: 'Te enviamos un nuevo código a tu correo.',
+        titulo: 'Código enviado',
+        mensaje: 'Te enviamos un código a tu correo.',
       );
     }
   }
@@ -164,6 +185,24 @@ class _VistaActivarCuentaState extends State<_VistaActivarCuenta> {
         mensaje: 'Para verlo, creá tu contraseña con el código que te mandamos.',
       );
     }
+  }
+
+  String _obtenerSubtitulo() {
+    final emailText = emailController.text.trim();
+    if (emailText.isNotEmpty) {
+      return 'Te mandamos un código a $emailText. Ingresalo y creá tu contraseña para ver tus turnos. Vence en ${widget.venceEnDias} días.';
+    }
+    return 'Ingresá tu correo electrónico y solicitá el código para activar tu cuenta y crear tu contraseña. Vence en ${widget.venceEnDias} días.';
+  }
+
+  String _obtenerTextoBotonReenviar(ActivarCuentaViewModel vm) {
+    if (vm.reenvioBloqueado) {
+      return 'Reenviar código (${vm.segundosRestantes}s)';
+    }
+    if (widget.vieneDeLogin || emailController.text.trim().isEmpty) {
+      return 'Enviarme el código';
+    }
+    return 'Reenviar código';
   }
 
   @override
@@ -212,7 +251,7 @@ class _VistaActivarCuentaState extends State<_VistaActivarCuenta> {
                 const SizedBox(height: 20),
               ],
               Text(
-                'Te mandamos un código a ${emailController.text}. Ingresalo y creá tu contraseña para ver tus turnos. Vence en ${widget.venceEnDias} días.',
+                _obtenerSubtitulo(),
                 style: EstilosTexto.subtitulo,
               ),
               const SizedBox(height: 16),
@@ -239,14 +278,17 @@ class _VistaActivarCuentaState extends State<_VistaActivarCuenta> {
                   ),
                 ),
               ],
-              if (widget.vieneDeLogin) ...[
+              if (widget.vieneDeLogin || emailController.text.trim().isEmpty) ...[
                 CampoTexto(
                   controller: emailController,
                   etiqueta: 'Correo electrónico',
                   hintText: 'ejemplo@correo.com',
                   iconoPrefijo: Icons.email_outlined,
                   tipoTeclado: TextInputType.emailAddress,
-                  alCambiar: (_) => vm.limpiarError('email'),
+                  alCambiar: (_) {
+                    setState(() {});
+                    vm.limpiarError('email');
+                  },
                 ),
                 const SizedBox(height: 14),
               ],
@@ -320,11 +362,7 @@ class _VistaActivarCuentaState extends State<_VistaActivarCuenta> {
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
                   ),
-                  child: Text(
-                    vm.reenvioBloqueado
-                        ? 'Reenviar código (${vm.segundosRestantes}s)'
-                        : 'Reenviar código',
-                  ),
+                  child: Text(_obtenerTextoBotonReenviar(vm)),
                 ),
               ),
               const SizedBox(height: 12),

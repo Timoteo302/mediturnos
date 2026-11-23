@@ -11,11 +11,14 @@ import '../../../componentes/turnos/tarjetaMedicoSede.dart';
 import '../../../configuracion/coloresApp.dart';
 import '../../../configuracion/estilosTexto.dart';
 import '../../../autenticacion/presentacion/viewmodels/autenticacionViewModel.dart';
+import '../../../medicos/datos/modelos/medico.dart';
+import '../../../medicos/datos/modelos/especialidad.dart';
 import '../../datos/modelos/estadoTurno.dart';
 import '../../datos/modelos/turnoDetalle.dart';
 import '../../datos/repositorios/repositorioGestionTurnos.dart';
 import '../viewmodels/detalleTurnoViewModel.dart';
 import 'pantallaModificarTurno.dart';
+import 'pantallaSeleccionarTurno.dart';
 
 /// Pantalla para ver el detalle completo de un turno médico (08. Detalle del turno).
 class PantallaDetalleTurno extends StatelessWidget {
@@ -114,7 +117,69 @@ class _VistaDetalleTurno extends StatelessWidget {
               const SizedBox(height: 16),
             ],
             const TarjetaIndicacionesPaciente(),
-            if (!ocultarAcciones) ...[
+            if (t.noRegistrado) ...[
+              const SizedBox(height: 24),
+              BotonPrincipal(
+                texto: 'Elegir otro horario',
+                onPressed: () async {
+                  final medicoObj = Medico(
+                    id: t.medico.id,
+                    nombre: t.medico.nombre,
+                    apellido: t.medico.apellido,
+                    especialidad: Especialidad(
+                      id: t.medico.especialidad.id,
+                      nombre: t.medico.especialidad.nombre,
+                      activo: true,
+                    ),
+                    activo: true,
+                  );
+                  final res = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PantallaSeleccionarTurno(medico: medicoObj),
+                    ),
+                  );
+                  if (res == true && context.mounted) {
+                    await context.read<RepositorioGestionTurnos>().eliminarTurnoLocal(t.id);
+                    if (context.mounted) Navigator.pop(context, true);
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () async {
+                    final confirmar = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('¿Quitar turno no registrado?'),
+                        content: const Text('¿Estás seguro de que deseas eliminar esta solicitud de turno de tu dispositivo?'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            style: TextButton.styleFrom(foregroundColor: Colors.red),
+                            child: const Text('Quitar'),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirmar == true && context.mounted) {
+                      await context.read<RepositorioGestionTurnos>().eliminarTurnoLocal(t.id);
+                      if (context.mounted) Navigator.pop(context, true);
+                    }
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(color: Colors.red),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+                  ),
+                  child: const Text('Quitar'),
+                ),
+              ),
+            ] else if (!ocultarAcciones) ...[
               const SizedBox(height: 24),
               if (DateTime.now().isAfter(t.fechaHora.subtract(const Duration(hours: 24))) &&
                   DateTime.now().isBefore(t.fechaHora) &&
