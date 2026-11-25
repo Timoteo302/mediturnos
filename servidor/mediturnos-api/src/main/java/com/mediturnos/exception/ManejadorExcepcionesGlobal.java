@@ -36,6 +36,28 @@ public class ManejadorExcepcionesGlobal {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
     }
 
+    // Traduce violaciones de integridad de la BD que no sean duplicados a HTTP 400 DATOS_INVALIDOS
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> manejarIntegridadDatos(org.springframework.dao.DataIntegrityViolationException ex) {
+        String msg = ex.getMessage() != null ? ex.getMessage().toLowerCase() : "";
+        Throwable rootCause = ex.getRootCause();
+        if (rootCause != null && rootCause.getMessage() != null) {
+            msg += " " + rootCause.getMessage().toLowerCase();
+        }
+
+        if (msg.contains("duplicate") || msg.contains("unique")) {
+            Map<String, Object> body = new HashMap<>();
+            body.put("error", "Conflicto de duplicación de datos.");
+            body.put("codigo", "DATO_DUPLICADO");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+        }
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("error", "Algún dato no es válido.");
+        body.put("codigo", "DATOS_INVALIDOS");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> manejarGeneral(Exception ex) {
         Map<String, Object> body = new HashMap<>();
