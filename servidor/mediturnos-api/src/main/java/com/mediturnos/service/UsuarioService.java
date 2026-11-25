@@ -30,6 +30,9 @@ public class UsuarioService {
     @Autowired
     private ServicioToken servicioToken;
 
+    @Autowired
+    private ValidadorDatosPersona validador;
+
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Transactional
@@ -57,9 +60,7 @@ public class UsuarioService {
         if (contrasena == null || contrasena.length() < 8 || contrasena.length() > 72) {
             throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "La contraseña debe tener entre 8 y 72 caracteres", "contrasena");
         }
-        if (dni == null || dni.isBlank()) {
-            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El DNI es obligatorio", "dni");
-        }
+        validador.validarDni(dni);
         if (telefono == null || telefono.isBlank()) {
             throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El teléfono es obligatorio", "telefono");
         }

@@ -802,4 +802,94 @@ class ApiIntegrationTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.codigo").value("RUTA_NO_ENCONTRADA"));
     }
+
+    @Test
+    void test18_validacionDni() throws Exception {
+        Especialidad esp = new Especialidad();
+        esp.setNombre("Pediatría DNI");
+        esp.setActivo(true);
+        esp = especialidadRepository.save(esp);
+
+        Medico medico = new Medico();
+        medico.setNombre("Dr. DNI");
+        medico.setApellido("Test");
+        medico.setMatricula("998877");
+        medico.setActivo(true);
+        medico.setEspecialidad(esp);
+        medico = medicoRepository.save(medico);
+
+        LocalDate fechaHoy = LocalDate.now(ZoneId.of("America/Argentina/Buenos_Aires"));
+
+        mockMvc.perform(put("/medicos/" + medico.getId() + "/horarios")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + tokenAdmin)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(Map.of("horarios", List.of(
+                        Map.of("diaSemana", fechaHoy.plusDays(2).getDayOfWeek().getValue(), "horaInicio", "08:00", "horaFin", "12:00", "duracionTurno", 30)
+                )))))
+                .andExpect(status().isOk());
+
+        List<String> dnisInvalidos = List.of("00000000", "0123456", "123");
+
+        for (String dniInvalid : dnisInvalidos) {
+            Map<String, String> bodyReg = Map.of(
+                    "nombre", "Pedro",
+                    "apellido", "Prueba",
+                    "dni", dniInvalid,
+                    "telefono", "1122334455",
+                    "email", "reg_" + dniInvalid + "@test.com",
+                    "contrasena", "Clave1234"
+            );
+            mockMvc.perform(post("/usuarios")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(new ObjectMapper().writeValueAsString(bodyReg)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.codigo").value("DATOS_INVALIDOS"));
+
+            Map<String, String> bodyInv = Map.of(
+                    "nombre", "Pedro",
+                    "apellido", "Prueba",
+                    "dni", dniInvalid,
+                    "email", "inv_" + dniInvalid + "@test.com",
+                    "telefono", "1122334455",
+                    "medicoId", medico.getId().toString(),
+                    "fecha", fechaHoy.plusDays(2).toString(),
+                    "hora", "08:00",
+                    "claveSolicitud", "uuid-inv-" + dniInvalid
+            );
+            mockMvc.perform(post("/reservas/invitado")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(new ObjectMapper().writeValueAsString(bodyInv)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.codigo").value("DATOS_INVALIDOS"));
+        }
+
+        Map<String, String> bodyRegValido = Map.of(
+                "nombre", "Pedro",
+                "apellido", "Prueba",
+                "dni", "1234567",
+                "telefono", "1122334455",
+                "email", "reg_1234567@test.com",
+                "contrasena", "Clave1234"
+        );
+        mockMvc.perform(post("/usuarios")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(bodyRegValido)))
+                .andExpect(status().isCreated());
+
+        Map<String, String> bodyInvValido = Map.of(
+                "nombre", "Pedro",
+                "apellido", "Prueba",
+                "dni", "45858281",
+                "email", "inv_45858281@test.com",
+                "telefono", "1122334455",
+                "medicoId", medico.getId().toString(),
+                "fecha", fechaHoy.plusDays(2).toString(),
+                "hora", "08:30",
+                "claveSolicitud", "uuid-inv-45858281"
+        );
+        mockMvc.perform(post("/reservas/invitado")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(new ObjectMapper().writeValueAsString(bodyInvValido)))
+                .andExpect(status().isCreated());
+    }
 }

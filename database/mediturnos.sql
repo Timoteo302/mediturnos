@@ -115,12 +115,13 @@ DROP TABLE IF EXISTS `pacientes`;
 CREATE TABLE `pacientes` (
   `id` int NOT NULL AUTO_INCREMENT,
   `usuario_id` int NOT NULL,
-  `dni` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `dni` int unsigned NOT NULL,
   `telefono` varchar(30) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `usuario_id` (`usuario_id`),
   UNIQUE KEY `dni` (`dni`),
-  CONSTRAINT `fk_paciente_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`)
+  CONSTRAINT `fk_paciente_usuario` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`),
+  CONSTRAINT `chk_pacientes_dni` CHECK ((`dni` between 1000000 and 99999999))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

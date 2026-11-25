@@ -70,8 +70,8 @@ class RecuperacionViewModel extends ChangeNotifier {
     }
     final val = v.trim();
     if (_porDni) {
-      final regex = RegExp(r'^\d{7,8}$');
-      if (!regex.hasMatch(val)) return 'El DNI debe tener 7 u 8 números, sin puntos ni espacios.';
+      final regex = RegExp(r'^[1-9]\d{6,7}$');
+      if (!regex.hasMatch(val)) return 'El DNI debe tener 7 u 8 números, sin puntos, y no puede empezar con 0.';
     } else {
       final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
       if (!regex.hasMatch(val) || val.length > 150) return 'Ingresá un correo electrónico válido.';

@@ -6,5 +6,5 @@ INSERT INTO usuarios (nombre, apellido, email, contrasena, rol, activo) VALUES
   ('Matías','Romero','paciente@mediturnos.com','$2b$10$Uih1r6a9BuuUSmTHGXbrW.QJrUmCpbS4cUxMfEysrOnzZVvoLrIJ2','PACIENTE',1)
 ON DUPLICATE KEY UPDATE email = email;
 INSERT INTO pacientes (usuario_id, dni, telefono)
-  SELECT id, '36782904', NULL FROM usuarios WHERE email = 'paciente@mediturnos.com'
+  SELECT id, 36782904, NULL FROM usuarios WHERE email = 'paciente@mediturnos.com'
 ON DUPLICATE KEY UPDATE dni = dni;

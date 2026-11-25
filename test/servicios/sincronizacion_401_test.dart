@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:mediturnos/configuracion/baseDatosLocal.dart';
 import 'package:mediturnos/servicios/servicioSincronizacion.dart';
 import 'package:mediturnos/turnos/datos/modelos/turno.dart';
 import 'package:mediturnos/turnos/datos/repositorios/repositorioTurnos.dart';
@@ -34,9 +35,16 @@ class RepositorioTurnosSincronizacionFake implements RepositorioTurnos {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   setUpAll(() {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
+  });
+
+  setUp(() async {
+    final db = await BaseDatosLocal.obtenerBaseDatos();
+    await db.delete('turnos');
   });
 
   test('Un 401 durante sincronización interrumpe sin marcar turnos como error', () async {

@@ -31,6 +31,9 @@ public class RecuperacionService {
     @Autowired
     private PacienteRepository pacienteRepository;
 
+    @Autowired
+    private ValidadorDatosPersona validador;
+
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final SecureRandom secureRandom = new SecureRandom();
     private final ConcurrentHashMap<String, SolicitudRecuperacion> solicitudes = new ConcurrentHashMap<>();
@@ -75,6 +78,7 @@ public class RecuperacionService {
             String emailNorm = email.trim().toLowerCase();
             usuarioOpt = usuarioRepository.findByEmail(emailNorm);
         } else if (dni != null && !dni.isBlank()) {
+            validador.validarDni(dni);
             String dniTrim = dni.trim();
             Optional<Paciente> pacienteOpt = pacienteRepository.findByDni(dniTrim);
             if (pacienteOpt.isPresent()) {

@@ -117,4 +117,33 @@ void main() {
       expect(vm.errorTelefono, isNull);
     });
   });
+
+  group('RegistroViewModel - Pruebas de validación de DNI', () {
+    late RegistroViewModel vm;
+
+    setUp(() {
+      vm = RegistroViewModel(FakeRepositorioAutenticacion());
+    });
+
+    test('validarDni("00000000") devuelve mensaje de error', () {
+      final res = vm.validarDni('00000000');
+      expect(res, isNotNull);
+      expect(res, equals('El DNI debe tener 7 u 8 números, sin puntos, y no puede empezar con 0.'));
+    });
+
+    test('validarDni("0123456") devuelve mensaje de error', () {
+      final res = vm.validarDni('0123456');
+      expect(res, isNotNull);
+    });
+
+    test('validarDni("45858281") devuelve null (DNI válido)', () {
+      final res = vm.validarDni('45858281');
+      expect(res, isNull);
+    });
+
+    test('validarDni("1234567") devuelve null (DNI de 7 dígitos válido)', () {
+      final res = vm.validarDni('1234567');
+      expect(res, isNull);
+    });
+  });
 }

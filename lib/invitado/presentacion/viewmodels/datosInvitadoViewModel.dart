@@ -68,8 +68,8 @@ class DatosInvitadoViewModel extends ChangeNotifier {
   String? validarDni(String? v) {
     if (v == null || v.trim().isEmpty) return 'El DNI es obligatorio.';
     final val = v.trim();
-    final regex = RegExp(r'^\d{7,8}$');
-    if (!regex.hasMatch(val)) return 'El DNI debe tener 7 u 8 números, sin puntos ni espacios.';
+    final regex = RegExp(r'^[1-9]\d{6,7}$');
+    if (!regex.hasMatch(val)) return 'El DNI debe tener 7 u 8 números, sin puntos, y no puede empezar con 0.';
     return null;
   }
 

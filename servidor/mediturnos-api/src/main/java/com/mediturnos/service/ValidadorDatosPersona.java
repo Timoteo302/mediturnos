@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 public class ValidadorDatosPersona {
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
-    private static final Pattern DNI_PATTERN = Pattern.compile("^\\d{7,8}$");
+    private static final Pattern DNI_PATTERN = Pattern.compile("^[1-9]\\d{6,7}$");
 
     public void validarNombre(String nombre) {
         if (nombre == null || nombre.trim().length() < 2 || nombre.trim().length() > 100) {
@@ -38,7 +38,7 @@ public class ValidadorDatosPersona {
 
     public void validarDni(String dni) {
         if (dni == null || !DNI_PATTERN.matcher(dni.trim()).matches()) {
-            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El DNI es obligatorio y debe tener 7 u 8 dígitos", "dni");
+            throw new ExcepcionApi(HttpStatus.BAD_REQUEST, "DATOS_INVALIDOS", "El DNI debe tener 7 u 8 dígitos y no puede empezar con 0.", "dni");
         }
     }
 
